@@ -122,7 +122,6 @@ def draw_bboxes(file_name):
 
     # Draw bounding boxes
     draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, data)
-
     print(f"Annotated PDF saved to: {output_pdf_path}")
 
     # Print summary
