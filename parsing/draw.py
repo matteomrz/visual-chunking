@@ -1,33 +1,67 @@
+import argparse
+import io
 import json
 import os
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.colors import red, blue, green, orange, purple, black, transparent
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen.canvas import Canvas
-import io
 
-guideline_directory = "../guidelines"
-annotated_directory = "../annotated/unstructured-io"
-bounding_boxes_directory = "../bounding-boxes/unstructured-io"
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.lib.colors import black, blue, green, orange, purple, red, yellow, grey
+from reportlab.pdfgen.canvas import Canvas
+
+from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, DEFAULT_GUIDELINE, DEFAULT_MODULE, GUIDELINES_DIR
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--draw", "-d", action="store_true", help="Create annotated PDF")
+parser.add_argument(
+    "--file",
+    "-f",
+    type=str,
+    default=DEFAULT_GUIDELINE,
+    help=f'PDF filename without extension. Default: "{DEFAULT_GUIDELINE}"',
+)
+parser.add_argument(
+    "--module",
+    "-m",
+    type=str,
+    default=DEFAULT_MODULE,
+    help=f'The output of which module to draw. Default: "{DEFAULT_MODULE}"',
+)
+parser.add_argument(
+    "--appendix",
+    "-a",
+    type=str,
+    default="",
+    help=f'Optional: Any appendix attached to the path of the input JSON and output PDF. Example: "guideline\'-no_ocr\'.json"',
+)
+
+args = parser.parse_args()
 
 # Color mapping for different element types
 ELEMENT_COLORS = {
+    # Unstructured.io Tags
     "Title": red,
     "UncategorizedText": blue,
     "NarrativeText": green,
     "ListItem": orange,
     "Table": purple,
-    "Image": black,
-    "Footer": black,
-    "Header": black,
+    "Image": purple,
+    "Footer": grey,
+    "Header": grey,
+
+    # LlamaParse Tags
+    "picture": purple,
+    "text": blue,
+    "sectionHeader": red,
+    "pageFooter": grey,
+    "pageHeader": grey,
+    "listItem": orange,
 }
 
 
 def get_element_color(element_type):
     """Get color for element type, default to black if not found"""
+    if element_type not in ELEMENT_COLORS:
+        print(f'Error: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black')
     return ELEMENT_COLORS.get(element_type, black)
 
 
@@ -35,29 +69,25 @@ def draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, json_data):
     """
     Draw bounding boxes on top of the original PDF
     """
-    # Read the original PDF
     reader = PdfReader(input_pdf_path)
     writer = PdfWriter()
 
-    # Process each page
     for page_num, page in enumerate(reader.pages):
-        # Get page dimensions
         page_width = float(page.mediabox.width)
         page_height = float(page.mediabox.height)
 
-        # Create overlay canvas
         packet = io.BytesIO()
         overlay_canvas = Canvas(packet, pagesize=(page_width, page_height))
 
         for element in json_data:
             metadata = element.get("metadata", {})
-            coordinates = metadata.get("coordinates", {})
-            element_page = metadata.get("page_number", 1)
+            layout = metadata.get("layout", {})
+            element_page = layout.get("page_num", 1)
 
             if element_page == page_num + 1:
-                points = coordinates.get("points", [])
-                element_type = element.get("type", "Unknown")
-                layout_height = coordinates.get("layout_height", page_height)
+                points = layout.get("bbox", [])
+                element_type = metadata.get("type", "Unknown")
+                layout_height = layout.get("height", page_height)
                 scale_factor = layout_height / page_height
 
                 if len(points) >= 4:
@@ -97,30 +127,36 @@ def draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, json_data):
         writer.write(output_file)
 
 
-def draw_bboxes(file_name):
+def draw_bboxes(file_name, module_name, appendix=""):
     """
     Main function to draw bounding boxes on PDF
     """
-    input_pdf_path = f"{guideline_directory}/{file_name}.pdf"
-    output_pdf_path = f"{annotated_directory}/{file_name}-annotated.pdf"
-    json_path = f"{bounding_boxes_directory}/{file_name}-output.json"
+    input_pdf_path = GUIDELINES_DIR / f"{file_name}.pdf"
+    output_folder_path = ANNOTATED_DIR / module_name
+    if appendix:
+        output_pdf_path = output_folder_path / f"{file_name}-{appendix}-annotated.pdf"
+        json_path = BOUNDING_BOX_DIR / module_name / f"{file_name}-{appendix}-output.json"
+    else:
+        output_pdf_path = output_folder_path / f"{file_name}-annotated.pdf"
+        json_path = BOUNDING_BOX_DIR / module_name / f"{file_name}-output.json"
 
     # Check if files exist
-    if not os.path.exists(input_pdf_path):
+    if not input_pdf_path.exists():
         print(f"Error: PDF file not found: {input_pdf_path}")
         return
 
-    if not os.path.exists(json_path):
+    if not json_path.exists():
         print(f"Error: JSON file not found: {json_path}")
         return
 
     # Load JSON data
-    with open(json_path, "r") as file:
-        data = json.load(file)
+    with open(json_path, "r") as f:
+        data = json.load(f)
 
     print(f"Processing {len(data)} elements...")
 
     # Draw bounding boxes
+    os.makedirs(output_folder_path, exist_ok=True)
     draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, data)
     print(f"Annotated PDF saved to: {output_pdf_path}")
 
@@ -136,4 +172,4 @@ def draw_bboxes(file_name):
 
 
 if __name__ == "__main__":
-    draw_bboxes("example-guideline")
+    draw_bboxes(args.file, args.module, args.appendix)

@@ -2,3 +2,4 @@ parsing/guidelines/*
 parsing/bounding-boxes/*/*
 parsing/annotated/*/*.pdf
 .DS_Store
+.env

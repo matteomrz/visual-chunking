@@ -1,0 +1,34 @@
+[
+  {
+    "content": "Example Text of the Chunk",
+    "metadata": {
+      "element_id": "Id of the Chunk - depends on the method",
+      "type": "Type of the Chunk (Title, Heading, Text, Table...)",
+      "layout": {
+        "page_num": 1,
+        "height": 1,
+        "width": 1,
+        "bbox": [
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ]
+      },
+      "image_path": "optional: If method allows extraction of tables and figures as images",
+      "link_path": "optional: If method extracts link information"
+    }
+  }
+]
