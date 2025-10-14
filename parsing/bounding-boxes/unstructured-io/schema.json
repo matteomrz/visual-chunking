@@ -1,0 +1,137 @@
+{
+  "type": "array",
+  "description": "An array of content elements extracted from a document.",
+  "items": {
+    "type": "object",
+    "properties": {
+      "element_id": {
+        "type": "string",
+        "description": "A unique identifier for the content element."
+      },
+      "metadata": {
+        "type": "object",
+        "description": "A collection of metadata associated with the element.",
+        "properties": {
+          "coordinates": {
+            "type": "object",
+            "description": "Positional information of the element on the page.",
+            "properties": {
+              "layout_height": {
+                "type": "number"
+              },
+              "layout_width": {
+                "type": "number"
+              },
+              "points": {
+                "type": "array",
+                "description": "An array of [x, y] coordinate pairs defining the bounding box.",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "system": {
+                "type": "string",
+                "description": "The coordinate system used, e.g., 'PixelSpace'."
+              }
+            },
+            "required": [
+              "layout_height",
+              "layout_width",
+              "points",
+              "system"
+            ]
+          },
+          "detection_class_prob": {
+            "type": "number",
+            "description": "Optional: Confidence score from the detection model."
+          },
+          "file_directory": {
+            "type": "string",
+            "description": "The directory where the source file is located."
+          },
+          "filename": {
+            "type": "string",
+            "description": "The name of the source file."
+          },
+          "filetype": {
+            "type": "string",
+            "description": "The MIME type of the source file."
+          },
+          "image_path": {
+            "type": "string",
+            "description": "Optional: The file path to an image representation of the element."
+          },
+          "languages": {
+            "type": "array",
+            "description": "A list of languages detected in the element's text.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "last_modified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The last modification date and time of the source file."
+          },
+          "page_number": {
+            "type": "integer",
+            "description": "The page number where the element appears."
+          },
+          "parent_id": {
+            "type": "string",
+            "description": "Optional: The element_id of a parent element."
+          },
+          "links": {
+            "type": "array",
+            "description": "Optional: A list of hyperlinks found within the element's text.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start_index": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "required": [
+                "start_index",
+                "text",
+                "url"
+              ]
+            }
+          }
+        },
+        "required": [
+          "file_directory",
+          "filename",
+          "filetype",
+          "languages",
+          "last_modified",
+          "page_number"
+        ]
+      },
+      "text": {
+        "type": "string",
+        "description": "The text content of the element."
+      },
+      "type": {
+        "type": "string",
+        "description": "The classified type of the element (e.g., 'Image', 'Title', 'NarrativeText')."
+      }
+    },
+    "required": [
+      "element_id",
+      "metadata",
+      "text",
+      "type"
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+# input and output files from the parsing process
 parsing/guidelines/*
 parsing/bounding-boxes/*/*.json
 parsing/bounding-boxes/*.json
@@ -6,6 +7,10 @@ parsing/bounding-boxes/*/images/*
 !parsing/bounding-boxes/*/schema.json
 parsing/annotated/*/*.pdf
 
+# IDE settings and Cache
 .idea
 .DS_Store
+__pycache__
+
+# Secrets
 .env
