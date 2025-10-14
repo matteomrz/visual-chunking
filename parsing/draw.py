@@ -4,10 +4,10 @@ import json
 import os
 
 from PyPDF2 import PdfReader, PdfWriter
-from reportlab.lib.colors import black, blue, green, orange, purple, red, yellow, grey
+from reportlab.lib.colors import black, blue, green, orange, purple, red, grey
 from reportlab.pdfgen.canvas import Canvas
 
-from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, DEFAULT_GUIDELINE, DEFAULT_MODULE, GUIDELINES_DIR
+from config import GUIDELINES_DIR, BOUNDING_BOX_DIR, ANNOTATED_DIR, DEFAULT_GUIDELINE, DEFAULT_MODULE
 
 parser = argparse.ArgumentParser()
 
@@ -61,7 +61,8 @@ ELEMENT_COLORS = {
 def get_element_color(element_type):
     """Get color for element type, default to black if not found"""
     if element_type not in ELEMENT_COLORS:
-        print(f'Error: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black')
+        print(f'Warning: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black')
+
     return ELEMENT_COLORS.get(element_type, black)
 
 
