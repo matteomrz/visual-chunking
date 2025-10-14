@@ -31,7 +31,7 @@ parser.add_argument(
     "-a",
     type=str,
     default="",
-    help=f'Optional: Any appendix attached to the path of the input JSON and output PDF. Example: "guideline\'-no_ocr\'.json"',
+    help=f'Optional: Any appendix attached to the path of the input JSON and output PDF. Added with a dash after the filename. Example: "guideline-\'no_ocr\'.json"',
 )
 
 args = parser.parse_args()
