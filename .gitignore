@@ -1,5 +1,11 @@
 parsing/guidelines/*
-parsing/bounding-boxes/*/*
+parsing/bounding-boxes/*/*.json
+parsing/bounding-boxes/*.json
+parsing/bounding-boxes/*/images/*
+!parsing/bounding-boxes/schema.json
+!parsing/bounding-boxes/*/schema.json
 parsing/annotated/*/*.pdf
+
+.idea
 .DS_Store
 .env

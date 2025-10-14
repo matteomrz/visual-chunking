@@ -1,0 +1,307 @@
+{
+  "pages": {
+    "type": "array",
+    "description": "A list of pages which make up the document.",
+    "items": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "description": "The page number of the document."
+        },
+        "text": {
+          "type": "string",
+          "description": "The full text content of the page."
+        },
+        "md": {
+          "type": "string",
+          "description": "The page content formatted in Markdown."
+        },
+        "images": {
+          "type": "array",
+          "description": "A list of image objects found on the page.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The filename of the image."
+              },
+              "height": {
+                "type": "number",
+                "description": "The height of the image in pixels."
+              },
+              "width": {
+                "type": "number",
+                "description": "The width of the image in pixels."
+              },
+              "x": {
+                "type": "number",
+                "description": "The x-coordinate of the top-left corner of the image."
+              },
+              "y": {
+                "type": "number",
+                "description": "The y-coordinate of the top-left corner of the image."
+              },
+              "original_width": {
+                "type": "integer",
+                "description": "The original width of the image before any scaling."
+              },
+              "original_height": {
+                "type": "integer",
+                "description": "The original height of the image before any scaling."
+              },
+              "ocr": {
+                "type": "array",
+                "description": "A list of OCR results for the image.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    },
+                    "w": {
+                      "type": "integer"
+                    },
+                    "h": {
+                      "type": "integer"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "w",
+                    "h",
+                    "confidence",
+                    "text"
+                  ]
+                }
+              },
+              "type": {
+                "type": "string",
+                "description": "The type of layout element the image represents."
+              }
+            },
+            "required": [
+              "name",
+              "height",
+              "width",
+              "x",
+              "y",
+              "original_width",
+              "original_height"
+            ]
+          }
+        },
+        "charts": {
+          "type": "array",
+          "description": "A list of charts found on the page.",
+          "items": {}
+        },
+        "items": {
+          "type": "array",
+          "description": "A list of structured content items from the page.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of the content item (e.g., 'text', 'heading')."
+              },
+              "value": {
+                "type": "string",
+                "description": "The text value of the item."
+              },
+              "md": {
+                "type": "string",
+                "description": "The Markdown representation of the item."
+              },
+              "bBox": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "w": {
+                    "type": "number"
+                  },
+                  "h": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ]
+              },
+              "lvl": {
+                "type": "integer",
+                "description": "The heading level, if the type is 'heading'."
+              }
+            },
+            "required": [
+              "type",
+              "value",
+              "md",
+              "bBox"
+            ]
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the parsing operation."
+        },
+        "originalOrientationAngle": {
+          "type": "integer"
+        },
+        "links": {
+          "type": "array",
+          "description": "A list of hyperlinks found on the page.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "unsafeUrl": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "unsafeUrl",
+              "text"
+            ]
+          }
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "triggeredAutoMode": {
+          "type": "boolean"
+        },
+        "parsingMode": {
+          "type": "string"
+        },
+        "structuredData": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "noStructuredContent": {
+          "type": "boolean"
+        },
+        "noTextContent": {
+          "type": "boolean"
+        },
+        "pageHeaderMarkdown": {
+          "type": "string"
+        },
+        "pageFooterMarkdown": {
+          "type": "string"
+        },
+        "slideSpeakerNotes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "slideSectionName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "layout": {
+          "type": "array",
+          "description": "A list of layout elements identified on the page.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "image": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              },
+              "bbox": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "w": {
+                    "type": "number"
+                  },
+                  "h": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ]
+              },
+              "isLikelyNoise": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "image",
+              "confidence",
+              "label",
+              "bbox",
+              "isLikelyNoise"
+            ]
+          }
+        }
+      },
+      "required": [
+        "page",
+        "text",
+        "md",
+        "images",
+        "charts",
+        "items",
+        "status",
+        "links",
+        "width",
+        "height",
+        "confidence",
+        "layout"
+      ]
+    }
+  }
+}

@@ -93,7 +93,7 @@ def _transform_and_save(json_string):
 
     output_path = dst_path / f"{args.file}-{args.strat}-output.json"
     with open(output_path, "w") as f:
-        json.dump(json_elements, f, indent=4)
+        json.dump(json_elements, f, indent=2)
         print(f"Success: JSON saved at: {output_path}")
 
 

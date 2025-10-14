@@ -1,0 +1,19 @@
+[project]
+name = "visual-chunking"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pymupdf>=1.26.4",
+    "unstructured[local-inference,pdf]>=0.18.15",
+    "reportlab>=4.0.0",
+    "PyPDF2>=3.0.0",
+    "matplotlib>=3.7.0",
+    "argparse>=1.4.0",
+    "ruff>=0.14.0",
+    "langchain-core>=0.3.78",
+    "langchain-unstructured[local]>=0.1.5",
+    "python-dotenv>=1.1.1",
+    "llama-cloud-services>=0.6.73",
+]
