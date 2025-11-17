@@ -20,6 +20,13 @@ uv sync
 source .venv/bin/activate
 ```
 
+Deactivating the virtual environment:
+
+```bash
+# Deactivate the environment for your shell session
+deactivate
+```
+
 ### General usage pattern
 
 All commands are invoked with Python's module runner.

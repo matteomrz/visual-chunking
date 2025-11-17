@@ -7,7 +7,13 @@ from PyPDF2 import PdfReader, PdfWriter
 from reportlab.lib.colors import black, blue, green, orange, purple, red, grey
 from reportlab.pdfgen.canvas import Canvas
 
-from config import GUIDELINES_DIR, BOUNDING_BOX_DIR, ANNOTATED_DIR, DEFAULT_GUIDELINE, DEFAULT_MODULE
+from config import (
+    GUIDELINES_DIR,
+    BOUNDING_BOX_DIR,
+    ANNOTATED_DIR,
+    DEFAULT_GUIDELINE,
+    DEFAULT_MODULE,
+)
 
 parser = argparse.ArgumentParser()
 
@@ -31,7 +37,7 @@ parser.add_argument(
     "-a",
     type=str,
     default="",
-    help=f'Optional: Any appendix attached to the path of the input JSON and output PDF. Added with a dash after the filename. Example: "guideline-\'no_ocr\'.json"',
+    help=f"Optional: Any appendix attached to the path of the input JSON and output PDF. Added with a dash after the filename. Example: \"guideline-'no_ocr'.json\"",
 )
 
 args = parser.parse_args()
@@ -47,7 +53,6 @@ ELEMENT_COLORS = {
     "Image": purple,
     "Footer": grey,
     "Header": grey,
-
     # LlamaParse Tags
     "picture": purple,
     "text": blue,
@@ -61,7 +66,9 @@ ELEMENT_COLORS = {
 def get_element_color(element_type):
     """Get color for element type, default to black if not found"""
     if element_type not in ELEMENT_COLORS:
-        print(f'Warning: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black')
+        print(
+            f'Warning: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black'
+        )
 
     return ELEMENT_COLORS.get(element_type, black)
 
@@ -136,7 +143,9 @@ def draw_bboxes(file_name, module_name, appendix=""):
     output_folder_path = ANNOTATED_DIR / module_name
     if appendix:
         output_pdf_path = output_folder_path / f"{file_name}-{appendix}-annotated.pdf"
-        json_path = BOUNDING_BOX_DIR / module_name / f"{file_name}-{appendix}-output.json"
+        json_path = (
+            BOUNDING_BOX_DIR / module_name / f"{file_name}-{appendix}-output.json"
+        )
     else:
         output_pdf_path = output_folder_path / f"{file_name}-annotated.pdf"
         json_path = BOUNDING_BOX_DIR / module_name / f"{file_name}-output.json"

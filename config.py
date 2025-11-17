@@ -4,9 +4,10 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
 PARSING_DIR = ROOT_DIR / "parsing"
-GUIDELINES_DIR = PARSING_DIR / "guidelines"
-BOUNDING_BOX_DIR = PARSING_DIR / "bounding-boxes"
-ANNOTATED_DIR = PARSING_DIR / "annotated"
+DATA_DIR = ROOT_DIR / "data"
+GUIDELINES_DIR = DATA_DIR / "guidelines"
+BOUNDING_BOX_DIR = DATA_DIR / "bounding-boxes"
+ANNOTATED_DIR = DATA_DIR / "annotated"
 
 # Default File and Modules used by the parsing and drawing methods
 

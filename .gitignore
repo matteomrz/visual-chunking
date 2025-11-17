@@ -1,11 +1,11 @@
 # input and output files from the parsing process
-parsing/guidelines/*
-parsing/bounding-boxes/*/*.json
-parsing/bounding-boxes/*.json
-parsing/bounding-boxes/*/images/*
-!parsing/bounding-boxes/schema.json
-!parsing/bounding-boxes/*/schema.json
-parsing/annotated/*/*.pdf
+data/guidelines/*
+data/bounding-boxes/*/*.json
+data/bounding-boxes/*.json
+data/bounding-boxes/*/images/*
+!data/bounding-boxes/schema.json
+!data/bounding-boxes/*/schema.json
+data/annotated/*/*.pdf
 
 # IDE settings and Cache
 .idea
