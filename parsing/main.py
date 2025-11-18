@@ -12,9 +12,6 @@ DEFAULT_PARSER = Parsers.default().value
 arg_parser = argparse.ArgumentParser()
 
 arg_parser.add_argument(
-    "--draw", "-d", action="store_true", help="Create annotated PDF"
-)
-arg_parser.add_argument(
     "--file",
     "-f",
     type=str,
@@ -22,31 +19,32 @@ arg_parser.add_argument(
     help=f'PDF filename without extension. Default: "{DEFAULT_GUIDELINE}"',
 )
 arg_parser.add_argument(
-    "--method",
-    "-m",
+    "--parser",
+    "-p",
     type=str,
     default=DEFAULT_PARSER,
     help=f'Supported PDF parsing method. Default: "{DEFAULT_PARSER}"',
     choices=[p.value for p in Parsers],
 )
-
-args = arg_parser.parse_args()
+arg_parser.add_argument(
+    "--draw", "-d", action="store_true", help="Create annotated PDF"
+)
 
 
 def _get_parser(parser_type: str, options: dict) -> DocumentParser[Any]:
-    match parser_type:
-        case Parsers.LLAMA_PARSE.value:
+    match Parsers.get_parser(parser_type):
+        case Parsers.LLAMA_PARSE:
             return LlamaParseParser()
-        case Parsers.DOCLING.value:
+        case Parsers.DOCLING:
             return DoclingParser()
-        case Parsers.UNSTRUCTURED_IO.value:
+        case Parsers.UNSTRUCTURED_IO:
             return UnstructuredParser()
         case _:
             raise ValueError(f'No DocumentParser specified for type "{parser_type}"')
 
 
 def main():
-    parser = _get_parser(args.method, {})
+    parser = _get_parser(args.parser, {})
     options = {}
     if args.draw:
         options["draw"] = True
@@ -55,4 +53,5 @@ def main():
 
 
 if __name__ == "__main__":
+    args = arg_parser.parse_args()
     main()

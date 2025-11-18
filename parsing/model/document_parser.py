@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Protocol, TypeVar
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR
-from parsing.draw import draw_bboxes
+from parsing.draw import draw_annotations
 from parsing.methods.config import Parsers
 from parsing.model.parsing_result import ParsingResult
 
@@ -77,7 +77,7 @@ class DocumentParser(Protocol[T]):
         """
         if options and options.get("draw", False):
             print("Drawing bounding boxes...")
-            draw_bboxes(file_name, module_name=self.module)
+            draw_annotations(file_name, parser=self.module)
 
     def process_document(self, file_name: str, options: dict = None):
         """

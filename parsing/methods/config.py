@@ -11,3 +11,11 @@ class Parsers(Enum):
     @classmethod
     def default(cls):
         return cls.DOCLING
+
+    @classmethod
+    def get_parser(cls, name: str):
+        for parser in cls:
+            if parser.value == name:
+                return parser
+
+        raise ValueError(f'Parsing strategy "{name}" does not exist')

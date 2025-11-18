@@ -1,6 +1,8 @@
+import json
 from pathlib import Path
 
 from unstructured.partition.pdf import partition_pdf
+from unstructured.staging.base import elements_to_json
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
@@ -36,7 +38,8 @@ class UnstructuredParser(DocumentParser):
                                            / strat,
         )
 
-        return {"elements": elements}
+        json_str = elements_to_json(elements)
+        return {"elements": json.loads(json_str)}
 
     def _transform(self, raw_result: dict) -> ParsingResult:
         root = ParsingResult.root()
@@ -59,7 +62,7 @@ class UnstructuredParser(DocumentParser):
                 continue
 
             origin = points[0]
-            end = points[3]
+            end = points[2]
 
             if len(origin) < 2 or len(end) < 2:
                 print(f"Malformed bounding box: {points}")

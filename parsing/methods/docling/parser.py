@@ -53,7 +53,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         root = ParsingResult.root()
         docling_root = raw_result.body
         for child in docling_root.children:
-            _transform_item(root, raw_result, child)
+            _transform_item(root, raw_result, child.resolve(raw_result))
 
         return root
 
@@ -111,8 +111,8 @@ def _transform_b_box(raw_b_box: BoundingBox, page: PageItem) -> ParsingBoundingB
 
     x_frac = raw_b_box.l / page_width
     y_frac = raw_b_box.t / page_height
-    w_frac = 1 - raw_b_box.r / page_width
-    h_frac = 1 - raw_b_box.b / page_height
+    w_frac = raw_b_box.r / page_width - x_frac
+    h_frac = raw_b_box.b / page_height - y_frac
 
     return ParsingBoundingBox(
         page=page.page_no, x=x_frac, y=y_frac, width=w_frac, height=h_frac

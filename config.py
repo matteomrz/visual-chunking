@@ -12,4 +12,4 @@ ANNOTATED_DIR = DATA_DIR / "annotated"
 # Default File and Modules used by the parsing and drawing methods
 
 DEFAULT_GUIDELINE = "example-guideline"
-DEFAULT_MODULE = "unstructured-io"
+DEFAULT_MODULE = "unstructured_io"

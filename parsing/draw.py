@@ -1,185 +1,109 @@
-import argparse
-import io
 import json
-import os
+import random
 
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.lib.colors import black, blue, green, orange, purple, red, grey
-from reportlab.pdfgen.canvas import Canvas
+import argparse
+from pymupdf import Document, pymupdf
 
-from config import (
-    GUIDELINES_DIR,
-    BOUNDING_BOX_DIR,
-    ANNOTATED_DIR,
-    DEFAULT_GUIDELINE,
-    DEFAULT_MODULE,
-)
+from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, DEFAULT_GUIDELINE, GUIDELINES_DIR
+from parsing.methods.config import Parsers
 
-parser = argparse.ArgumentParser()
+color_mapping: dict[str, tuple[float, float, float]] = {}
 
-parser.add_argument("--draw", "-d", action="store_true", help="Create annotated PDF")
-parser.add_argument(
+DEFAULT_PARSER = Parsers.default().value
+arg_parser = argparse.ArgumentParser()
+
+arg_parser.add_argument(
     "--file",
     "-f",
     type=str,
     default=DEFAULT_GUIDELINE,
     help=f'PDF filename without extension. Default: "{DEFAULT_GUIDELINE}"',
 )
-parser.add_argument(
-    "--module",
-    "-m",
+arg_parser.add_argument(
+    "--parser",
+    "-p",
     type=str,
-    default=DEFAULT_MODULE,
-    help=f'The output of which module to draw. Default: "{DEFAULT_MODULE}"',
-)
-parser.add_argument(
-    "--appendix",
-    "-a",
-    type=str,
-    default="",
-    help=f"Optional: Any appendix attached to the path of the input JSON and output PDF. Added with a dash after the filename. Example: \"guideline-'no_ocr'.json\"",
+    default=DEFAULT_PARSER,
+    help=f'Supported PDF parsing method. Default: "{DEFAULT_PARSER}"',
+    choices=[p.value for p in Parsers],
 )
 
-args = parser.parse_args()
 
-# Color mapping for different element types
-ELEMENT_COLORS = {
-    # Unstructured.io Tags
-    "Title": red,
-    "UncategorizedText": blue,
-    "NarrativeText": green,
-    "ListItem": orange,
-    "Table": purple,
-    "Image": purple,
-    "Footer": grey,
-    "Header": grey,
-    # LlamaParse Tags
-    "picture": purple,
-    "text": blue,
-    "sectionHeader": red,
-    "pageFooter": grey,
-    "pageHeader": grey,
-    "listItem": orange,
-}
+def _get_color(label: str):
+    if not color_mapping.get(label):
+        color_mapping[label] = (random.random(), random.random(), random.random())
+    return color_mapping[label]
 
 
-def get_element_color(element_type):
-    """Get color for element type, default to black if not found"""
-    if element_type not in ELEMENT_COLORS:
-        print(
-            f'Warning: Element type "{element_type}" not found in ELEMENT_COLORS. Defaulting to black'
-        )
+def _draw_element(element: dict, doc: Document):
+    loaded_idx = -1
+    page = None
 
-    return ELEMENT_COLORS.get(element_type, black)
+    for box in element.get("geom", []):
+        page_idx = box.get("page", 1) - 1
 
+        if page_idx < 0 or page_idx >= doc.page_count:
+            print(f"Warning: Malformed page number [{page_idx + 1}] in {element}")
+            continue
 
-def draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, json_data):
-    """
-    Draw bounding boxes on top of the original PDF
-    """
-    reader = PdfReader(input_pdf_path)
-    writer = PdfWriter()
+        if loaded_idx != page_idx:
+            page = doc.load_page(page_idx)
 
-    for page_num, page in enumerate(reader.pages):
-        page_width = float(page.mediabox.width)
-        page_height = float(page.mediabox.height)
+        page_size = page.rect
+        page_height = page_size.height
+        page_width = page_size.width
 
-        packet = io.BytesIO()
-        overlay_canvas = Canvas(packet, pagesize=(page_width, page_height))
+        x1 = box.get("x", 0.0) * page_width
+        y1 = box.get("y", 0.0) * page_height
+        x2 = x1 + box.get("w", 0.0) * page_width
+        y2 = y1 + box.get("h", 0.0) * page_height
 
-        for element in json_data:
-            metadata = element.get("metadata", {})
-            layout = metadata.get("layout", {})
-            element_page = layout.get("page_num", 1)
+        label = element.get("type", "undefined")
+        rect = pymupdf.Rect(x1, y1, x2, y2)
+        color = _get_color(label)
 
-            if element_page == page_num + 1:
-                points = layout.get("bbox", [])
-                element_type = metadata.get("type", "Unknown")
-                layout_height = layout.get("height", page_height)
-                scale_factor = layout_height / page_height
+        page.draw_rect(rect=rect, color=color, width=1.5)
+        page.insert_text(point=(x1, y1 - 10), text=label, fontsize=8, color=color, fill=color, fill_opacity=0.3)
 
-                if len(points) >= 4:
-                    x1, y1 = [p / scale_factor for p in points[0]]  # top-left
-                    x3, y3 = [p / scale_factor for p in points[2]]  # bottom-right
-
-                    pdf_y1 = page_height - y1
-                    pdf_y3 = page_height - y3
-
-                    color = get_element_color(element_type)
-
-                    # Draw rectangle
-                    overlay_canvas.setStrokeColor(color)
-                    overlay_canvas.setLineWidth(2)
-
-                    # Draw the bounding box
-                    overlay_canvas.rect(
-                        x1, pdf_y1, x3 - x1, pdf_y3 - pdf_y1, stroke=1, fill=0
-                    )
-
-                    # Add Type Label
-                    overlay_canvas.setFillColor(color)
-                    overlay_canvas.setFont("Helvetica", 8)
-                    overlay_canvas.drawString(x1, pdf_y1 + 5, f"{element_type}")
-
-        overlay_canvas.save()
-        packet.seek(0)
-
-        overlay_pdf = PdfReader(packet)
-
-        if overlay_pdf.pages:
-            page.merge_page(overlay_pdf.pages[0])
-            writer.add_page(page)
-
-    # Write Output PDF
-    with open(output_pdf_path, "wb") as output_file:
-        writer.write(output_file)
+    for child in element.get("children", []):
+        if isinstance(child, dict):
+            _draw_element(child, doc)
+        else:
+            print(f"Warning invalid child element of type: {type(child)}")
 
 
-def draw_bboxes(file_name, module_name, appendix=""):
-    """
-    Main function to draw bounding boxes on PDF
-    """
-    input_pdf_path = GUIDELINES_DIR / f"{file_name}.pdf"
-    output_folder_path = ANNOTATED_DIR / module_name
-    if appendix:
-        output_pdf_path = output_folder_path / f"{file_name}-{appendix}-annotated.pdf"
-        json_path = (
-            BOUNDING_BOX_DIR / module_name / f"{file_name}-{appendix}-output.json"
-        )
-    else:
-        output_pdf_path = output_folder_path / f"{file_name}-annotated.pdf"
-        json_path = BOUNDING_BOX_DIR / module_name / f"{file_name}-output.json"
+def draw_annotations(file_name: str, parser: Parsers):
+    json_path = BOUNDING_BOX_DIR / parser.value / f"{file_name}-output.json"
+    doc_path = GUIDELINES_DIR / f"{file_name}.pdf"
+    output_dir = ANNOTATED_DIR / parser.value
+    output_path = output_dir / f"{file_name}-annotated.pdf"
 
-    # Check if files exist
-    if not input_pdf_path.exists():
-        print(f"Error: PDF file not found: {input_pdf_path}")
-        return
+    if not doc_path.exists():
+        raise ValueError(f"File not found: {doc_path}")
 
     if not json_path.exists():
-        print(f"Error: JSON file not found: {json_path}")
-        return
+        raise ValueError(f"File not found: {json_path}")
 
-    # Load JSON data
-    with open(json_path, "r") as f:
-        data = json.load(f)
+    with open(json_path) as j:
+        annotations = json.load(j)
+        document = pymupdf.open(doc_path)
 
-    print(f"Processing {len(data)} elements...")
+        if isinstance(annotations, dict):
+            for element in annotations.get("children", []):
+                if isinstance(element, dict):
+                    _draw_element(element, document)
+                else:
+                    print(f"Warning invalid child element of type: {type(element)}")
 
-    # Draw bounding boxes
-    os.makedirs(output_folder_path, exist_ok=True)
-    draw_bboxes_on_pdf(input_pdf_path, output_pdf_path, data)
-    print(f"Annotated PDF saved to: {output_pdf_path}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        document.save(output_path)
 
-    # Print summary
-    element_types = {}
-    for element in data:
-        element_type = element.get("type", "Unknown")
-        element_types[element_type] = element_types.get(element_type, 0) + 1
 
-    print("\nElement type summary:")
-    for element_type, count in element_types.items():
-        print(f"  {element_type}: {count} elements")
+def _draw():
+    parser = Parsers.get_parser(args.parser)
+    draw_annotations(file_name=args.file, parser=parser)
 
 
 if __name__ == "__main__":
-    draw_bboxes(args.file, args.module, args.appendix)
+    args = arg_parser.parse_args()
+    _draw()
