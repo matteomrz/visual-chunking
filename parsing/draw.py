@@ -1,5 +1,4 @@
 import json
-import random
 
 import argparse
 from pymupdf import Document, pymupdf
@@ -7,7 +6,19 @@ from pymupdf import Document, pymupdf
 from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, DEFAULT_GUIDELINE, GUIDELINES_DIR
 from parsing.methods.config import Parsers
 
-color_mapping: dict[str, tuple[float, float, float]] = {}
+# If two methods produce the same output with different labels, the colors will be identical
+# 19 colors from Tab20 color scheme (from matplotlib)
+possible_colors = [
+    (0.1216, 0.4667, 0.7059), (0.6824, 0.7804, 0.9098), (1.0000, 0.4980, 0.0549),
+    (1.0000, 0.7333, 0.4706), (0.1725, 0.6275, 0.1725), (0.5961, 0.8745, 0.5412),
+    (0.8392, 0.1529, 0.1569), (1.0000, 0.5961, 0.5882), (0.5804, 0.4039, 0.7412),
+    (0.7725, 0.6902, 0.8353), (0.5490, 0.3373, 0.2941), (0.7686, 0.6118, 0.5804),
+    (0.8902, 0.4667, 0.7608), (0.9686, 0.7137, 0.8235), (0.4980, 0.4980, 0.4980),
+    (0.7804, 0.7804, 0.7804), (0.7373, 0.7412, 0.1333), (0.8588, 0.8588, 0.5529),
+    (0.0902, 0.7451, 0.8118)
+]
+possible_colors_count = len(possible_colors)
+color_mapping: dict[str, tuple] = {}
 
 DEFAULT_PARSER = Parsers.default().value
 arg_parser = argparse.ArgumentParser()
@@ -31,7 +42,9 @@ arg_parser.add_argument(
 
 def _get_color(label: str):
     if not color_mapping.get(label):
-        color_mapping[label] = (random.random(), random.random(), random.random())
+        current_index = len(color_mapping) * 2 % possible_colors_count
+        color_mapping[label] = possible_colors[current_index]
+
     return color_mapping[label]
 
 
@@ -63,7 +76,7 @@ def _draw_element(element: dict, doc: Document):
         color = _get_color(label)
 
         page.draw_rect(rect=rect, color=color, width=1.5)
-        page.insert_text(point=(x1, y1 - 10), text=label, fontsize=8, color=color, fill=color, fill_opacity=0.3)
+        page.insert_text(point=(x1, y1 - 3), text=label, fontsize=6, color=color, fill=color, fill_opacity=0.6)
 
     for child in element.get("children", []):
         if isinstance(child, dict):
