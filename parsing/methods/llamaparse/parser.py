@@ -10,7 +10,6 @@ from parsing.model.document_parser import DocumentParser
 from parsing.model.parsing_result import (
     ParsingBoundingBox,
     ParsingResult,
-    ParsingResultType,
 )
 
 

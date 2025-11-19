@@ -57,7 +57,7 @@ class UnstructuredParser(DocumentParser):
 
             if not page_width or not page_height:
                 print(
-                    f"Malformed page dimenstions: height={page_height}, width={page_width}"
+                    f"Malformed page dimensions: height={page_height}, width={page_width}"
                 )
                 continue
 

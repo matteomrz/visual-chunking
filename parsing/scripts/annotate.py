@@ -1,12 +1,12 @@
 import json
 
-import argparse
+from pathlib import Path
+
 from pymupdf import Document, pymupdf
 
-from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, DEFAULT_GUIDELINE, GUIDELINES_DIR
-from parsing.methods.config import Parsers
+from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, GUIDELINES_DIR
 
-# If two methods produce the same output with different labels, the colors will be identical
+# If two methods produce the same output with different labels, the colors will still be identical
 # 19 colors from Tab20 color scheme (from matplotlib)
 possible_colors = [
     (0.1216, 0.4667, 0.7059), (0.6824, 0.7804, 0.9098), (1.0000, 0.4980, 0.0549),
@@ -19,25 +19,6 @@ possible_colors = [
 ]
 possible_colors_count = len(possible_colors)
 color_mapping: dict[str, tuple] = {}
-
-DEFAULT_PARSER = Parsers.default().value
-arg_parser = argparse.ArgumentParser()
-
-arg_parser.add_argument(
-    "--file",
-    "-f",
-    type=str,
-    default=DEFAULT_GUIDELINE,
-    help=f'PDF filename without extension. Default: "{DEFAULT_GUIDELINE}"',
-)
-arg_parser.add_argument(
-    "--parser",
-    "-p",
-    type=str,
-    default=DEFAULT_PARSER,
-    help=f'Supported PDF parsing method. Default: "{DEFAULT_PARSER}"',
-    choices=[p.value for p in Parsers],
-)
 
 
 def _get_color(label: str):
@@ -76,7 +57,8 @@ def _draw_element(element: dict, doc: Document):
         color = _get_color(label)
 
         page.draw_rect(rect=rect, color=color, width=1.5)
-        page.insert_text(point=(x1, y1 - 3), text=label, fontsize=6, color=color, fill=color, fill_opacity=0.6)
+        page.insert_text(point=(x1, y1 - 3), text=label, fontsize=6, color=color, fill=color,
+                         fill_opacity=0.6)
 
     for child in element.get("children", []):
         if isinstance(child, dict):
@@ -85,12 +67,7 @@ def _draw_element(element: dict, doc: Document):
             print(f"Warning invalid child element of type: {type(child)}")
 
 
-def draw_annotations(file_name: str, parser: Parsers):
-    json_path = BOUNDING_BOX_DIR / parser.value / f"{file_name}-output.json"
-    doc_path = GUIDELINES_DIR / f"{file_name}.pdf"
-    output_dir = ANNOTATED_DIR / parser.value
-    output_path = output_dir / f"{file_name}-annotated.pdf"
-
+def _annotate_file(json_path: Path, doc_path: Path) -> Document:
     if not doc_path.exists():
         raise ValueError(f"File not found: {doc_path}")
 
@@ -106,17 +83,41 @@ def draw_annotations(file_name: str, parser: Parsers):
                 if isinstance(element, dict):
                     _draw_element(element, document)
                 else:
-                    print(f"Warning invalid child element of type: {type(element)}")
+                    print(f"Warning: invalid child element of type: {type(element)}")
+        else:
+            print(
+                f"Error: Invalid Parsing Output at: {json_path}. Expected: `dict`, Actual: `{type(annotations)}`")
 
-        output_dir.mkdir(parents=True, exist_ok=True)
-        document.save(output_path)
-
-
-def _draw():
-    parser = Parsers.get_parser(args.parser)
-    draw_annotations(file_name=args.file, parser=parser)
+        return document
 
 
-if __name__ == "__main__":
-    args = arg_parser.parse_args()
-    _draw()
+def create_annotation(parser_name: str, src_name: str, is_batch: bool = False):
+    parser_output = BOUNDING_BOX_DIR / parser_name
+    parser_annotations = ANNOTATED_DIR / parser_name
+
+    # Batch Logic
+    if is_batch:
+        batch_path = parser_output / src_name
+
+        if batch_path.exists() and batch_path.is_dir():
+            batch_annotations = parser_annotations / src_name
+            batch_annotations.mkdir(parents=True, exist_ok=True)
+
+            for json_path in batch_path.glob("*.json"):
+                pdf_name = json_path.name.replace("json", "pdf")
+                doc_path = GUIDELINES_DIR / src_name / pdf_name
+
+                anno_file = _annotate_file(json_path, doc_path)
+                anno_file.save(batch_annotations / pdf_name)
+        else:
+            raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
+
+    # Single File logic
+    else:
+        pdf_name = f"{src_name}.pdf"
+        json_path = parser_output / f"{src_name}.json"
+        doc_path = GUIDELINES_DIR / pdf_name
+        anno_path = parser_annotations / pdf_name
+
+        anno_file = _annotate_file(json_path, doc_path)
+        anno_file.save(anno_path)
