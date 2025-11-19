@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from typing import Protocol, TypeVar
 
@@ -68,7 +67,7 @@ class DocumentParser(Protocol[T]):
 
         output_path = output_dir / f"{file_name}.json"
 
-        os.makedirs(self.dst_path, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
             print(f"Success: JSON saved at: {output_path}")

@@ -120,4 +120,5 @@ def create_annotation(parser_name: str, src_name: str, is_batch: bool = False):
         anno_path = parser_annotations / pdf_name
 
         anno_file = _annotate_file(json_path, doc_path)
+        parser_annotations.mkdir(parents=True, exist_ok=True)
         anno_file.save(anno_path)
