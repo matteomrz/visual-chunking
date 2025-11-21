@@ -1,8 +1,8 @@
-import json
 from pathlib import Path
 
+from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
-from unstructured.staging.base import elements_to_json
+from unstructured.staging.base import elements_to_md
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
@@ -12,10 +12,10 @@ default_strat = "hi_res"
 valid_strats = ["auto", "hi_res", "fast", "ocr_only"]
 
 
-class UnstructuredParser(DocumentParser):
+class UnstructuredParser(DocumentParser[list[Element]]):
     module = Parsers.UNSTRUCTURED_IO
 
-    def _parse(self, file_path: Path, options=None) -> dict:
+    def _parse(self, file_path: Path, options=None) -> list[Element]:
         if not options:
             options = {}
 
@@ -25,6 +25,7 @@ class UnstructuredParser(DocumentParser):
             raise ValueError(f"""Error while creating UnstructuredParser: {strat} is not a valid strategy. 
                 Valid strategies: {valid_strats}""")
 
+        image_dir = self._create_directory(file_path, self.image_dir, with_file=True)
         elements = partition_pdf(
             filename=file_path,
             strategy=strat,
@@ -32,17 +33,16 @@ class UnstructuredParser(DocumentParser):
             extract_images_in_pdf=True,
             extract_image_block_types=["Image", "Table"],
             extract_image_block_to_payload=False,
-            extract_image_block_output_dir=self.image_path / file_path.stem,
+            extract_image_block_output_dir=image_dir,
         )
 
-        json_str = elements_to_json(elements)
-        return {"elements": json.loads(json_str)}
+        return elements
 
-    def _transform(self, raw_result: dict) -> ParsingResult:
+    def _transform(self, raw_result: list[Element]) -> ParsingResult:
         root = ParsingResult.root()
 
-        for element in raw_result.get("elements", []):
-            metadata: dict = element.get("metadata", {})
+        for element in raw_result:
+            metadata: dict = element.metadata.to_dict()
             coordinates: dict = metadata.get("coordinates", {})
             points: list[list] = coordinates.get("points", [])
             page_width = coordinates.get("layout_width", 0.0)
@@ -79,12 +79,15 @@ class UnstructuredParser(DocumentParser):
             )
 
             transformed = ParsingResult(
-                id=element.get("element_id", "unknown"),
-                content=element.get("text", ""),
-                type=element.get("type", "unknown"),
+                id=element.id,
+                content=element.text,
+                type=element.category,
                 geom=[b_box],
             )
 
             root.children.append(transformed)
 
         return root
+
+    def _get_md(self, raw_result: list[Element], file_path: Path) -> str:
+        return elements_to_md(raw_result)

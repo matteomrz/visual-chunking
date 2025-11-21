@@ -5,6 +5,7 @@ from typing import Any
 from dotenv import load_dotenv
 from llama_cloud_services import LlamaParse
 from llama_cloud_services.parse import ResultType
+from llama_cloud_services.parse.types import JobResult
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
@@ -14,7 +15,7 @@ from parsing.model.parsing_result import (
 )
 
 
-class LlamaParseParser(DocumentParser):
+class LlamaParseParser(DocumentParser[JobResult]):
     """Uses the LlamaParse API for parsing PDF documents"""
 
     module = Parsers.LLAMA_PARSE
@@ -37,12 +38,13 @@ class LlamaParseParser(DocumentParser):
 
         print(f"Successfully initialized Document Parser using LlamaParse")
 
-    def _parse(self, file_path: Path, options: dict = None) -> dict:
+    def _parse(self, file_path: Path, options: dict = None) -> JobResult:
         raw_result = self.parser.parse(str(file_path))
-        return raw_result.get_json()
+        return raw_result
 
-    def _transform(self, raw_result: dict) -> ParsingResult:
-        pages = raw_result.get("pages", [])
+    def _transform(self, raw_result: JobResult) -> ParsingResult:
+        json_result = raw_result.get_json()
+        pages = json_result.get("pages", [])
 
         root = ParsingResult.root()
         levels: list[ParsingResult | None] = [root]
@@ -97,6 +99,9 @@ class LlamaParseParser(DocumentParser):
                     levels[-1].children.append(transformed)
 
         return root
+
+    def _get_md(self, raw_result: JobResult, file_path: Path) -> str:
+        return raw_result.get_markdown()
 
 
 def _find_first_and_remove(values: list, key: str, val: str) -> Any:

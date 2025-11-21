@@ -1,8 +1,9 @@
 import json
+import time
 from pathlib import Path
 from typing import Protocol, TypeVar
 
-from config import BOUNDING_BOX_DIR, GUIDELINES_DIR
+from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from parsing.model.options import ParserOptions
 from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
@@ -22,12 +23,48 @@ class DocumentParser(Protocol[T]):
     src_path: Path = GUIDELINES_DIR
 
     @property
-    def dst_path(self) -> Path:
+    def json_dst_path(self) -> Path:
         return BOUNDING_BOX_DIR / self.module.value
 
     @property
-    def image_path(self) -> Path:
-        return BOUNDING_BOX_DIR / self.module.value / "images"
+    def md_dst_path(self) -> Path:
+        return MD_DIR / self.module.value
+
+    @property
+    def image_dir(self) -> Path:
+        return IMAGES_DIR / self.module.value
+
+    def _create_directory(self, file_path: Path, base_dir: Path, with_file: bool = False) -> Path:
+        """
+            Helper method to create a helper directory for an input file
+            at the given base directory.
+
+            Example:
+                ``<src_dir>/<some_path>/<file>.pdf``
+                -> ``<base_dir>/<some_path>/<file>``
+
+            Args:
+                file_path: The absolute path to the input PDF file
+                base_dir: The directory which contains the created directories.
+                with_file: If True, will create a directory with the name of the file.
+
+            Returns:
+                Path of the created image directory
+        """
+        parents = file_path.relative_to(self.src_path).parents
+        final_dir = base_dir
+
+        # Handle batch names
+        for parent in parents:
+            final_dir = final_dir / parent
+        if with_file:
+            final_dir = final_dir / file_path.stem
+
+        if not final_dir.exists():
+            final_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Created directory at: {final_dir}")
+
+        return final_dir
 
     def _parse(self, file_path: Path, options: dict = None) -> T:
         """
@@ -52,29 +89,53 @@ class DocumentParser(Protocol[T]):
             ParsingResult representation of the initial document
         """
 
-    def _save(self, file_name: str, result: ParsingResult, batch_name: str = None):
+    def _get_md(self, raw_result: T, file_path: Path) -> str:
+        """
+            Get the model output in Markdown format.
+
+            Args:
+                raw_result: Raw output from the parsing method
+                file_path: The path of the original file
+
+            Returns:
+                Markdown representation of the initial document
+        """
+
+    def _save_md(self, file_path: Path, md: str):
+        """
+        Saves the output from the model as a Markdown file.
+
+        The file will be saved to the parsers `md_dst_path` directory
+        with the name `<file_name>.md`.
+
+        Args:
+            file_path: The path of the original file
+            md: Markdown output as a string
+        """
+        output_dir = self._create_directory(file_path, self.md_dst_path)
+        output_path = output_dir / f"{file_path.stem}.md"
+
+        with open(output_path, "w") as f:
+            f.write(md)
+            print(f"Success: Model output saved at: {output_path}")
+
+    def _save_json(self, file_path: Path, result: ParsingResult):
         """
         Saves the transformed ParsingResult as a JSON file.
 
-        The file will be saved in the parser's `dst_path` directory
-        with the name `<file_name>-output.json`.
+        The file will be saved to the parser's `json_dst_path` directory
+        with the name `<file_name>.json`.
 
         Args:
-            file_name: The base name of the original file
+            file_path: The path of the original file
             result: The ParsingResult object to serialize and save
-            batch_name: For Batch processing, name of the batch that the file belongs to [optional]
         """
+        output_dir = self._create_directory(file_path, self.json_dst_path)
+        output_path = output_dir / f"{file_path.stem}.json"
 
-        output_dir = self.dst_path
-        if batch_name is not None:
-            output_dir = output_dir / batch_name
-
-        output_path = output_dir / f"{file_name}.json"
-
-        output_dir.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
-            print(f"Success: JSON saved at: {output_path}")
+            print(f"Success: Model output saved at: {output_path}")
 
     def _annotate(self, file_name: str, options: dict = None, batch_name: str = None):
         """
@@ -114,24 +175,39 @@ class DocumentParser(Protocol[T]):
         file_name = file_path.stem
         print(f"Parsing {file_name} using {self.module.name}...")
 
-        json_result = self._parse(file_path, options)
-        transformed_result = self._transform(json_result)
+        start_time = time.time()
 
-        self._save(file_name, transformed_result, batch_name=batch_name)
+        raw_result = self._parse(file_path, options)
+        print("Success: Parsing completed")
+
+        parse_time = time.time()
+
+        print("Transforming output...")
+        transformed_result = self._transform(raw_result)
+        md_result = self._get_md(raw_result, file_path)
+
+        transformation_time = time.time()
+        _set_time_meta(transformed_result, start_time, parse_time, transformation_time)
+
+        self._create_directory(file_path, self.md_dst_path)
+        self._create_directory(file_path, self.json_dst_path)
+
+        self._save_md(file_path, md_result)
+        self._save_json(file_path, transformed_result)
         self._annotate(file_name, options, batch_name=batch_name)
 
     def process_batch(self, batch_name: str, options: dict = None):
         """
-                Performs full parsing pipeline for a batch of multiple documents.
+        Performs full parsing pipeline for a batch of multiple documents.
 
-                Args:
-                    batch_name: Name of the directory containing the guideline PDF files in
-                    options: A dictionary of method-specific options [optional]
+        Args:
+            batch_name: Name of the directory containing the guideline PDF files in
+            options: A dictionary of method-specific options [optional]
 
-                Raises:
-                    FileNotFoundError: If the PDF file (`{file_name}.pdf`)
-                                       is not found in `src_path`.
-                """
+        Raises:
+            FileNotFoundError: If the PDF file (`{file_name}.pdf`)
+                               is not found in `src_path`.
+        """
         batch_path = self.src_path / batch_name
 
         if batch_path.exists() and batch_path.is_dir():
@@ -139,3 +215,12 @@ class DocumentParser(Protocol[T]):
                 self.process_document(file_path, batch_name, options)
         else:
             raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
+
+
+def _set_time_meta(result: ParsingResult, start: float, parse: float, transformation: float):
+    """Set the parsing and transformation duration on the ParsingResult."""
+    parsing_duration = parse - start
+    transformation_duration = transformation - parse
+    print(f"Parsing Time: {round(parsing_duration, 2)}s")
+    result.metadata["parsing_time"] = parsing_duration
+    result.metadata["transformation_time"] = transformation_duration

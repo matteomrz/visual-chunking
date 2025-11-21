@@ -1,12 +1,11 @@
-import json
-import os
 from pathlib import Path
 
-from mineru.backend.vlm.vlm_analyze import ModelSingleton, doc_analyze
+from mineru.backend.vlm.vlm_analyze import ModelSingleton, doc_analyze as vlm_doc_analyze
+from mineru.backend.vlm.vlm_middle_json_mkcontent import union_make as vlm_union_make
 from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
 from mineru.data.data_reader_writer import FileBasedDataWriter
+from mineru.utils.enum_class import MakeMode
 
-from config import GUIDELINES_DIR
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
 from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
@@ -22,14 +21,12 @@ class MinerUParser(DocumentParser):
             backend="mlx-engine", model_path=None, server_url=None)
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
-        # Prepare Image directory
-        file_image_path = self.image_path / file_path.stem
-        file_image_path.mkdir(parents=True, exist_ok=True)
+        file_image_path = self._create_directory(file_path, base_dir=self.image_dir, with_file=True)
         image_writer = FileBasedDataWriter(parent_dir=str(file_image_path))
 
         pdf_bytes = _get_pdf_bytes(file_path)
 
-        result, _ = doc_analyze(pdf_bytes, image_writer=image_writer, predictor=self.model)
+        result, _ = vlm_doc_analyze(pdf_bytes, image_writer=image_writer, predictor=self.model)
 
         return result
 
@@ -45,6 +42,11 @@ class MinerUParser(DocumentParser):
                 _transform_element(parent=root, element=element, page=page)
 
         return root
+
+    def _get_md(self, raw_result: dict, file_path: Path) -> str:
+        pdf_info = raw_result.get("pdf_info", [])
+        image_dir = self._create_directory(file_path, self.image_dir, with_file=True)
+        return vlm_union_make(pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir))
 
 
 def _transform_element(parent: ParsingResult, element: dict, page: dict):
@@ -97,7 +99,6 @@ def _get_content(element: dict) -> str:
 
 def _get_bounding_box(element: dict, page: dict) -> ParsingBoundingBox:
     """Parse Bounding box to needed format."""
-
     page_nr = page.get("page_idx", 0) + 1
 
     page_size = page.get("page_size", [])

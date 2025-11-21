@@ -8,6 +8,8 @@ DATA_DIR = ROOT_DIR / "data"
 GUIDELINES_DIR = DATA_DIR / "guidelines"
 BOUNDING_BOX_DIR = DATA_DIR / "bounding-boxes"
 ANNOTATED_DIR = DATA_DIR / "annotated"
+IMAGES_DIR = DATA_DIR / "images"
+MD_DIR = DATA_DIR / "markdown"
 
 # Default File and Modules used by the parsing and drawing methods
 

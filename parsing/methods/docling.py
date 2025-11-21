@@ -59,6 +59,9 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
         return root
 
+    def _get_md(self, raw_result: DoclingDocument, file_path: Path) -> str:
+        return raw_result.export_to_markdown()
+
 
 def _transform_item(res: ParsingResult, doc: DoclingDocument, item: Any):
     if not isinstance(item, NodeItem):

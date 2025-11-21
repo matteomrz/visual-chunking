@@ -1,7 +1,5 @@
 # input and output files from the parsing process
-data/guidelines/*
-data/bounding-boxes/*
-data/annotated/*
+data
 
 # IDE settings and Cache
 .idea
