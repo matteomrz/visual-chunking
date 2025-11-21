@@ -70,7 +70,6 @@ def interface():
         create_annotation(parser, src_name, is_batch=is_batch)
     else:
         should_draw = args.draw
-        print(f"should_draw: {should_draw}")
         skip_existing = args.skip_existing
         parse_pdf(parser, src_name, is_batch=is_batch, should_draw=should_draw,
                   skip_existing=skip_existing)

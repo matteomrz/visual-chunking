@@ -32,10 +32,7 @@ class UnstructuredParser(DocumentParser):
             extract_images_in_pdf=True,
             extract_image_block_types=["Image", "Table"],
             extract_image_block_to_payload=False,
-            extract_image_block_output_dir=self.dst_path
-                                           / "images"
-                                           / file_path.name
-                                           / strat,
+            extract_image_block_output_dir=self.image_path / file_path.stem,
         )
 
         json_str = elements_to_json(elements)
@@ -68,17 +65,17 @@ class UnstructuredParser(DocumentParser):
                 print(f"Malformed bounding box: {points}")
                 continue
 
-            x1 = origin[0] / page_width
-            y1 = origin[1] / page_height
-            x2 = end[0] / page_width
-            y2 = end[1] / page_height
+            l = origin[0] / page_width
+            t = origin[1] / page_height
+            r = end[0] / page_width
+            b = end[1] / page_height
 
             b_box = ParsingBoundingBox(
                 page=metadata.get("page_number", 0),
-                x=x1,
-                y=y1,
-                width=x2 - x1,
-                height=y2 - y1,
+                left=l,
+                top=t,
+                right=r,
+                bottom=b
             )
 
             transformed = ParsingResult(

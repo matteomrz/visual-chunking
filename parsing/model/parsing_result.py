@@ -5,33 +5,38 @@ from dataclasses import dataclass, field
 
 
 class ParsingResultType(Enum):
-    ROOT = 0
-    TITLE = 1
-    PARAGRAPH = 2
-    LIST_ITEM = 3
-    TABLE = 4
-    FOOTNOTE = 5
-    HEADING = 6
-    FIGURE = 7
+    ROOT = "__root__"
+    TITLE = "title"
+    PARAGRAPH = "text"
+    LIST = "list"
+    LIST_ITEM = "list_item"
+    TABLE = "table"
+    FOOTNOTE = "footer"
+    HEADING = "header"
+    FIGURE = "image"
 
 
 @dataclass
 class ParsingBoundingBox:
-    """Bounding Box for an element in the Parsing Result"""
+    """
+    Bounding Box for an element in the Parsing Result.
+    LTRB format with top left coordinate source.
+    Values between 0.0 and 1.0. (Fraction of width / height)
+    """
 
     page: int
-    x: float
-    y: float
-    width: float
-    height: float
+    left: float
+    top: float
+    right: float
+    bottom: float
 
     def to_json(self) -> dict:
         return {
             "page": self.page,
-            "x": self.x,
-            "y": self.y,
-            "w": self.width,
-            "h": self.height,
+            "l": self.left,
+            "t": self.top,
+            "r": self.right,
+            "b": self.bottom,
         }
 
 

@@ -26,6 +26,8 @@ from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
 
 
 class DoclingParser(DocumentParser[DoclingDocument]):
+    """Uses the Docling Package for parsing PDF documents"""
+
     module = Parsers.DOCLING
 
     def __init__(self):
@@ -60,7 +62,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
 def _transform_item(res: ParsingResult, doc: DoclingDocument, item: Any):
     if not isinstance(item, NodeItem):
-        print("item is not a valid NodeItem")
+        print(f"Error: Item is not a valid NodeItem. Actual: {type(item)}")
         return
 
     # Handle GroupItem
@@ -109,11 +111,15 @@ def _transform_b_box(raw_b_box: BoundingBox, page: PageItem) -> ParsingBoundingB
     page_width = page.size.width
     raw_b_box = raw_b_box.to_top_left_origin(page_height=page_height)
 
-    x_frac = raw_b_box.l / page_width
-    y_frac = raw_b_box.t / page_height
-    w_frac = raw_b_box.r / page_width - x_frac
-    h_frac = raw_b_box.b / page_height - y_frac
+    l_frac = raw_b_box.l / page_width
+    t_frac = raw_b_box.t / page_height
+    r_frac = raw_b_box.r / page_width
+    b_frac = raw_b_box.b / page_height
 
     return ParsingBoundingBox(
-        page=page.page_no, x=x_frac, y=y_frac, width=w_frac, height=h_frac
+        page=page.page_no,
+        left=l_frac,
+        top=t_frac,
+        right=r_frac,
+        bottom=b_frac
     )

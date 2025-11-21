@@ -6,6 +6,8 @@ class Parsers(Enum):
     LLAMA_PARSE = "llamaparse"
     UNSTRUCTURED_IO = "unstructured_io"
     DOCLING = "docling"
+    PADDLEOCR = "paddle_ocr"
+    MINERU = "mineru"
 
     @classmethod
     def default(cls):

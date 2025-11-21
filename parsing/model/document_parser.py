@@ -25,6 +25,10 @@ class DocumentParser(Protocol[T]):
     def dst_path(self) -> Path:
         return BOUNDING_BOX_DIR / self.module.value
 
+    @property
+    def image_path(self) -> Path:
+        return BOUNDING_BOX_DIR / self.module.value / "images"
+
     def _parse(self, file_path: Path, options: dict = None) -> T:
         """
         Parses the document at the given file path.
@@ -104,10 +108,10 @@ class DocumentParser(Protocol[T]):
         """
 
         file_name = file_path.name
-        if not (file_path.exists() and file_name and file_name.endswith("pdf")):
+        if not (file_path.exists() and file_name and file_name.endswith(".pdf")):
             raise FileNotFoundError(f"Error: PDF not found: {file_path}")
 
-        file_name = file_name.removesuffix(".pdf")
+        file_name = file_path.stem
         print(f"Parsing {file_name} using {self.module.name}...")
 
         json_result = self._parse(file_path, options)

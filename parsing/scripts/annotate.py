@@ -47,17 +47,17 @@ def _draw_element(element: dict, doc: Document):
         page_height = page_size.height
         page_width = page_size.width
 
-        x1 = box.get("x", 0.0) * page_width
-        y1 = box.get("y", 0.0) * page_height
-        x2 = x1 + box.get("w", 0.0) * page_width
-        y2 = y1 + box.get("h", 0.0) * page_height
+        l = box.get("l", 0.0) * page_width
+        t = box.get("t", 0.0) * page_height
+        r = box.get("r", 0.0) * page_width
+        b = box.get("b", 0.0) * page_height
 
         label = element.get("type", "undefined")
-        rect = pymupdf.Rect(x1, y1, x2, y2)
+        rect = pymupdf.Rect(l, t, r, b)
         color = _get_color(label)
 
         page.draw_rect(rect=rect, color=color, width=1.5)
-        page.insert_text(point=(x1, y1 - 3), text=label, fontsize=6, color=color, fill=color,
+        page.insert_text(point=(l, t - 3), text=label, fontsize=6, color=color, fill=color,
                          fill_opacity=0.6)
 
     for child in element.get("children", []):
@@ -118,7 +118,8 @@ def create_annotation(parser_name: str, src_name: str, is_batch: bool = False):
         json_path = parser_output / f"{src_name}.json"
         doc_path = GUIDELINES_DIR / pdf_name
         anno_path = parser_annotations / pdf_name
+        anno_parent = anno_path.parent  # handle folder/file as the src_name
 
         anno_file = _annotate_file(json_path, doc_path)
-        parser_annotations.mkdir(parents=True, exist_ok=True)
+        anno_parent.mkdir(parents=True, exist_ok=True)
         anno_file.save(anno_path)

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from llama_cloud_services import LlamaParse
@@ -46,43 +47,63 @@ class LlamaParseParser(DocumentParser):
         root = ParsingResult.root()
         levels: list[ParsingResult | None] = [root]
 
-        for page in pages:
-            for idx, element in enumerate(page["items"]):
+        for page_idx, page in enumerate(pages):
+            height = page.get("height", 0)
+            width = page.get("width", 0)
+            layout_elems = page.get("layout", [])
+            for idx, element in enumerate(page.get("items", [])):
                 type_label = element.get("type", "Unknown")
-                height = page.get("height", 0)
-                width = page.get("width", 0)
 
-                json_bbox = element.get("bBox", {})
-                x = json_bbox.get("x", 0.0)
-                y = json_bbox.get("y", 0.0)
-                w = json_bbox.get("w", 0.0)
-                h = json_bbox.get("h", 0.0)
+                # Use the values from the layout section -> way more accurate
+                l_elm = _find_first_and_remove(layout_elems, "type", type_label)
+                if l_elm:
+                    bbox = l_elm.get["bbox", {}]
+                    l = bbox.get("x", 0.0)
+                    t = bbox.get("y", 0.0)
+                    r = bbox.get("w", 0.0) + l
+                    b = bbox.get("h", 0.0) + t
+                else:
+                    json_bbox = element.get("bBox", {})
+                    l = json_bbox.get("x", 0.0) / width
+                    t = json_bbox.get("y", 0.0) / height
+                    r = json_bbox.get("w", 0.0) / width + l
+                    b = json_bbox.get("h", 0.0) / height + t
 
                 # Fix the wrongly rotated coordinates -- TODO: Different Angles?
                 if page.get("originalOrientationAngle", 0) != 0:
-                    x = width - x - w
-                    y = height - y - h
+                    l = 1 - r
+                    t = 1 - b
 
-                bbox = ParsingBoundingBox(page=page, x=x, y=y, width=w, height=h)
+                bbox = ParsingBoundingBox(page=page_idx + 1, left=l, top=t, right=r, bottom=b)
 
-                lvl = element.get("lvl")
+                lvl = element.get("lvl", -1)
                 transformed = ParsingResult(
-                    id=f"{page}_{idx}",
+                    id=f"p{page_idx}_{idx}",
                     type=type_label,
                     content=element.get("md", ""),
                     geom=[bbox],
                 )
 
-                if lvl:
+                if lvl > 0:
                     while len(levels) > lvl:
                         levels.pop()
                     for index in range(lvl):
-                        if not levels[index]:
-                            levels[index] = levels[-1]
+                        if index >= len(levels) or levels[index] is None:
+                            levels.append(levels[-1])
 
                     levels[-1].children.append(transformed)
-                    levels[lvl] = transformed
+                    levels.append(transformed)
                 else:
                     levels[-1].children.append(transformed)
 
         return root
+
+
+def _find_first_and_remove(values: list, key: str, val: str) -> Any:
+    for elem in values:
+        found = elem.get(key, "")
+        if found and found == val:
+            values.remove(elem)
+            return elem
+
+    return None
