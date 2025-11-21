@@ -22,9 +22,6 @@ class MinerUParser(DocumentParser):
             backend="mlx-engine", model_path=None, server_url=None)
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
-        with open(GUIDELINES_DIR / f"{file_path.stem}.json", "rb") as f:
-            return json.load(f)
-
         # Prepare Image directory
         file_image_path = self.image_path / file_path.stem
         file_image_path.mkdir(parents=True, exist_ok=True)
