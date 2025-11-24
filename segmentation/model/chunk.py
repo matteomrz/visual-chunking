@@ -26,8 +26,6 @@ class ChunkingResult:
 
     def to_json(self) -> dict[str, str | dict | list]:
         return {
-            "id": self.id,
-            "content": self.content,
             "metadata": self.metadata,
-            "geom": [b.to_json() for b in self.geom]
+            "chunks": [b.to_json() for b in self.chunks]
         }
