@@ -21,7 +21,7 @@ class MinerUParser(DocumentParser):
             backend="mlx-engine", model_path=None, server_url=None)
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
-        file_image_path = self._create_directory(file_path, base_dir=self.image_dir, with_file=True)
+        file_image_path = self._create_image_dir(file_path)
         image_writer = FileBasedDataWriter(parent_dir=str(file_image_path))
 
         pdf_bytes = _get_pdf_bytes(file_path)
@@ -45,7 +45,7 @@ class MinerUParser(DocumentParser):
 
     def _get_md(self, raw_result: dict, file_path: Path) -> str:
         pdf_info = raw_result.get("pdf_info", [])
-        image_dir = self._create_directory(file_path, self.image_dir, with_file=True)
+        image_dir = self._create_image_dir(file_path)
         return vlm_union_make(pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir))
 
 

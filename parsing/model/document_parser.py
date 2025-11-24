@@ -8,6 +8,7 @@ from parsing.model.options import ParserOptions
 from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
 from parsing.model.parsing_result import ParsingResult
+from utils.create_dir import create_directory
 
 # Raw output type of the PDF parsing method
 T = TypeVar("T", default=dict)
@@ -16,7 +17,7 @@ T = TypeVar("T", default=dict)
 class DocumentParser(Protocol[T]):
     """
     Standard Interface for a PDF Document Parser.
-    Transforms a PDF file into a structured JSON format
+    Transforms a PDF file into a structured JSON format.
     """
 
     module: Parsers  # Has to be set by the implementation
@@ -31,40 +32,13 @@ class DocumentParser(Protocol[T]):
         return MD_DIR / self.module.value
 
     @property
-    def image_dir(self) -> Path:
+    def base_image_dir(self) -> Path:
         return IMAGES_DIR / self.module.value
 
-    def _create_directory(self, file_path: Path, base_dir: Path, with_file: bool = False) -> Path:
-        """
-            Helper method to create a helper directory for an input file
-            at the given base directory.
-
-            Example:
-                ``<src_dir>/<some_path>/<file>.pdf``
-                -> ``<base_dir>/<some_path>/<file>``
-
-            Args:
-                file_path: The absolute path to the input PDF file
-                base_dir: The directory which contains the created directories.
-                with_file: If True, will create a directory with the name of the file.
-
-            Returns:
-                Path of the created image directory
-        """
-        parents = file_path.relative_to(self.src_path).parents
-        final_dir = base_dir
-
-        # Handle batch names
-        for parent in parents:
-            final_dir = final_dir / parent
-        if with_file:
-            final_dir = final_dir / file_path.stem
-
-        if not final_dir.exists():
-            final_dir.mkdir(parents=True, exist_ok=True)
-            print(f"Created directory at: {final_dir}")
-
-        return final_dir
+    def _create_image_dir(self, file_path: Path) -> Path:
+        """Creates an image directory for the given file."""
+        return create_directory(file_path, src_dir=self.src_path, dst_dir=self.base_image_dir,
+                                with_file=True)
 
     def _parse(self, file_path: Path, options: dict = None) -> T:
         """
@@ -112,7 +86,7 @@ class DocumentParser(Protocol[T]):
             file_path: The path of the original file
             md: Markdown output as a string
         """
-        output_dir = self._create_directory(file_path, self.md_dst_path)
+        output_dir = create_directory(file_path, self.src_path, self.md_dst_path)
         output_path = output_dir / f"{file_path.stem}.md"
 
         with open(output_path, "w") as f:
@@ -130,7 +104,7 @@ class DocumentParser(Protocol[T]):
             file_path: The path of the original file
             result: The ParsingResult object to serialize and save
         """
-        output_dir = self._create_directory(file_path, self.json_dst_path)
+        output_dir = create_directory(file_path, self.src_path, self.json_dst_path)
         output_path = output_dir / f"{file_path.stem}.json"
 
         with open(output_path, "w") as f:
@@ -188,9 +162,6 @@ class DocumentParser(Protocol[T]):
 
         transformation_time = time.time()
         _set_time_meta(transformed_result, start_time, parse_time, transformation_time)
-
-        self._create_directory(file_path, self.md_dst_path)
-        self._create_directory(file_path, self.json_dst_path)
 
         self._save_md(file_path, md_result)
         self._save_json(file_path, transformed_result)

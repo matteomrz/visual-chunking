@@ -1,8 +1,8 @@
 ### Evaluating and Enhancing Location-Aware Visual Document Segmentation for Oncology Guidelines
 
 This repository contains scripts to parse oncology guideline PDFs using different methods, normalize
-their outputs into
-a shared bounding-box schema, and optionally draw the detected regions back onto the original PDF
+their outputs into a shared bounding-box schema, and optionally draw the detected regions back onto
+the original PDF
 for visualization.
 
 ### Prerequisites
@@ -11,6 +11,8 @@ for visualization.
 - **Data locations**: All input and output files are stored under `data/` (see `config.py`):
     - `guidelines/`: Input PDF files
     - `bounding-boxes/`: JSON Parsing Output
+    - `markdown/`: Markdown Parsing Output
+    - `images/`: Output images (Figures, Tables) [ optional ]
     - `annotated/`: Annotated PDF files
 - **Environment** (for LlamaParse only): Set `LLAMAPARSE_API_KEY` in a `.env` file at the repo root.
 

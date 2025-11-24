@@ -78,11 +78,11 @@ class ParsingResult:
             "geom": [bbox.to_json() for bbox in self.geom],
         }
 
-        if len(self.children) > 0:
-            res["children"] = [child.to_json() for child in self.children]
-        if self.image:
-            res["image"] = self.image
         if self.metadata:
             res["metadata"] = self.metadata
+        if self.image:
+            res["image"] = self.image
+        if len(self.children) > 0:
+            res["children"] = [child.to_json() for child in self.children]
 
         return res

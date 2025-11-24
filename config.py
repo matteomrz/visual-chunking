@@ -10,8 +10,9 @@ BOUNDING_BOX_DIR = DATA_DIR / "bounding-boxes"
 ANNOTATED_DIR = DATA_DIR / "annotated"
 IMAGES_DIR = DATA_DIR / "images"
 MD_DIR = DATA_DIR / "markdown"
+CHUNK_DIR = DATA_DIR / "segmentation"
 
 # Default File and Modules used by the parsing and drawing methods
 
-DEFAULT_GUIDELINE = "example-guideline"
+DEFAULT_GUIDELINE = "example_guideline"
 DEFAULT_MODULE = "unstructured_io"

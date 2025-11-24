@@ -25,7 +25,7 @@ class UnstructuredParser(DocumentParser[list[Element]]):
             raise ValueError(f"""Error while creating UnstructuredParser: {strat} is not a valid strategy. 
                 Valid strategies: {valid_strats}""")
 
-        image_dir = self._create_directory(file_path, self.image_dir, with_file=True)
+        image_dir = self._create_image_dir(file_path)
         elements = partition_pdf(
             filename=file_path,
             strategy=strat,
