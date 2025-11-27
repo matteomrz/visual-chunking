@@ -19,36 +19,45 @@ class FixedSizeChunker(DocumentChunker):
 
         counter = 0
         tokens = []
-        res_length = self.max_tokens
+        token_counts = {}
 
         for elem in _flatten(document):
-            geom = elem.geom
             elem_tokens = self._encode(elem.content)
-            bbox_tokens = [(geom, t) for t in elem_tokens]
+            token_counts[elem.id] = (len(elem_tokens), elem.geom)
+            bbox_tokens = [(elem.id, t) for t in elem_tokens]
             tokens.extend(bbox_tokens)
 
-            while len(tokens) > res_length:
-                chunk_tokens = tokens[:res_length]
+            while len(tokens) > self.max_tokens:
+                chunk_tokens = tokens[:self.max_tokens]
 
                 chunk = self._get_chunk(chunk_tokens, counter)
                 result.chunks.append(chunk)
                 counter += 1
 
-                tokens = tokens[res_length:]
-                res_length = self.max_tokens
+                tokens = tokens[self.max_tokens:]
+
+        # Handle trailing undersized chunk
+        if tokens:
+            chunk = self._get_chunk(tokens, counter)
+            result.chunks.append(chunk)
 
         return result
 
     def _get_chunk(self, buffer_slice, idx: int) -> Chunk:
+        token_len = len(buffer_slice)
         content = self._decode([t[1] for t in buffer_slice])
         bounding_boxes = [t[0] for t in buffer_slice]
         unique = []
+        meta = {
+            "token_len": token_len
+        }
+
         for geom in bounding_boxes:
             for b in geom:
                 if b not in unique:
                     unique.append(b)
 
-        return Chunk(id=f"c_{idx}", content=content, geom=unique)
+        return Chunk(id=f"c_{idx}", content=content, metadata=meta, geom=unique)
 
 
 def _flatten(root: ParsingResult):

@@ -1,14 +1,16 @@
 import json
 import time
 from pathlib import Path
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
+
+from tqdm import tqdm
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from parsing.model.options import ParserOptions
 from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
 from parsing.model.parsing_result import ParsingResult
-from utils.create_dir import create_directory
+from utils.create_dir import create_directory, get_directory
 
 # Raw output type of the PDF parsing method
 T = TypeVar("T", default=dict)
@@ -74,6 +76,17 @@ class DocumentParser(Protocol[T]):
             Returns:
                 Markdown representation of the initial document
         """
+
+    def _check_output_exists(self, file_path: Path) -> bool:
+        """
+        Checks if there already exists a JSON output for the given file.
+
+        Args:
+            file_path: The path of the original file
+        """
+        output_dir = get_directory(file_path, self.src_path, self.json_dst_path)
+        output_path = output_dir / f"{file_path.stem}.json"
+        return output_path.exists()
 
     def _save_md(self, file_path: Path, md: str):
         """
@@ -167,7 +180,7 @@ class DocumentParser(Protocol[T]):
         self._save_json(file_path, transformed_result)
         self._annotate(file_name, options, batch_name=batch_name)
 
-    def process_batch(self, batch_name: str, options: dict = None):
+    def process_batch(self, batch_name: str, options: dict[ParserOptions, Any] = None):
         """
         Performs full parsing pipeline for a batch of multiple documents.
 
@@ -180,10 +193,14 @@ class DocumentParser(Protocol[T]):
                                is not found in `src_path`.
         """
         batch_path = self.src_path / batch_name
+        skip_existing = options.get(ParserOptions.EXIST_OK, False)
 
         if batch_path.exists() and batch_path.is_dir():
-            for file_path in batch_path.glob("*.pdf"):
-                self.process_document(file_path, batch_name, options)
+            for file_path in tqdm(batch_path.glob("*.pdf")):
+                if skip_existing and self._check_output_exists(file_path):
+                    print(f"Skipping Document: {file_path.stem}. Output JSON already exists.")
+                else:
+                    self.process_document(file_path, batch_name, options)
         else:
             raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
 
