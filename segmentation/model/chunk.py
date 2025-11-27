@@ -15,7 +15,7 @@ class Chunk:
             "id": self.id,
             "content": self.content,
             "metadata": self.metadata,
-            "geom": [b.to_json() for b in self.geom]
+            "geom": [b.to_dict() for b in self.geom]
         }
 
 

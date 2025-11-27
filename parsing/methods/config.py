@@ -7,7 +7,8 @@ class Parsers(Enum):
     UNSTRUCTURED_IO = "unstructured_io"
     DOCLING = "docling"
     # PADDLEOCR = "paddle_ocr"
-    MINERU = "mineru"
+    MINERU_PIPELINE = "mineru_pipeline"
+    MINERU_VLM = "mineru_vlm"
 
     @classmethod
     def default(cls):

@@ -18,8 +18,10 @@ def _get_parser(parser_name: str, options: dict) -> DocumentParser[Any]:
             return DoclingParser()
         case Parsers.UNSTRUCTURED_IO:
             return UnstructuredParser()
-        case Parsers.MINERU:
-            return MinerUParser()
+        case Parsers.MINERU_PIPELINE:
+            return MinerUParser(use_vlm=False)
+        case Parsers.MINERU_VLM:
+            return MinerUParser(use_vlm=True)
         case _:
             raise ValueError(f'No DocumentParser specified for type "{parser_name}"')
 

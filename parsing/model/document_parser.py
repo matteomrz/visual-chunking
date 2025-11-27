@@ -108,7 +108,7 @@ class DocumentParser(Protocol[T]):
         output_path = output_dir / f"{file_path.stem}.json"
 
         with open(output_path, "w") as f:
-            json.dump(result.to_json(), f, indent=2)
+            json.dump(result.to_dict(), f, indent=2)
             print(f"Success: Model output saved at: {output_path}")
 
     def _annotate(self, file_name: str, options: dict = None, batch_name: str = None):

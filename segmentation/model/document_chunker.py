@@ -3,10 +3,41 @@ import time
 from pathlib import Path
 from typing import Protocol
 
-from config import BOUNDING_BOX_DIR, CHUNK_DIR
+from transformers import AutoTokenizer
+
+from config import BOUNDING_BOX_DIR, SEGMENTATION_OUTPUT_DIR
+from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
 from segmentation.model.chunk import ChunkingResult
 from utils.create_dir import create_directory
+
+
+def _open(file_path: Path) -> ParsingResult:
+    """
+    Opens the JSON file of the ParsingResult.
+    Transforms it into a ParsingResult object.
+
+    Args:
+        file_path: The absolute path to the input ParsingResult JSON
+
+    Returns:
+        ParsingResult object
+
+    Raises:
+        KeyError, TypeError: If the JSON is malformed
+        FileNotFoundError: If the JSON file (``{file_name}.json``)
+                           is not found in ``src_path``
+    """
+    file_name = file_path.name
+    if not (file_path.exists() and file_name and file_name.endswith(".json")):
+        raise FileNotFoundError(f"Error: Bounding Boxes not found: {file_path}")
+
+    with open(file_path, "r") as f:
+        document = json.load(f)
+        if not isinstance(document, dict):
+            raise ValueError(f"Error: Not a valid JSON scheme at {file_path}")
+
+        return ParsingResult.from_dict(document)
 
 
 class DocumentChunker(Protocol):
@@ -19,16 +50,28 @@ class DocumentChunker(Protocol):
 
     src_path: Path = BOUNDING_BOX_DIR
 
+    # Placeholder for now
+    tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
+    def _encode(self, text: str) -> list[str]:
+        return self.tokenizer.encode(text)
+
+    def _decode(self, tokens: list[str]) -> str:
+        return self.tokenizer.decode(tokens, skip_special_tokens=True)
+
+    def _get_token_count(self, text: str) -> int:
+        return len(self._encode(text))
+
     @property
     def dst_path(self) -> Path:
-        return CHUNK_DIR / self.module.value
+        return SEGMENTATION_OUTPUT_DIR / self.module.value
 
-    def _segment(self, file_path: Path, options: dict = None) -> ChunkingResult:
+    def _segment(self, document: ParsingResult, options: dict = None) -> ChunkingResult:
         """
         Segments the ParsingResult at the given file path
 
         Args:
-            file_path: The absolute path to the input ParsingResult JSON
+            document: The input ParsingResult
             options: A dictionary of method-specific options [optional]
 
         Returns:
@@ -59,20 +102,13 @@ class DocumentChunker(Protocol):
         Args:
             file_path: Absolute path of the JSON file containing the bounding boxes
             options: A dictionary of method-specific options [optional]
-
-        Raises:
-            FileNotFoundError: If the JSON file (`{file_name}.json`)
-                               is not found in `src_path`
         """
-        file_name = file_path.name
-        if not (file_path.exists() and file_name and file_name.endswith(".json")):
-            raise FileNotFoundError(f"Error: Bounding Boxes not found: {file_path}")
-
+        document = _open(file_path)
         file_name = file_path.stem
         print(f"Chunking {file_name} using {self.module.name}...")
 
         start_time = time.time()
-        result = self._segment(file_path, options)
+        result = self._segment(document, options)
 
         chunk_time = time.time() - start_time
         _add_metadata(result, chunk_time)
@@ -88,8 +124,7 @@ class DocumentChunker(Protocol):
             options: A dictionary of method-specific options [optional]
 
         Raises:
-            FileNotFoundError: If the JSON file (`{file_name}.json`)
-                               is not found in `src_path` / `batch_name`
+            FileNotFoundError: If the batch directory is not found in ``src_path``
         """
         batch_path = self.src_path / batch_name
 

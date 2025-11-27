@@ -24,17 +24,16 @@ def create_directory(
         Returns:
             Path of the created directory
     """
-    parents = file_path.relative_to(src_dir).parents
-    final_dir = dst_dir
+    parent = file_path.relative_to(src_dir).parent
+    final_dir = dst_dir / parent
 
-    # Handle batch names
-    for parent in parents:
-        final_dir = final_dir / parent
     if with_file:
         final_dir = final_dir / file_path.stem
 
     if not final_dir.exists():
         final_dir.mkdir(parents=True, exist_ok=True)
-        print(f"Created directory at: {final_dir}")
+        print(f"Info: Created directory at: {final_dir}")
+    else:
+        print(f"Info: Directory already exists: {final_dir}")
 
     return final_dir

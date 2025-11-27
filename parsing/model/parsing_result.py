@@ -14,6 +14,17 @@ class ParsingResultType(Enum):
     FOOTNOTE = "footer"
     HEADING = "header"
     FIGURE = "image"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def get_type(cls, name: str) -> ParsingResultType | str:
+        try:
+            return cls[name]
+        except KeyError:
+            if not name:
+                return cls.UNKNOWN
+            else:
+                return name
 
 
 @dataclass
@@ -30,7 +41,7 @@ class ParsingBoundingBox:
     right: float
     bottom: float
 
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             "page": self.page,
             "l": self.left,
@@ -38,6 +49,21 @@ class ParsingBoundingBox:
             "r": self.right,
             "b": self.bottom,
         }
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> ParsingBoundingBox:
+        try:
+            return cls(
+                page=dictionary["page"],
+                left=dictionary["l"],
+                top=dictionary["t"],
+                right=dictionary["r"],
+                bottom=dictionary["b"],
+            )
+        except KeyError as e:
+            raise ValueError(f"Error: Missing key in BoundingBox dictionary: {e}")
+        except TypeError as e:
+            raise ValueError(f"Error: Invalid type in BoundingBox dictionary: {e}")
 
 
 @dataclass
@@ -66,7 +92,7 @@ class ParsingResult:
             metadata=metadata,
         )
 
-    def to_json(self) -> dict[str, str | dict | list]:
+    def to_dict(self) -> dict[str, str | dict | list]:
         type_name = self.type
         if isinstance(type_name, ParsingResultType):
             type_name = type_name.name
@@ -75,7 +101,7 @@ class ParsingResult:
             "id": self.id,
             "type": type_name,
             "content": self.content,
-            "geom": [bbox.to_json() for bbox in self.geom],
+            "geom": [bbox.to_dict() for bbox in self.geom],
         }
 
         if self.metadata:
@@ -83,6 +109,44 @@ class ParsingResult:
         if self.image:
             res["image"] = self.image
         if len(self.children) > 0:
-            res["children"] = [child.to_json() for child in self.children]
+            res["children"] = [child.to_dict() for child in self.children]
 
         return res
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> ParsingResult:
+        try:
+            elem_id: str = dictionary["id"]
+            content: str = dictionary["content"]
+            geom: list[dict] = dictionary["geom"]
+            type_name: str = dictionary["type"]
+
+            metadata: dict = dictionary.get("metadata", {})
+            children: list[dict] = dictionary.get("children", [])
+            image: str | None = dictionary.get("image", None)
+        except KeyError as e:
+            raise ValueError(f"Error: Missing key in ParsingResult dictionary: {e}")
+        except TypeError as e:
+            raise ValueError(f"Error: Invalid type in ParsingResult dictionary: {e}")
+
+        parsing_type = ParsingResultType.get_type(type_name)
+
+        geom_parsed: list[ParsingBoundingBox] = [
+            ParsingBoundingBox.from_dict(bbox)
+            for bbox in geom
+        ]
+
+        children_parsed = [
+            cls.from_dict(child)
+            for child in children
+        ]
+
+        return cls(
+            id=elem_id,
+            type=parsing_type,
+            content=content,
+            geom=geom_parsed,
+            image=image,
+            metadata=metadata,
+            children=children_parsed
+        )
