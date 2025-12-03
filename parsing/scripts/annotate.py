@@ -2,9 +2,11 @@ import json
 
 from pathlib import Path
 
-from pymupdf import Document, pymupdf
+from pymupdf import Document, Page, pymupdf
 
 from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, GUIDELINES_DIR
+from parsing.methods.config import Parsers
+from parsing.model.parsing_result import ParsingResultType
 
 # If two methods produce the same output with different labels, the colors will still be identical
 # 19 colors from Tab20 color scheme (from matplotlib)
@@ -29,6 +31,34 @@ def _get_color(label: str):
     return color_mapping[label]
 
 
+def _draw_box(box: dict, page: Page, color: tuple, opacity: float = 1.0, fill: bool = False):
+    page_size = page.rect
+    page_height = page_size.height
+    page_width = page_size.width
+
+    l = box.get("l", 0.0) * page_width
+    t = box.get("t", 0.0) * page_height
+    r = box.get("r", 0.0) * page_width
+    b = box.get("b", 0.0) * page_height
+
+    rect = pymupdf.Rect(l, t, r, b)
+
+    if fill:
+        fill_color = color
+        color = None
+    else:
+        fill_color = None
+
+    page.draw_rect(
+        rect=rect,
+        color=color,
+        fill=fill_color,
+        width=1.5,
+        fill_opacity=opacity,
+        stroke_opacity=opacity
+    )
+
+
 def _draw_element(element: dict, doc: Document):
     loaded_idx = -1
     page = None
@@ -37,7 +67,7 @@ def _draw_element(element: dict, doc: Document):
         page_idx = box.get("page", 1) - 1
 
         if page_idx < 0 or page_idx >= doc.page_count:
-            print(f"Warning: Malformed page number [{page_idx + 1}] in {element}")
+            print(f"Warning: Malformed page number [{page_idx + 1}] in {str(box)}")
             continue
 
         if loaded_idx != page_idx:
@@ -49,16 +79,22 @@ def _draw_element(element: dict, doc: Document):
 
         l = box.get("l", 0.0) * page_width
         t = box.get("t", 0.0) * page_height
-        r = box.get("r", 0.0) * page_width
-        b = box.get("b", 0.0) * page_height
 
-        label = element.get("type", "undefined")
-        rect = pymupdf.Rect(l, t, r, b)
+        label = element.get("type", ParsingResultType.UNKNOWN.value)
         color = _get_color(label)
 
-        page.draw_rect(rect=rect, color=color, width=1.5)
-        page.insert_text(point=(l, t - 3), text=label, fontsize=6, color=color, fill=color,
-                         fill_opacity=0.6)
+        _draw_box(box, page, color)
+        page.insert_text(
+            point=(l, t - 3),
+            text=label,
+            fontsize=6,
+            fill=color,
+            fill_opacity=0.6
+        )
+
+        # Draw spans if available
+        for child in box.get("spans", []):
+            _draw_box(child, page, color, opacity=0.3, fill=True)
 
     for child in element.get("children", []):
         if isinstance(child, dict):
@@ -75,6 +111,7 @@ def _annotate_file(json_path: Path, doc_path: Path) -> Document:
         raise ValueError(f"File not found: {json_path}")
 
     with open(json_path) as j:
+        print(f"Creating Annotation for {doc_path.stem}")
         annotations = json.load(j)
         document = pymupdf.open(doc_path)
 
@@ -91,35 +128,48 @@ def _annotate_file(json_path: Path, doc_path: Path) -> Document:
         return document
 
 
-def create_annotation(parser_name: str, src_name: str, is_batch: bool = False):
-    parser_output = BOUNDING_BOX_DIR / parser_name
-    parser_annotations = ANNOTATED_DIR / parser_name
+def create_annotation(src_path: Path, parser: Parsers | str):
+    if isinstance(parser, str):
+        parser = Parsers.get_parser(parser)
+
+    if not src_path.exists():
+        raise ValueError(f"The source path does not exist: {src_path}")
+
+    is_batch = src_path.is_dir()
+
+    if is_batch:
+        dir_path = src_path
+    elif src_path.name.endswith(".pdf"):
+        dir_path = src_path.parent
+    else:
+        raise ValueError(f"No PDF file found at {src_path}")
+
+    rel_path = dir_path.relative_to(GUIDELINES_DIR)
+    anno_dir = ANNOTATED_DIR / parser.value / rel_path
+    bbox_dir = BOUNDING_BOX_DIR / parser.value / rel_path
+
+    if not bbox_dir.exists() or not bbox_dir.is_dir():
+        raise ValueError(f"Error: Directory {bbox_dir} does not exist or is not a directory.")
+
+    anno_dir.mkdir(parents=True, exist_ok=True)
 
     # Batch Logic
     if is_batch:
-        batch_path = parser_output / src_name
+        for json_path in bbox_dir.glob("*.json"):
+            pdf_name = json_path.stem + ".pdf"
+            doc_path = src_path / pdf_name
 
-        if batch_path.exists() and batch_path.is_dir():
-            batch_annotations = parser_annotations / src_name
-            batch_annotations.mkdir(parents=True, exist_ok=True)
+            anno_file = _annotate_file(json_path, doc_path)
+            anno_path = anno_dir / pdf_name
+            anno_file.save(anno_dir / pdf_name)
+            print(f"Saved annotated PDF document to: {anno_path}")
 
-            for json_path in batch_path.glob("*.json"):
-                pdf_name = json_path.name.replace("json", "pdf")
-                doc_path = GUIDELINES_DIR / src_name / pdf_name
-
-                anno_file = _annotate_file(json_path, doc_path)
-                anno_file.save(batch_annotations / pdf_name)
-        else:
-            raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
 
     # Single File logic
     else:
-        pdf_name = f"{src_name}.pdf"
-        json_path = parser_output / f"{src_name}.json"
-        doc_path = GUIDELINES_DIR / pdf_name
-        anno_path = parser_annotations / pdf_name
-        anno_parent = anno_path.parent  # handle folder/file as the src_name
+        json_path = bbox_dir / f"{src_path.stem}.json"
 
-        anno_file = _annotate_file(json_path, doc_path)
-        anno_parent.mkdir(parents=True, exist_ok=True)
+        anno_file = _annotate_file(json_path, src_path)
+        anno_path = anno_dir / src_path.name
         anno_file.save(anno_path)
+        print(f"Saved annotated PDF document to: {anno_path}")

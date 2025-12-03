@@ -15,11 +15,32 @@ from mineru.utils.enum_class import MakeMode
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
 
 
 class MinerUParser(DocumentParser):
     """Uses the MinerU Package for parsing PDF documents"""
+
+    label_mapping = {
+        # Texts
+        "text": ParsingResultType.PARAGRAPH,
+        "title": ParsingResultType.HEADER,
+
+        # Lists
+        "list": ParsingResultType.LIST,
+        "list_text": ParsingResultType.LIST,
+        "list_ref_text": ParsingResultType.REFERENCE_LIST,
+        "ref_text": ParsingResultType.REFERENCE_ITEM,
+
+        # Figures and Tables
+        "image": ParsingResultType.FIGURE,
+        "image_body": ParsingResultType.FIGURE,
+        "image_caption": ParsingResultType.CAPTION,
+        "table_caption": ParsingResultType.CAPTION,
+        "table": ParsingResultType.TABLE,
+        "table_body": ParsingResultType.TABLE,
+        "table_footnote": ParsingResultType.FOOTNOTE,
+    }
 
     def __init__(self, use_vlm=False):
         self.is_vlm = use_vlm
@@ -53,7 +74,7 @@ class MinerUParser(DocumentParser):
                 continue
 
             for element in page.get("para_blocks", []):
-                _transform_element(parent=root, element=element, page=page)
+                self._transform_element(parent=root, element=element, page=page)
 
         return root
 
@@ -66,30 +87,38 @@ class MinerUParser(DocumentParser):
         else:
             return pipeline_union_make(pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir))
 
+    def _transform_element(self, parent: ParsingResult, element: dict, page: dict):
+        if not isinstance(element, dict):
+            print(f"Warning: Wrong element type. Expected `dict`, Actual `{type(element)}`")
+            return
 
-def _transform_element(parent: ParsingResult, element: dict, page: dict):
-    if not isinstance(element, dict):
-        print(f"Warning: Wrong element type. Expected `dict`, Actual `{type(element)}`")
-        return
+        content = _get_content(element)
 
-    content = _get_content(element)
-    elem_type = element.get("type", "undefined")
-    elem_type = elem_type + "_" + element.get("sub_type", "")
-    idx = element.get("index", "")
+        elem_type = element.get("type", "unknown")
+        if "sub_type" in element.keys():
+            elem_type += f"_{element["sub_type"]}"
 
-    b_box = _get_bounding_box(element, page)
+        parsed_type = self._get_element_type(elem_type)
+        idx = element.get("index", "")
 
-    result = ParsingResult(
-        id=f"{elem_type}_{idx}",
-        type=elem_type,
-        content=content,
-        geom=[b_box]
-    )
+        if parsed_type == ParsingResultType.TABLE:
+            print("found table")
 
-    parent.children.append(result)
-    child_nodes = element.get("blocks", [])
-    for node in child_nodes:
-        _transform_element(parent=result, element=node, page=page)
+        # Line output only works on MinerU Pipeline
+        with_spans = self.module == Parsers.MINERU_PIPELINE
+        b_box = _get_bounding_box(element, page, with_spans)
+
+        result = ParsingResult(
+            id=f"{parsed_type}_{idx}",
+            type=parsed_type,
+            content=content,
+            geom=[b_box]
+        )
+
+        parent.children.append(result)
+        child_nodes = element.get("blocks", [])
+        for node in child_nodes:
+            self._transform_element(parent=result, element=node, page=page)
 
 
 def _get_pdf_bytes(file_path: Path) -> bytes | Any:
@@ -101,14 +130,14 @@ def _get_pdf_bytes(file_path: Path) -> bytes | Any:
 def _get_pipeline_result(pdf_bytes: bytes | Any, image_writer: FileBasedDataWriter) -> dict:
     infer_result, all_images, all_pdfs, lang_list, ocr_list = pipeline_doc_analyze([pdf_bytes],
                                                                                    ["en"])
-    print(f"Results from pipeline: {len(infer_result)}")
+    print(f"Info: Results count from pipeline: {len(infer_result)}")
 
     return pipeline_get_middle_json(infer_result[0], all_images[0], all_pdfs[0], image_writer,
                                     lang_list[0], ocr_list[0])
 
 
 def _get_content(element: dict) -> str:
-    """Collect element content from the constructing lines."""
+    """Collect element content from the constructing spans."""
     content = ""
     lines = element.get("lines", [])
     for line in lines:
@@ -124,7 +153,7 @@ def _get_content(element: dict) -> str:
     return content
 
 
-def _get_bounding_box(element: dict, page: dict) -> ParsingBoundingBox:
+def _get_bounding_box(element: dict, page: dict, with_lines: bool) -> ParsingBoundingBox:
     """Parse Bounding box to needed format."""
     page_nr = page.get("page_idx", 0) + 1
 
@@ -138,11 +167,19 @@ def _get_bounding_box(element: dict, page: dict) -> ParsingBoundingBox:
         print(f"Warning: Malformed Bounding Box: {b_box}")
         b_box = [0.0] * 4
 
-    # Could also return a list of all line bounding boxes
+    # Transform Line Bounding Boxes
+    line_boxes = []
+    if with_lines:
+        lines = element.get("lines", [])
+        for line in lines:
+            l_box = _get_bounding_box(line, page, with_lines)
+            line_boxes.append(l_box)
+
     return ParsingBoundingBox(
         page=page_nr,
         left=b_box[0] / page_size[0],
         top=b_box[1] / page_size[1],
         right=b_box[2] / page_size[0],
-        bottom=b_box[3] / page_size[1]
+        bottom=b_box[3] / page_size[1],
+        spans=line_boxes
     )

@@ -2,18 +2,27 @@ import json
 import time
 from pathlib import Path
 from typing import Any, Protocol, TypeVar
-
 from tqdm import tqdm
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from parsing.model.options import ParserOptions
+from parsing.model.spans import add_span_boxes
 from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
-from parsing.model.parsing_result import ParsingResult
+from parsing.model.parsing_result import ParsingResult, ParsingResultType
 from utils.create_dir import create_directory, get_directory
 
 # Raw output type of the PDF parsing method
 T = TypeVar("T", default=dict)
+
+
+def _set_time_meta(result: ParsingResult, start: float, parse: float, transformation: float):
+    """Set the parsing and transformation duration on the ParsingResult."""
+    parsing_duration = parse - start
+    transformation_duration = transformation - parse
+    print(f"Parsing Time: {round(parsing_duration, 2)}s")
+    result.metadata["parsing_time"] = parsing_duration
+    result.metadata["transformation_time"] = transformation_duration
 
 
 class DocumentParser(Protocol[T]):
@@ -22,7 +31,10 @@ class DocumentParser(Protocol[T]):
     Transforms a PDF file into a structured JSON format.
     """
 
-    module: Parsers  # Has to be set by the implementation
+    # Have to be set by the implementation
+    module: Parsers
+    label_mapping: dict[str, ParsingResultType]
+
     src_path: Path = GUIDELINES_DIR
 
     @property
@@ -53,6 +65,23 @@ class DocumentParser(Protocol[T]):
         Returns:
             Raw output from the parsing method
         """
+
+    def _get_element_type(self, raw_type: str) -> ParsingResultType:
+        """
+        Transform a raw label from the classification of the method to ParsingResultType.
+        Uses the label_mapping specified by the method.
+
+        Args:
+            raw_type: Label string from the output method
+
+        Returns:
+            Corresponding ParsingResultType
+        """
+        if raw_type not in self.label_mapping.keys():
+            print(f"Warning missing label mapping for type '{raw_type}' in {self.module}.")
+            return ParsingResultType.MISSING
+
+        return self.label_mapping[raw_type]
 
     def _transform(self, raw_result: T) -> ParsingResult:
         """
@@ -124,31 +153,26 @@ class DocumentParser(Protocol[T]):
             json.dump(result.to_dict(), f, indent=2)
             print(f"Success: Model output saved at: {output_path}")
 
-    def _annotate(self, file_name: str, options: dict = None, batch_name: str = None):
+    def _annotate(self, file_path: Path, options: dict = None):
         """
         Call drawing method if requested.
         To request drawing, set options["draw"] = True
 
         Args:
-            file_name: The base name of the original file
-            options: Dictionary
-            batch_name: For Batch processing, name of the batch that the file belongs to [optional]
+            file_path: The path of the input PDF file
+            options: A dictionary of method-specific options [optional]
         """
         if options and options.get(ParserOptions.ANNOTATE, False):
-            print(f"Scheduled annotation of {file_name}...")
-            src_name = file_name
-            if batch_name is not None:
-                src_name = f"{batch_name}/{src_name}"
+            print(f"Scheduled annotation of {file_path.name}...")
 
-            create_annotation(parser_name=self.module.value, src_name=src_name, is_batch=False)
+            create_annotation(src_path=file_path, parser=self.module)
 
-    def process_document(self, file_path: Path, batch_name: str = None, options: dict = None):
+    def process_document(self, file_path: Path, options: dict = None):
         """
         Performs full parsing pipeline for a single document.
 
         Args:
             file_path: Path of the guideline PDF file
-            batch_name: For Batch processing, name of the batch that the file belongs to [optional]
             options: A dictionary of method-specific options [optional]
 
         Raises:
@@ -175,10 +199,11 @@ class DocumentParser(Protocol[T]):
 
         transformation_time = time.time()
         _set_time_meta(transformed_result, start_time, parse_time, transformation_time)
+        add_span_boxes(file_path, transformed_result)
 
         self._save_md(file_path, md_result)
         self._save_json(file_path, transformed_result)
-        self._annotate(file_name, options, batch_name=batch_name)
+        self._annotate(file_path, options)
 
     def process_batch(self, batch_name: str, options: dict[ParserOptions, Any] = None):
         """
@@ -200,15 +225,6 @@ class DocumentParser(Protocol[T]):
                 if skip_existing and self._check_output_exists(file_path):
                     print(f"Skipping Document: {file_path.stem}. Output JSON already exists.")
                 else:
-                    self.process_document(file_path, batch_name, options)
+                    self.process_document(file_path, options)
         else:
             raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
-
-
-def _set_time_meta(result: ParsingResult, start: float, parse: float, transformation: float):
-    """Set the parsing and transformation duration on the ParsingResult."""
-    parsing_duration = parse - start
-    transformation_duration = transformation - parse
-    print(f"Parsing Time: {round(parsing_duration, 2)}s")
-    result.metadata["parsing_time"] = parsing_duration
-    result.metadata["transformation_time"] = transformation_duration

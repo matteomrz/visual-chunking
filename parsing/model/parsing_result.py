@@ -2,19 +2,41 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass, field
+from typing import Generator
 
 
 class ParsingResultType(Enum):
-    ROOT = "__root__"
-    TITLE = "title"
-    PARAGRAPH = "text"
-    LIST = "list"
-    LIST_ITEM = "list_item"
-    TABLE = "table"
-    FOOTNOTE = "footer"
-    HEADING = "header"
-    FIGURE = "image"
-    UNKNOWN = "unknown"
+    ROOT = "__root__"  # The top-level node containing the entire document structure.
+
+    # TEXTS
+    TITLE = "title"  # The specific main title of the document.
+    PARAGRAPH = "text"  # Standard body text content.
+    HEADER = "header"  # Section headings or subheaders within the text body.
+    FOOTNOTE = "footnote"  # Explanatory notes usually placed at the bottom of a page/text.
+
+    # LISTS
+    LIST = "list"  # A container node for a list of items.
+    LIST_ITEM = "list_item"  # An individual item within a list.
+    REFERENCE_LIST = "ref_list"  # A container node for a list of reference items.
+    REFERENCE_ITEM = "ref_item"  # An individual item within a reference list.
+
+    # FIGURES AND TABLES
+    CAPTION = "caption"  # Descriptive text immediately accompanying a table or figure.
+    FIGURE = "image"  # Graphical elements, diagrams, or pictures.
+    TABLE = "table"  # A container node for tabular data.
+    TABLE_ROW = "table_row"  # A horizontal row within a table.
+    TABLE_CELL = "table_cell"  # An individual cell containing data within a table row.
+
+    # MISCELLANEOUS
+    FOOTER = "footer"  # Repeating page footer (page numbers, copyright, etc.).
+    KEY_VALUE = "key_value"  # A specific key-value pair.
+    PAGE_HEADER = "page_header"  # Repeating header found at the top of pages (e.g., journal name).
+    KEY_VALUE_AREA = "key_value_area"  # A distinct region grouped by key-value pairs (e.g., article info).
+    FORM_AREA = "form_area"  # A region indicating form content (e.g., text-fields).
+
+    # FALLBACK
+    UNKNOWN = "unknown"  # Used when the parser cannot determine the element type.
+    MISSING = "missing"  # Used when label mappings are absent [Debug].
 
     @classmethod
     def get_type(cls, name: str) -> ParsingResultType | str:
@@ -40,9 +62,33 @@ class ParsingBoundingBox:
     top: float
     right: float
     bottom: float
+    spans: list[ParsingBoundingBox] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> ParsingBoundingBox:
+        """Deserialize from dict."""
+        try:
+            geom_parsed: list[ParsingBoundingBox] = [
+                ParsingBoundingBox.from_dict(bbox)
+                for bbox in dictionary.get("spans", [])
+            ]
+
+            return cls(
+                page=dictionary["page"],
+                left=dictionary["l"],
+                top=dictionary["t"],
+                right=dictionary["r"],
+                bottom=dictionary["b"],
+                spans=geom_parsed
+            )
+        except KeyError as e:
+            raise ValueError(f"Error: Missing key in BoundingBox dictionary: {e}")
+        except TypeError as e:
+            raise ValueError(f"Error: Invalid type in BoundingBox dictionary: {e}")
 
     def to_dict(self) -> dict:
-        return {
+        """Serealize to dict."""
+        res: dict[str, float | int | list] = {
             "page": self.page,
             "l": self.left,
             "t": self.top,
@@ -50,32 +96,26 @@ class ParsingBoundingBox:
             "b": self.bottom,
         }
 
-    @classmethod
-    def from_dict(cls, dictionary: dict) -> ParsingBoundingBox:
-        try:
-            return cls(
-                page=dictionary["page"],
-                left=dictionary["l"],
-                top=dictionary["t"],
-                right=dictionary["r"],
-                bottom=dictionary["b"],
-            )
-        except KeyError as e:
-            raise ValueError(f"Error: Missing key in BoundingBox dictionary: {e}")
-        except TypeError as e:
-            raise ValueError(f"Error: Invalid type in BoundingBox dictionary: {e}")
+        if self.spans:
+            res["spans"] = [b.to_dict() for b in self.spans]
+
+        return res
 
 
 @dataclass
 class ParsingResult:
-    """Parsing Result from a PDF parser"""
+    """
+    Parsing Result from a PDF parser.
+    The document is portrait as a tree structure, with a ROOT node at the top.
+    The ROOT node does not contain any visual content of the document.
+    """
 
     id: str
     type: ParsingResultType | str
     content: str
     geom: list[ParsingBoundingBox]
     image: str = None
-    children: list[ParsingResult | None] = field(default_factory=list)
+    children: list[ParsingResult] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
 
     @classmethod
@@ -92,29 +132,9 @@ class ParsingResult:
             metadata=metadata,
         )
 
-    def to_dict(self) -> dict[str, str | dict | list]:
-        type_name = self.type
-        if isinstance(type_name, ParsingResultType):
-            type_name = type_name.name
-
-        res: dict[str, str | dict | list] = {
-            "id": self.id,
-            "type": type_name,
-            "content": self.content,
-            "geom": [bbox.to_dict() for bbox in self.geom],
-        }
-
-        if self.metadata:
-            res["metadata"] = self.metadata
-        if self.image:
-            res["image"] = self.image
-        if len(self.children) > 0:
-            res["children"] = [child.to_dict() for child in self.children]
-
-        return res
-
     @classmethod
     def from_dict(cls, dictionary: dict) -> ParsingResult:
+        """Deserialize from dict."""
         try:
             elem_id: str = dictionary["id"]
             content: str = dictionary["content"]
@@ -150,3 +170,34 @@ class ParsingResult:
             metadata=metadata,
             children=children_parsed
         )
+
+    def to_dict(self) -> dict[str, str | dict | list]:
+        """Serialize to dict."""
+        type_name = self.type
+        if isinstance(type_name, ParsingResultType):
+            type_name = type_name.value
+
+        res: dict[str, str | dict | list] = {
+            "id": self.id,
+            "type": type_name,
+            "content": self.content,
+            "geom": [bbox.to_dict() for bbox in self.geom],
+        }
+
+        if self.metadata:
+            res["metadata"] = self.metadata
+        if self.image:
+            res["image"] = self.image
+        if len(self.children) > 0:
+            res["children"] = [child.to_dict() for child in self.children]
+
+        return res
+
+    def flatten(self) -> Generator[ParsingResult]:
+        """
+        Flattens the document tree structure to iterate over the nodes.
+        Does not include the Result it is called on.
+        """
+        for child in self.children:
+            yield child
+            yield from child.flatten()

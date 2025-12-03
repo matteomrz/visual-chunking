@@ -1,6 +1,6 @@
 import argparse
 
-from config import DEFAULT_GUIDELINE
+from config import DEFAULT_GUIDELINE, GUIDELINES_DIR
 from parsing.scripts.annotate import create_annotation
 from parsing.scripts.parse import parse_pdf
 from parsing.methods.config import Parsers
@@ -67,7 +67,11 @@ def interface():
 
     parser = args.parser
     if args.only_draw:
-        create_annotation(parser, src_name, is_batch=is_batch)
+        if is_batch:
+            src_path = GUIDELINES_DIR / src_name
+        else:
+            src_path = GUIDELINES_DIR / f"{src_name}.pdf"
+        create_annotation(src_path, parser)
     else:
         should_draw = args.draw
         skip_existing = args.skip_existing
