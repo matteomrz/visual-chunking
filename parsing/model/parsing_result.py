@@ -79,7 +79,7 @@ class ParsingBoundingBox:
                 top=dictionary["t"],
                 right=dictionary["r"],
                 bottom=dictionary["b"],
-                spans=geom_parsed
+                spans=geom_parsed,
             )
         except KeyError as e:
             raise ValueError(f"Error: Missing key in BoundingBox dictionary: {e}")
@@ -152,14 +152,10 @@ class ParsingResult:
         parsing_type = ParsingResultType.get_type(type_name)
 
         geom_parsed: list[ParsingBoundingBox] = [
-            ParsingBoundingBox.from_dict(bbox)
-            for bbox in geom
+            ParsingBoundingBox.from_dict(bbox) for bbox in geom
         ]
 
-        children_parsed = [
-            cls.from_dict(child)
-            for child in children
-        ]
+        children_parsed = [cls.from_dict(child) for child in children]
 
         return cls(
             id=elem_id,
@@ -168,7 +164,7 @@ class ParsingResult:
             geom=geom_parsed,
             image=image,
             metadata=metadata,
-            children=children_parsed
+            children=children_parsed,
         )
 
     def to_dict(self) -> dict[str, str | dict | list]:

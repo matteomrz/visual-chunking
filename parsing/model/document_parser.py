@@ -16,7 +16,9 @@ from utils.create_dir import create_directory, get_directory
 T = TypeVar("T", default=dict)
 
 
-def _set_time_meta(result: ParsingResult, start: float, parse: float, transformation: float):
+def _set_time_meta(
+    result: ParsingResult, start: float, parse: float, transformation: float
+):
     """Set the parsing and transformation duration on the ParsingResult."""
     parsing_duration = parse - start
     transformation_duration = transformation - parse
@@ -51,8 +53,12 @@ class DocumentParser(Protocol[T]):
 
     def _create_image_dir(self, file_path: Path) -> Path:
         """Creates an image directory for the given file."""
-        return create_directory(file_path, src_dir=self.src_path, dst_dir=self.base_image_dir,
-                                with_file=True)
+        return create_directory(
+            file_path,
+            src_dir=self.src_path,
+            dst_dir=self.base_image_dir,
+            with_file=True,
+        )
 
     def _parse(self, file_path: Path, options: dict = None) -> T:
         """
@@ -78,7 +84,7 @@ class DocumentParser(Protocol[T]):
             Corresponding ParsingResultType
         """
         if raw_type not in self.label_mapping.keys():
-            print(f"Warning missing label mapping for type '{raw_type}' in {self.module}.")
+            print(f"Warning: No mapping for label '{raw_type}' in {self.module}.")
             return ParsingResultType.MISSING
 
         return self.label_mapping[raw_type]
@@ -96,14 +102,14 @@ class DocumentParser(Protocol[T]):
 
     def _get_md(self, raw_result: T, file_path: Path) -> str:
         """
-            Get the model output in Markdown format.
+        Get the model output in Markdown format.
 
-            Args:
-                raw_result: Raw output from the parsing method
-                file_path: The path of the original file
+        Args:
+            raw_result: Raw output from the parsing method
+            file_path: The path of the original file
 
-            Returns:
-                Markdown representation of the initial document
+        Returns:
+            Markdown representation of the initial document
         """
 
     def _check_output_exists(self, file_path: Path) -> bool:
@@ -227,4 +233,4 @@ class DocumentParser(Protocol[T]):
                 else:
                     self.process_document(file_path, options)
         else:
-            raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
+            raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")

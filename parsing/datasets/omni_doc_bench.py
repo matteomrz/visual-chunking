@@ -26,7 +26,7 @@ def _get_json(exist_ok: bool = False) -> list:
             repo_id=omni_doc_repo_id,
             filename=file_name,
             local_dir=omni_doc_dir,
-            repo_type="dataset"
+            repo_type="dataset",
         )
 
     with open(final_path) as f:
@@ -36,7 +36,8 @@ def _get_json(exist_ok: bool = False) -> list:
             return omni_doc
         else:
             raise ValueError(
-                f"Error: Wrong type in OmniDocBench.json. Expected: `list`. Actual: {type(omni_doc)}")
+                f"Error: Wrong type in OmniDocBench.json. Expected: `list`. Actual: {type(omni_doc)}"
+            )
 
 
 def _filter_images(images: list[str]) -> list[str]:
@@ -83,7 +84,7 @@ def _get_images(omni_doc, exist_ok: bool = False) -> list[str]:
         repo_id=omni_doc_repo_id,
         local_dir=omni_doc_dir,
         repo_type="dataset",
-        allow_patterns=[f"*/{i}" for i in images]
+        allow_patterns=[f"*/{i}" for i in images],
     )
 
     print(f"Downloaded {len(images)} images from the OmniDocBench benchmark.")

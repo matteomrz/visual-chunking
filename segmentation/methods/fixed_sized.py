@@ -1,7 +1,11 @@
 import math
 from dataclasses import dataclass
 
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from parsing.model.parsing_result import (
+    ParsingBoundingBox,
+    ParsingResult,
+    ParsingResultType,
+)
 from segmentation.methods.config import Chunkers
 from segmentation.model.chunk import Chunk, ChunkingResult
 from segmentation.model.document_chunker import DocumentChunker
@@ -61,7 +65,7 @@ class FixedSizeChunker(DocumentChunker):
     excluded_types: list[ParsingResultType] = [
         ParsingResultType.TABLE,
         ParsingResultType.TABLE_ROW,
-        ParsingResultType.FIGURE
+        ParsingResultType.FIGURE,
     ]
 
     def __init__(self, options: dict = None):
@@ -91,15 +95,14 @@ class FixedSizeChunker(DocumentChunker):
             # Save element id and the token index inside the
             elem_tokens = [
                 RichToken(elem.id, idx, token)
-                for idx, token
-                in enumerate(elem_tokens_raw)
+                for idx, token in enumerate(elem_tokens_raw)
             ]
 
             # Add Tokens to the end of the token queue
             tokens.extend(elem_tokens)
 
             while len(tokens) > self.max_tokens:
-                chunk_tokens = tokens[:self.max_tokens]
+                chunk_tokens = tokens[: self.max_tokens]
 
                 chunk = self._get_chunk(chunk_tokens, chunk_idx, elem_info)
                 result.chunks.append(chunk)
@@ -116,9 +119,9 @@ class FixedSizeChunker(DocumentChunker):
         return result
 
     # TODO: Move this into the Protocol
-    def _get_chunk(self, buffer_slice: list[RichToken], idx: int,
-                   elem_info: dict[str, ElementInfo]) -> Chunk:
-
+    def _get_chunk(
+        self, buffer_slice: list[RichToken], idx: int, elem_info: dict[str, ElementInfo]
+    ) -> Chunk:
         # List of tokenized text
         content = self._decode([t.token for t in buffer_slice])
 
@@ -132,7 +135,8 @@ class FixedSizeChunker(DocumentChunker):
             min_idx, max_idx = min_max
             info = elem_info[elem_id]
 
-            if info.geom_count == 0: continue
+            if info.geom_count == 0:
+                continue
 
             for ind, bbox in enumerate(info.geom):
                 box_start_idx = ind * info.tokens_per_geom
@@ -141,7 +145,8 @@ class FixedSizeChunker(DocumentChunker):
 
                 # Handle no bbox tokens are in the chunk
                 no_intersect = max_idx < box_start_idx or box_end_idx < min_idx
-                if no_intersect: continue
+                if no_intersect:
+                    continue
 
                 # Handle all bbox tokens are in the chunk
                 full_intersect = min_idx <= box_start_idx and max_idx >= box_end_idx

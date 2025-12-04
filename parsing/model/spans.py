@@ -22,7 +22,7 @@ def add_span_boxes(file_path: Path, root: ParsingResult):
         FileNotFoundError: If the ``file_path`` does not exist or is not a PDF file.
     """
     if not file_path.exists() or not file_path.name.endswith(".pdf"):
-        raise FileNotFoundError(f"Error: Guideline PDF file does not exist at: {file_path}")
+        raise FileNotFoundError(f"Error: Guideline PDF file not found at: {file_path}")
 
     doc = pymupdf.open(file_path)
     print(f"Adding span-level bounding boxes for: {file_path.stem}")
@@ -60,7 +60,10 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
 
             box_width = abs_right - abs_left
             box_height = abs_bottom - abs_top
-            if box_width < width * 0.01 or box_height < height * 0.01:  # TODO: Find out when too small boxes cause a problem
+
+            is_narrow = box_width < width * 0.01
+            is_short = box_height < height * 0.01
+            if is_short or is_narrow:  # TODO: Find out when too small boxes cause a problem
                 print(f"Warning: Element Bounding Box is too small.\
                 Width: {round(box_width, 3)}, Height: {round(box_height, 3)}")
                 continue
@@ -71,7 +74,9 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
 
             # Using lower dpi than 300 leads to scaling issues
             tp = get_textpage_ocr(page, full=True, dpi=300)
-            text = get_text(page, textpage=tp, option="dict", sort=True, flags=_pymupdf_flag)
+            text = get_text(
+                page, textpage=tp, option="dict", sort=True, flags=_pymupdf_flag
+            )
 
             try:
                 for block in text.get("blocks", []):
@@ -91,7 +96,7 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
                             left=l_left,
                             top=l_top,
                             right=l_right,
-                            bottom=l_bottom
+                            bottom=l_bottom,
                         )
 
                         bbox.spans.append(child_box)
@@ -105,7 +110,9 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             page.set_cropbox(original_crop)
 
 
-def _merge_adjacent_spans(lines: list[dict], overlap_limit: float = 0.5) -> list[list[float]]:
+def _merge_adjacent_spans(
+    lines: list[dict], overlap_limit: float = 0.5
+) -> list[list[float]]:
     """
     Consolidates span bounding boxes based on significant vertical intersection.
     Two lines are merged if the overlap exceeds ``overlap_limit`` * the previous line's height.

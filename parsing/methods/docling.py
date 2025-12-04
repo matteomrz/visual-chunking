@@ -17,12 +17,18 @@ from docling_core.types.doc import (
     GroupItem,
     NodeItem,
     PageItem,
-    TableCell, TableItem, TextItem,
+    TableCell,
+    TableItem,
+    TextItem,
 )
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from parsing.model.parsing_result import (
+    ParsingBoundingBox,
+    ParsingResult,
+    ParsingResultType,
+)
 
 
 class DoclingParser(DocumentParser[DoclingDocument]):
@@ -35,18 +41,15 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         "TEXT": ParsingResultType.PARAGRAPH,
         "SECTION_HEADER": ParsingResultType.HEADER,
         "FOOTNOTE": ParsingResultType.FOOTNOTE,
-
         # Lists
         "LIST": ParsingResultType.LIST,
         "LIST_ITEM": ParsingResultType.LIST_ITEM,
-
         # Figures and Tables
         "PICTURE": ParsingResultType.FIGURE,
         "CAPTION": ParsingResultType.CAPTION,
         "TABLE": ParsingResultType.TABLE,
         "TABLE_ROW": ParsingResultType.TABLE_ROW,
         "TABLE_CELL": ParsingResultType.TABLE_CELL,
-
         # Miscellaneous
         "PAGE_HEADER": ParsingResultType.PAGE_HEADER,
         "PAGE_FOOTER": ParsingResultType.FOOTER,
@@ -142,7 +145,9 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         res.children.append(transformed)
 
 
-def _transform_table(transformed: ParsingResult, page: PageItem, grid: list[list[TableCell]]):
+def _transform_table(
+    transformed: ParsingResult, page: PageItem, grid: list[list[TableCell]]
+):
     parent_id = transformed.id
 
     for idx, row in enumerate(grid):
@@ -153,7 +158,8 @@ def _transform_table(transformed: ParsingResult, page: PageItem, grid: list[list
         max_b = None
 
         for cell in row:
-            if not cell.bbox: continue
+            if not cell.bbox:
+                continue
             box = _transform_b_box(cell.bbox, page)
 
             x = cell.start_row_offset_idx
@@ -172,7 +178,7 @@ def _transform_table(transformed: ParsingResult, page: PageItem, grid: list[list
                 id=f"{parent_id}_{y}_{x}",
                 type=ParsingResultType.TABLE_CELL,
                 content=cell.text,
-                geom=[box]
+                geom=[box],
             )
 
             cell_results.append(cell_res)
@@ -186,7 +192,7 @@ def _transform_table(transformed: ParsingResult, page: PageItem, grid: list[list
             type=ParsingResultType.TABLE_ROW,
             content=" | ".join([c.content for c in cell_results]),
             children=cell_results,
-            geom=[row_box]
+            geom=[row_box],
         )
         transformed.children.append(row_res)
 
@@ -202,9 +208,5 @@ def _transform_b_box(raw_b_box: BoundingBox, page: PageItem) -> ParsingBoundingB
     b_frac = max(0.0, raw_b_box.b / page_height)
 
     return ParsingBoundingBox(
-        page=page.page_no,
-        left=l_frac,
-        top=t_frac,
-        right=r_frac,
-        bottom=b_frac
+        page=page.page_no, left=l_frac, top=t_frac, right=r_frac, bottom=b_frac
     )

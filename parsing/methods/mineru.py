@@ -1,21 +1,32 @@
 from pathlib import Path
 from typing import Any
 
-from mineru.backend.vlm.vlm_analyze import ModelSingleton as VlmModelSingleton, \
-    doc_analyze as vlm_doc_analyze
+from mineru.backend.vlm.vlm_analyze import (
+    ModelSingleton as VlmModelSingleton,
+    doc_analyze as vlm_doc_analyze,
+)
 from mineru.backend.vlm.vlm_middle_json_mkcontent import union_make as vlm_union_make
-from mineru.backend.pipeline.pipeline_analyze import ModelSingleton as PipelineModelSingleton, \
-    doc_analyze as pipeline_doc_analyze
-from mineru.backend.pipeline.model_json_to_middle_json import \
-    result_to_middle_json as pipeline_get_middle_json
-from mineru.backend.pipeline.pipeline_middle_json_mkcontent import union_make as pipeline_union_make
+from mineru.backend.pipeline.pipeline_analyze import (
+    ModelSingleton as PipelineModelSingleton,
+    doc_analyze as pipeline_doc_analyze,
+)
+from mineru.backend.pipeline.model_json_to_middle_json import (
+    result_to_middle_json as pipeline_get_middle_json,
+)
+from mineru.backend.pipeline.pipeline_middle_json_mkcontent import (
+    union_make as pipeline_union_make,
+)
 from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
 from mineru.data.data_reader_writer import FileBasedDataWriter
 from mineru.utils.enum_class import MakeMode
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from parsing.model.parsing_result import (
+    ParsingBoundingBox,
+    ParsingResult,
+    ParsingResultType,
+)
 
 
 class MinerUParser(DocumentParser):
@@ -25,13 +36,11 @@ class MinerUParser(DocumentParser):
         # Texts
         "text": ParsingResultType.PARAGRAPH,
         "title": ParsingResultType.HEADER,
-
         # Lists
         "list": ParsingResultType.LIST,
         "list_text": ParsingResultType.LIST,
         "list_ref_text": ParsingResultType.REFERENCE_LIST,
         "ref_text": ParsingResultType.REFERENCE_ITEM,
-
         # Figures and Tables
         "image": ParsingResultType.FIGURE,
         "image_body": ParsingResultType.FIGURE,
@@ -48,7 +57,8 @@ class MinerUParser(DocumentParser):
         if self.is_vlm:
             self.module = Parsers.MINERU_VLM
             self.model = VlmModelSingleton().get_model(
-                backend="mlx-engine", model_path=None, server_url=None)
+                backend="mlx-engine", model_path=None, server_url=None
+            )
         else:
             self.module = Parsers.MINERU_PIPELINE
             self.model = PipelineModelSingleton().get_model()
@@ -59,7 +69,9 @@ class MinerUParser(DocumentParser):
 
         pdf_bytes = _get_pdf_bytes(file_path)
         if self.is_vlm:
-            result, _ = vlm_doc_analyze(pdf_bytes, image_writer=image_writer, predictor=self.model)
+            result, _ = vlm_doc_analyze(
+                pdf_bytes, image_writer=image_writer, predictor=self.model
+            )
         else:
             result = _get_pipeline_result(pdf_bytes, image_writer)
 
@@ -70,7 +82,9 @@ class MinerUParser(DocumentParser):
         pages = raw_result.get("pdf_info", [])
         for page in pages:
             if not isinstance(page, dict):
-                print(f"Warning: Wrong page type. Expected `dict`, Actual `{type(page)}`")
+                print(
+                    f"Warning: Wrong page type. Expected `dict`, Actual `{type(page)}`"
+                )
                 continue
 
             for element in page.get("para_blocks", []):
@@ -83,20 +97,26 @@ class MinerUParser(DocumentParser):
         image_dir = self._create_image_dir(file_path)
 
         if self.is_vlm:
-            return vlm_union_make(pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir))
+            return vlm_union_make(
+                pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir)
+            )
         else:
-            return pipeline_union_make(pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir))
+            return pipeline_union_make(
+                pdf_info, MakeMode.MM_MD, img_buket_path=str(image_dir)
+            )
 
     def _transform_element(self, parent: ParsingResult, element: dict, page: dict):
         if not isinstance(element, dict):
-            print(f"Warning: Wrong element type. Expected `dict`, Actual `{type(element)}`")
+            print(
+                f"Warning: Wrong element type. Expected `dict`, Actual `{type(element)}`"
+            )
             return
 
         content = _get_content(element)
 
         elem_type = element.get("type", "unknown")
         if "sub_type" in element.keys():
-            elem_type += f"_{element["sub_type"]}"
+            elem_type += f"_{element['sub_type']}"
 
         parsed_type = self._get_element_type(elem_type)
         idx = element.get("index", "")
@@ -109,10 +129,7 @@ class MinerUParser(DocumentParser):
         b_box = _get_bounding_box(element, page, with_spans)
 
         result = ParsingResult(
-            id=f"{parsed_type}_{idx}",
-            type=parsed_type,
-            content=content,
-            geom=[b_box]
+            id=f"{parsed_type}_{idx}", type=parsed_type, content=content, geom=[b_box]
         )
 
         parent.children.append(result)
@@ -127,13 +144,22 @@ def _get_pdf_bytes(file_path: Path) -> bytes | Any:
     return convert_pdf_bytes_to_bytes_by_pypdfium2(pdf_bytes)
 
 
-def _get_pipeline_result(pdf_bytes: bytes | Any, image_writer: FileBasedDataWriter) -> dict:
-    infer_result, all_images, all_pdfs, lang_list, ocr_list = pipeline_doc_analyze([pdf_bytes],
-                                                                                   ["en"])
+def _get_pipeline_result(
+    pdf_bytes: bytes | Any, image_writer: FileBasedDataWriter
+) -> dict:
+    infer_result, all_images, all_pdfs, lang_list, ocr_list = pipeline_doc_analyze(
+        [pdf_bytes], ["en"]
+    )
     print(f"Info: Results count from pipeline: {len(infer_result)}")
 
-    return pipeline_get_middle_json(infer_result[0], all_images[0], all_pdfs[0], image_writer,
-                                    lang_list[0], ocr_list[0])
+    return pipeline_get_middle_json(
+        infer_result[0],
+        all_images[0],
+        all_pdfs[0],
+        image_writer,
+        lang_list[0],
+        ocr_list[0],
+    )
 
 
 def _get_content(element: dict) -> str:
@@ -153,7 +179,9 @@ def _get_content(element: dict) -> str:
     return content
 
 
-def _get_bounding_box(element: dict, page: dict, with_lines: bool) -> ParsingBoundingBox:
+def _get_bounding_box(
+    element: dict, page: dict, with_lines: bool
+) -> ParsingBoundingBox:
     """Parse Bounding box to needed format."""
     page_nr = page.get("page_idx", 0) + 1
 
@@ -181,5 +209,5 @@ def _get_bounding_box(element: dict, page: dict, with_lines: bool) -> ParsingBou
         top=b_box[1] / page_size[1],
         right=b_box[2] / page_size[0],
         bottom=b_box[3] / page_size[1],
-        spans=line_boxes
+        spans=line_boxes,
     )

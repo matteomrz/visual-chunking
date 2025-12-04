@@ -71,11 +71,7 @@ class UnstructuredParser(DocumentParser[list[Element]]):
             b = end[1] / page_height
 
             b_box = ParsingBoundingBox(
-                page=metadata.get("page_number", 0),
-                left=l,
-                top=t,
-                right=r,
-                bottom=b
+                page=metadata.get("page_number", 0), left=l, top=t, right=r, bottom=b
             )
 
             transformed = ParsingResult(

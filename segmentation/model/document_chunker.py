@@ -132,7 +132,7 @@ class DocumentChunker(Protocol):
             for file_path in batch_path.glob("*.json"):
                 self.process_document(file_path, options)
         else:
-            raise ValueError(f"Error: Path {batch_path} does not exist or is not a directory.")
+            raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
 
 
 def _add_metadata(result: ChunkingResult, chunk_time: float):

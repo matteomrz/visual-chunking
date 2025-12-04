@@ -76,7 +76,9 @@ class LlamaParseParser(DocumentParser[JobResult]):
                     l = 1 - r
                     t = 1 - b
 
-                bbox = ParsingBoundingBox(page=page_idx + 1, left=l, top=t, right=r, bottom=b)
+                bbox = ParsingBoundingBox(
+                    page=page_idx + 1, left=l, top=t, right=r, bottom=b
+                )
 
                 lvl = element.get("lvl", -1)
                 transformed = ParsingResult(
