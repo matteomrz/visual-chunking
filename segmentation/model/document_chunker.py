@@ -1,4 +1,5 @@
 import json
+import math
 import time
 from pathlib import Path
 from typing import Protocol
@@ -6,10 +7,12 @@ from typing import Protocol
 from transformers import AutoTokenizer
 
 from config import BOUNDING_BOX_DIR, SEGMENTATION_OUTPUT_DIR
-from parsing.model.parsing_result import ParsingResult
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
 from segmentation.methods.config import Chunkers
-from segmentation.model.chunk import ChunkingResult
+from segmentation.model.chunk import Chunk, ChunkingResult
+from segmentation.model.token import ElementInfo, RichToken
 from utils.create_dir import create_directory
+from utils.max_min import get_max_min
 
 
 def _open(file_path: Path) -> ParsingResult:
@@ -77,6 +80,87 @@ class DocumentChunker(Protocol):
         Returns:
             ChunkingResult containing a list of the created chunks
         """
+
+    def _get_chunk(
+        self, buffer_slice: list[RichToken], idx: int, elem_info: dict[str, ElementInfo]
+    ) -> Chunk:
+        """
+        Creates a Chunk object and adds additional metadata.
+        Handles the creation of partial bounding boxes for cases where Document Elements are split up between different chunks.
+
+        Args:
+            buffer_slice: List of RichToken, containing information about token content and position
+            idx: Index of the resulting Chunk, used for setting the Chunk's ``id`` field
+            elem_info: Mapping from element id to ElementInfo, containing token length and bounding boxes
+
+        Returns:
+            Chunk object
+        """
+
+        # List of tokenized text
+        content = self._decode([t.token for t in buffer_slice])
+
+        # Get the min and max token indices for each element that are included in the chunk
+        elem_ids = [(t.element_id, t.token_index) for t in buffer_slice]
+        elem_min_max = get_max_min(elem_ids)
+
+        boxes = []
+
+        for elem_id, min_max in elem_min_max.items():
+            min_idx, max_idx = min_max
+            info = elem_info[elem_id]
+
+            if info.geom_count == 0:
+                continue
+
+            for ind, bbox in enumerate(info.geom):
+                box_start_idx = ind * info.tokens_per_geom
+                box_end_idx = box_start_idx + info.tokens_per_geom
+                line_cnt = len(bbox.spans)
+
+                # Handle no bbox tokens are in the chunk
+                no_intersect = max_idx < box_start_idx or box_end_idx < min_idx
+                if no_intersect:
+                    continue
+
+                # Handle all bbox tokens are in the chunk
+                full_intersect = min_idx <= box_start_idx and max_idx >= box_end_idx
+                if full_intersect or line_cnt < 2:
+                    boxes.append(bbox)
+                    continue
+
+                # Handle some bbox tokens are in the chunk
+                copy_box = ParsingBoundingBox(
+                    page=bbox.page,
+                    left=bbox.left,
+                    top=bbox.top,
+                    right=bbox.right,
+                    bottom=bbox.bottom,
+                )
+
+                # Assumes token density is the same across all lines
+                token_per_line = info.tokens_per_geom / line_cnt
+
+                if min_idx > box_start_idx:
+                    frac_lines = (min_idx - box_start_idx) / token_per_line
+                    top_line = math.floor(frac_lines)
+                    copy_box.top = bbox.spans[top_line].top
+
+                if max_idx < box_end_idx - 1:
+                    frac_lines = (box_end_idx - max_idx) / token_per_line
+                    bottom_line = line_cnt - math.ceil(frac_lines)
+                    copy_box.bottom = bbox.spans[bottom_line].bottom
+
+                boxes.append(copy_box)
+
+        # Add relevant chunk metadata
+        chunk_id = f"c_{idx}"
+        token_cnt = len(buffer_slice)
+        meta = {
+            "token_len": token_cnt
+        }
+
+        return Chunk(id=chunk_id, content=content, metadata=meta, geom=boxes)
 
     def _save(self, file_path: Path, result: ChunkingResult):
         """
