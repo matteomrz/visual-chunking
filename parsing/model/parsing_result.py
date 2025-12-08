@@ -28,7 +28,7 @@ class ParsingResultType(Enum):
     TABLE_CELL = "table_cell"  # An individual cell containing data within a table row.
 
     # MISCELLANEOUS
-    FOOTER = "footer"  # Repeating page footer (page numbers, copyright, etc.).
+    PAGE_FOOTER = "page_footer"  # Repeating page footer (page numbers, copyright, etc.).
     KEY_VALUE = "key_value"  # A specific key-value pair.
     PAGE_HEADER = "page_header"  # Repeating header found at the top of pages (e.g., journal name).
     KEY_VALUE_AREA = "key_value_area"  # A distinct region grouped by key-value pairs (e.g., article info).
@@ -47,6 +47,15 @@ class ParsingResultType(Enum):
                 return cls.UNKNOWN
             else:
                 return name
+
+
+class ParsingMetaData(Enum):
+    GUIDELINE_PATH = "file_path"
+    PARSER = "parsing_method"
+
+    # TIME
+    PARSING_TIME = "parsing_time"
+    TRANSFORMATION_TIME = "transformation_time"
 
 
 @dataclass
@@ -87,7 +96,7 @@ class ParsingBoundingBox:
             raise ValueError(f"Error: Invalid type in BoundingBox dictionary: {e}")
 
     def to_dict(self) -> dict:
-        """Serealize to dict."""
+        """Serialize to dict."""
         res: dict[str, float | int | list] = {
             "page": self.page,
             "l": self.left,
@@ -114,9 +123,10 @@ class ParsingResult:
     type: ParsingResultType | str
     content: str
     geom: list[ParsingBoundingBox]
-    image: str = None
+    parent: ParsingResult | None
     children: list[ParsingResult] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    image: str = None
 
     @classmethod
     def root(cls, metadata=None) -> ParsingResult:
@@ -129,11 +139,12 @@ class ParsingResult:
             type=ParsingResultType.ROOT,
             content="",
             geom=[],
+            parent=None,
             metadata=metadata,
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> ParsingResult:
+    def from_dict(cls, dictionary: dict, parent: ParsingResult = None) -> ParsingResult:
         """Deserialize from dict."""
         try:
             elem_id: str = dictionary["id"]
@@ -155,16 +166,17 @@ class ParsingResult:
             ParsingBoundingBox.from_dict(bbox) for bbox in geom
         ]
 
-        children_parsed = [cls.from_dict(child) for child in children]
+        children_parsed = [cls.from_dict(child, parent) for child in children]
 
         return cls(
             id=elem_id,
             type=parsing_type,
             content=content,
             geom=geom_parsed,
-            image=image,
-            metadata=metadata,
+            parent=parent,
             children=children_parsed,
+            metadata=metadata,
+            image=image,
         )
 
     def to_dict(self) -> dict[str, str | dict | list]:

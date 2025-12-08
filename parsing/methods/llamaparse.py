@@ -80,12 +80,14 @@ class LlamaParseParser(DocumentParser[JobResult]):
                     page=page_idx + 1, left=l, top=t, right=r, bottom=b
                 )
 
+                # Find out if the element is a header and at which level
                 lvl = element.get("lvl", -1)
                 transformed = ParsingResult(
                     id=f"p{page_idx}_{idx}",
                     type=type_label,
                     content=element.get("md", ""),
                     geom=[bbox],
+                    parent=None
                 )
 
                 if lvl > 0:
@@ -95,10 +97,13 @@ class LlamaParseParser(DocumentParser[JobResult]):
                         if index >= len(levels) or levels[index] is None:
                             levels.append(levels[-1])
 
-                    levels[-1].children.append(transformed)
+                    parent = levels[-1]
                     levels.append(transformed)
                 else:
-                    levels[-1].children.append(transformed)
+                    parent = levels[-1]
+
+                transformed.parent = parent
+                parent.children.append(transformed)
 
         return root
 

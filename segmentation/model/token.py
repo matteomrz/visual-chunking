@@ -9,7 +9,8 @@ class RichToken:
 
     element_id: str
     token_index: int
-    token: str
+    token: int
+    text: str
 
 
 @dataclass

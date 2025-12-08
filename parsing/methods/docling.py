@@ -52,7 +52,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         "TABLE_CELL": ParsingResultType.TABLE_CELL,
         # Miscellaneous
         "PAGE_HEADER": ParsingResultType.PAGE_HEADER,
-        "PAGE_FOOTER": ParsingResultType.FOOTER,
+        "PAGE_FOOTER": ParsingResultType.PAGE_FOOTER,
         "KEY_VALUE_AREA": ParsingResultType.KEY_VALUE_AREA,
         "FORM_AREA": ParsingResultType.FORM_AREA,
     }
@@ -101,7 +101,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
             item_type = self._get_element_type(item.label.name)
 
             transformed = ParsingResult(
-                id=item_id, content=item.name, type=item_type, geom=[]
+                id=item_id, content=item.name, type=item_type, geom=[], parent=res
             )
 
         # Handle DocItem
@@ -125,6 +125,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
                 id=item_id,
                 content=item_content,
                 type=item_type,
+                parent=res,
                 geom=[
                     _transform_b_box(prov.bbox, doc.pages[prov.page_no])
                     for prov in item.prov
@@ -146,9 +147,9 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
 
 def _transform_table(
-    transformed: ParsingResult, page: PageItem, grid: list[list[TableCell]]
+    table: ParsingResult, page: PageItem, grid: list[list[TableCell]]
 ):
-    parent_id = transformed.id
+    parent_id = table.id
 
     for idx, row in enumerate(grid):
         cell_results = []
@@ -179,6 +180,7 @@ def _transform_table(
                 type=ParsingResultType.TABLE_CELL,
                 content=cell.text,
                 geom=[box],
+                parent=None,
             )
 
             cell_results.append(cell_res)
@@ -191,10 +193,14 @@ def _transform_table(
             id=f"{parent_id}_{idx}",
             type=ParsingResultType.TABLE_ROW,
             content=" | ".join([c.content for c in cell_results]),
+            parent=table,
             children=cell_results,
             geom=[row_box],
         )
-        transformed.children.append(row_res)
+
+        for cell in cell_results:
+            cell.parent = row_res
+        table.children.append(row_res)
 
 
 def _transform_b_box(raw_b_box: BoundingBox, page: PageItem) -> ParsingBoundingBox:

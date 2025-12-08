@@ -78,6 +78,7 @@ class UnstructuredParser(DocumentParser[list[Element]]):
                 id=element.id,
                 content=element.text,
                 type=element.category,
+                parent=root,
                 geom=[b_box],
             )
 

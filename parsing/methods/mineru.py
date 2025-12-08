@@ -129,7 +129,11 @@ class MinerUParser(DocumentParser):
         b_box = _get_bounding_box(element, page, with_spans)
 
         result = ParsingResult(
-            id=f"{parsed_type}_{idx}", type=parsed_type, content=content, geom=[b_box]
+            id=f"{parsed_type}_{idx}",
+            type=parsed_type,
+            content=content,
+            geom=[b_box],
+            parent=parent,
         )
 
         parent.children.append(result)

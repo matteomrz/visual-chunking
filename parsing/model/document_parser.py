@@ -6,10 +6,10 @@ from tqdm import tqdm
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from parsing.model.options import ParserOptions
-from parsing.model.spans import add_span_boxes
+from parsing.scripts.postprocess import parse_post_process
 from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
-from parsing.model.parsing_result import ParsingResult, ParsingResultType
+from parsing.model.parsing_result import ParsingMetaData as PmD, ParsingResult, ParsingResultType
 from utils.create_dir import create_directory, get_directory
 
 # Raw output type of the PDF parsing method
@@ -23,8 +23,8 @@ def _set_time_meta(
     parsing_duration = parse - start
     transformation_duration = transformation - parse
     print(f"Parsing Time: {round(parsing_duration, 2)}s")
-    result.metadata["parsing_time"] = parsing_duration
-    result.metadata["transformation_time"] = transformation_duration
+    result.metadata[PmD.PARSING_TIME.value] = parsing_duration
+    result.metadata[PmD.TRANSFORMATION_TIME.value] = transformation_duration
 
 
 class DocumentParser(Protocol[T]):
@@ -173,6 +173,15 @@ class DocumentParser(Protocol[T]):
 
             create_annotation(src_path=file_path, parser=self.module)
 
+    def _set_meta(
+        self, result: ParsingResult, file_path: Path, start_time: float, parse_time: float,
+        transformation_time: float
+    ):
+        """Set the metadata for the ParsingResult."""
+        result.metadata[PmD.PARSER.value] = self.module.value
+        result.metadata[PmD.GUIDELINE_PATH.value] = str(file_path)
+        _set_time_meta(result, start_time, parse_time, transformation_time)
+
     def process_document(self, file_path: Path, options: dict = None):
         """
         Performs full parsing pipeline for a single document.
@@ -190,7 +199,7 @@ class DocumentParser(Protocol[T]):
             raise FileNotFoundError(f"Error: PDF not found: {file_path}")
 
         file_name = file_path.stem
-        print(f"Parsing {file_name} using {self.module.name}...")
+        print(f"Info: Parsing {file_name} using {self.module.name}...")
 
         start_time = time.time()
 
@@ -199,13 +208,14 @@ class DocumentParser(Protocol[T]):
 
         parse_time = time.time()
 
-        print("Transforming output...")
+        print("Info: Transforming output...")
         transformed_result = self._transform(raw_result)
         md_result = self._get_md(raw_result, file_path)
+        print("Success: Transformation completed")
 
         transformation_time = time.time()
-        _set_time_meta(transformed_result, start_time, parse_time, transformation_time)
-        add_span_boxes(file_path, transformed_result)
+        self._set_meta(transformed_result, file_path, start_time, parse_time, transformation_time)
+        parse_post_process(file_path, transformed_result)
 
         self._save_md(file_path, md_result)
         self._save_json(file_path, transformed_result)
