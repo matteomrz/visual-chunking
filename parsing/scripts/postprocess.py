@@ -11,15 +11,42 @@ unneeded_types = [
     ParsingResultType.PAGE_FOOTER,
     ParsingResultType.PAGE_HEADER,
     # MISC
-    ParsingResultType.FORM_AREA
+    ParsingResultType.FORM_AREA,
+]
+
+no_content_types = [
+    ParsingResultType.ROOT,
+    # FLOATING ITEMS
+    ParsingResultType.FIGURE,
+    ParsingResultType.TABLE,
+    # GROUP ITEMS
+    ParsingResultType.LIST,
+    ParsingResultType.REFERENCE_LIST
 ]
 
 
-def _filter_elements(result: ParsingResult):
-    for element in result.flatten():
-        if element.type in unneeded_types:
-            element.parent.children.remove(element)
+def _should_remove(element: ParsingResult) -> bool:
+    is_unneeded = element.type in unneeded_types
+    needs_content = element.type not in no_content_types
+    is_empty = needs_content and element.content.strip() == ""
+    return is_unneeded or is_empty
+
+
+def _filter_elements(result: ParsingResult) -> bool:
+    is_root = result.type == ParsingResultType.ROOT
+    if not is_root and _should_remove(result):
+        return False
+
+    filtered = []
+
+    for child in result.children:
+        if _filter_elements(child):
+            filtered.append(child)
+
+    result.children = filtered
+    return True
 
 
 def parse_post_process(file_path: Path, result: ParsingResult):
+    _filter_elements(result)
     add_span_boxes(file_path, result)

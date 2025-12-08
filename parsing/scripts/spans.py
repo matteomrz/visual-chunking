@@ -4,9 +4,21 @@ from pymupdf import TEXTFLAGS_DICT, TEXT_PRESERVE_IMAGES, pymupdf, Document
 from pymupdf.utils import get_text, get_textpage_ocr
 from tqdm import tqdm
 
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
 
 _pymupdf_flag = TEXTFLAGS_DICT & ~TEXT_PRESERVE_IMAGES
+
+# Types for which we don't need spans
+skip_types = [
+    # Spans for TABLE_CELL already sufficient / more accurate
+    ParsingResultType.TABLE,
+    ParsingResultType.TABLE_ROW,
+    # For now, no text from figures specifically needed
+    ParsingResultType.FIGURE,
+    # We don't want to split up title bounding boxes in our chunks
+    ParsingResultType.TITLE,
+    ParsingResultType.HEADER,
+]
 
 
 def add_span_boxes(file_path: Path, root: ParsingResult):
@@ -44,6 +56,9 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
     for child in element.children:
         _add_spans_to_element(child, pdf)
 
+    if element.type in skip_types:
+        return
+
     for bbox in element.geom:
         if not bbox.spans:
             page = pdf.load_page(bbox.page - 1)
@@ -61,11 +76,15 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             box_width = abs_right - abs_left
             box_height = abs_bottom - abs_top
 
-            is_narrow = box_width < width * 0.01
+            is_narrow = box_width < width * 0.02
             is_short = box_height < height * 0.01
-            if is_short or is_narrow:  # TODO: Find out when too small boxes cause a problem
-                print(f"Warning: Element Bounding Box is too small.\
-                Width: {round(box_width, 3)}, Height: {round(box_height, 3)}")
+            if is_short:
+                continue
+            elif is_narrow:  # TODO: Find out when too small boxes cause a problem
+                print(
+                    "Warning: Element Bounding Box is too small."
+                    f"Width: {round(box_width, 3)}, Height: {round(box_height, 3)}"
+                )
                 continue
 
             # Crop the PDF page to the dimensions of the element bounding box
