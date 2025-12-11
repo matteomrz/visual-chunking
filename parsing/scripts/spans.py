@@ -86,7 +86,7 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
                 continue
             elif is_narrow:  # TODO: Find out when too small boxes cause a problem
                 print(
-                    "Warning: Element Bounding Box is too small."
+                    "Warning: Element Bounding Box is too small. "
                     f"Width: {round(box_width, 3)}, Height: {round(box_height, 3)}"
                 )
                 continue
