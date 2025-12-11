@@ -41,8 +41,8 @@ class ParsingResultType(Enum):
     @classmethod
     def get_type(cls, name: str) -> ParsingResultType | str:
         try:
-            return cls[name]
-        except KeyError:
+            return cls(name)
+        except ValueError:
             if not name:
                 return cls.UNKNOWN
             else:

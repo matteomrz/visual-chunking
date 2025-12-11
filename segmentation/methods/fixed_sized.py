@@ -1,3 +1,5 @@
+from typing import Optional
+
 from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
 from segmentation.model.chunk import ChunkingResult
@@ -11,15 +13,21 @@ class FixedSizeChunker(DocumentChunker):
     max_tokens: int
     module = Chunkers.FIXED_SIZE
 
-    def __init__(self, options: dict = None):
-        if options:
-            self.max_tokens = options.get("max_tokens", 128)
-            self.overlap = options.get("overlap", 32)
-        else:
-            self.max_tokens = 128
-            self.overlap = 32
+    def __init__(self, max_tokens: Optional[int] = None, overlap: Optional[int] = None):
+        self.max_tokens = max_tokens if max_tokens else 128
+        self.overlap = overlap if overlap else 32
 
-    def _segment(self, document: ParsingResult, options: dict = None) -> ChunkingResult:
+    @classmethod
+    def from_options(cls, options: dict = None):
+        if options:
+            return cls(
+                max_tokens=options.get("max_tokens", None),
+                overlap=options.get("overlap", None),
+            )
+        else:
+            return cls()
+
+    def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         result = ChunkingResult(metadata=document.metadata)
 
         chunk_idx = 0
@@ -40,7 +48,7 @@ class FixedSizeChunker(DocumentChunker):
             while len(tokens) > self.max_tokens:
                 chunk_tokens = tokens[: self.max_tokens]
 
-                chunk = get_chunk(chunk_tokens, chunk_idx, elem_info)
+                chunk = get_chunk(chunk_tokens, chunk_idx, elem_info, with_geom)
                 result.chunks.append(chunk)
                 chunk_idx += 1
 
@@ -49,7 +57,7 @@ class FixedSizeChunker(DocumentChunker):
 
         # Handle trailing undersized chunk
         if tokens:
-            chunk = get_chunk(tokens, chunk_idx, elem_info)
+            chunk = get_chunk(tokens, chunk_idx, elem_info, with_geom)
             result.chunks.append(chunk)
 
         return result

@@ -44,7 +44,10 @@ def _open(file_path: Path) -> ParsingResult:
 
 
 def get_chunk(
-    buffer_slice: list[RichToken], idx: int, elem_info: dict[str, ElementInfo]
+    buffer_slice: list[RichToken],
+    idx: int,
+    elem_info: dict[str, ElementInfo],
+    with_geom: bool = True,
 ) -> Chunk:
     """
     Creates a Chunk object and adds additional metadata.
@@ -54,6 +57,7 @@ def get_chunk(
         buffer_slice: List of RichToken, containing information about token content and position
         idx: Index of the resulting Chunk, used for setting the Chunk's ``id`` field
         elem_info: Mapping from element id to ElementInfo, containing token length and bounding boxes
+        with_geom: Whether to extract a bounding box for the resulting Chunk (Default: True)
 
     Returns:
         Chunk object
@@ -62,58 +66,59 @@ def get_chunk(
     # List of tokenized text
     content = "".join([t.text for t in buffer_slice])
 
-    # Get the min and max token indices for each element that are included in the chunk
-    elem_ids = [(t.element_id, t.token_index) for t in buffer_slice]
-    elem_min_max = get_max_min(elem_ids)
-
     boxes = []
 
-    for elem_id, min_max in elem_min_max.items():
-        min_idx, max_idx = min_max
-        info = elem_info[elem_id]
+    if with_geom:
+        # Get the min and max token indices for each element that are included in the chunk
+        elem_ids = [(t.element_id, t.token_index) for t in buffer_slice]
+        elem_min_max = get_max_min(elem_ids)
 
-        if info.geom_count == 0:
-            continue
+        for elem_id, min_max in elem_min_max.items():
+            min_idx, max_idx = min_max
+            info = elem_info[elem_id]
 
-        for ind, bbox in enumerate(info.geom):
-            box_start_idx = ind * info.tokens_per_geom
-            box_end_idx = box_start_idx + info.tokens_per_geom
-            line_cnt = len(bbox.spans)
-
-            # Handle no bbox tokens are in the chunk
-            no_intersect = max_idx < box_start_idx or box_end_idx < min_idx
-            if no_intersect:
+            if info.geom_count == 0:
                 continue
 
-            # Handle all bbox tokens are in the chunk
-            full_intersect = min_idx <= box_start_idx and max_idx >= box_end_idx
-            if full_intersect or line_cnt < 2:
-                boxes.append(bbox)
-                continue
+            for ind, bbox in enumerate(info.geom):
+                box_start_idx = ind * info.tokens_per_geom
+                box_end_idx = box_start_idx + info.tokens_per_geom
+                line_cnt = len(bbox.spans)
 
-            # Handle some bbox tokens are in the chunk
-            copy_box = ParsingBoundingBox(
-                page=bbox.page,
-                left=bbox.left,
-                top=bbox.top,
-                right=bbox.right,
-                bottom=bbox.bottom,
-            )
+                # Handle no bbox tokens are in the chunk
+                no_intersect = max_idx < box_start_idx or box_end_idx < min_idx
+                if no_intersect:
+                    continue
 
-            # Assumes token density is the same across all lines
-            token_per_line = info.tokens_per_geom / line_cnt
+                # Handle all bbox tokens are in the chunk
+                full_intersect = min_idx <= box_start_idx and max_idx >= box_end_idx
+                if full_intersect or line_cnt < 2:
+                    boxes.append(bbox)
+                    continue
 
-            if min_idx > box_start_idx:
-                frac_lines = (min_idx - box_start_idx) / token_per_line
-                top_line = math.floor(frac_lines)
-                copy_box.top = bbox.spans[top_line].top
+                # Handle some bbox tokens are in the chunk
+                copy_box = ParsingBoundingBox(
+                    page=bbox.page,
+                    left=bbox.left,
+                    top=bbox.top,
+                    right=bbox.right,
+                    bottom=bbox.bottom,
+                )
 
-            if max_idx < box_end_idx:
-                frac_lines = (box_end_idx - max_idx) / token_per_line
-                bottom_line = line_cnt - math.ceil(frac_lines)
-                copy_box.bottom = bbox.spans[bottom_line].bottom
+                # Assumes token density is the same across all lines
+                token_per_line = info.tokens_per_geom / line_cnt
 
-            boxes.append(copy_box)
+                if min_idx > box_start_idx:
+                    frac_lines = (min_idx - box_start_idx) / token_per_line
+                    top_line = math.floor(frac_lines)
+                    copy_box.top = bbox.spans[top_line].top
+
+                if max_idx < box_end_idx:
+                    frac_lines = (box_end_idx - max_idx) / token_per_line
+                    bottom_line = line_cnt - math.ceil(frac_lines)
+                    copy_box.bottom = bbox.spans[bottom_line].bottom
+
+                boxes.append(copy_box)
 
     # Add relevant chunk metadata
     chunk_id = f"c_{idx}"
@@ -145,6 +150,9 @@ class DocumentChunker(Protocol):
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
     def _encode(self, element: ParsingResult) -> tuple[list[RichToken], ElementInfo]:
+        """
+        Transforms a ParsingResults into a list of Tokens and Information about token count and bounding boxes
+        """
         data = self.tokenizer(element.content, return_offsets_mapping=True)
         encoded = data.get("input_ids", [])
         offsets = data.get("offset_mapping", [])
@@ -154,7 +162,11 @@ class DocumentChunker(Protocol):
 
         drop_cnt = 0
         for idx in range(len(encoded)):
-            text_end = offsets[idx][1]
+            # Avoid dropping white-space at the end of the element -> Important for Chroma evaluation
+            if idx == len(encoded) - 1:
+                text_end = len(element.content)
+            else:
+                text_end = offsets[idx][1]
 
             if text_end <= text_start:
                 drop_cnt += 1
@@ -179,13 +191,13 @@ class DocumentChunker(Protocol):
     def dst_path(self) -> Path:
         return SEGMENTATION_OUTPUT_DIR / self.module.value
 
-    def _segment(self, document: ParsingResult, options: dict = None) -> ChunkingResult:
+    def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         """
         Segments the ParsingResult at the given file path
 
         Args:
             document: The input ParsingResult
-            options: A dictionary of method-specific options [optional]
+            with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
 
         Returns:
             ChunkingResult containing a list of the created chunks
@@ -208,33 +220,33 @@ class DocumentChunker(Protocol):
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
 
-    def process_document(self, file_path: Path, options: dict = None):
+    def process_document(self, file_path: Path, with_geom: bool = True):
         """
         Performs chunking for a single document.
 
         Args:
             file_path: Absolute path of the JSON file containing the bounding boxes
-            options: A dictionary of method-specific options [optional]
+            with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
         """
         document = _open(file_path)
         file_name = file_path.stem
         print(f"Chunking {file_name} using {self.module.name}...")
 
         start_time = time.time()
-        result = self._segment(document, options)
+        result = self.segment(document, with_geom)
 
         chunk_time = time.time() - start_time
         _add_metadata(result, chunk_time)
 
         self._save(file_path, result)
 
-    def process_batch(self, batch_name: str, options: dict = None):
+    def process_batch(self, batch_name: str, with_geom: bool = True):
         """
         Performs chunking for a batch of multiple documents.
 
         Args:
             batch_name: Name of the directory containing the JSON files of the bounding boxes
-            options: A dictionary of method-specific options [optional]
+            with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
 
         Raises:
             FileNotFoundError: If the batch directory is not found in ``src_path``
@@ -243,7 +255,7 @@ class DocumentChunker(Protocol):
 
         if batch_path.exists() and batch_path.is_dir():
             for file_path in batch_path.glob("*.json"):
-                self.process_document(file_path, options)
+                self.process_document(file_path, with_geom)
         else:
             raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
 

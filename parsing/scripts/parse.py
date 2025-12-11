@@ -10,7 +10,7 @@ from parsing.model.document_parser import DocumentParser
 from parsing.model.options import ParserOptions
 
 
-def _get_parser(parser_name: str, options: dict) -> DocumentParser[Any]:
+def _get_parser(parser_name: str) -> DocumentParser[Any]:
     match Parsers.get_parser(parser_name):
         case Parsers.LLAMA_PARSE:
             return LlamaParseParser()
@@ -38,7 +38,7 @@ def parse_pdf(
         ParserOptions.EXIST_OK: skip_existing,
     }
 
-    parser = _get_parser(parser_name, options)
+    parser = _get_parser(parser_name)
 
     if is_batch:
         parser.process_batch(src_name, options)

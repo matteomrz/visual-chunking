@@ -16,4 +16,9 @@ dependencies = [
     "llama-cloud-services>=0.6.73",
     "docling>=2.61.1",
     "mineru[core]>=2.6.4",
+    "chunking-evaluation",
+    "notebook>=7.5.0",
 ]
+
+[tool.uv.sources]
+chunking-evaluation = { git = "https://github.com/matteomrz/chunking_evaluation_fix.git" }

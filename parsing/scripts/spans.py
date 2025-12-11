@@ -1,7 +1,10 @@
 from pathlib import Path
 
 from pymupdf import TEXTFLAGS_DICT, TEXT_PRESERVE_IMAGES, pymupdf, Document
-from pymupdf.utils import get_text, get_textpage_ocr
+from pymupdf.utils import (
+    get_text,
+    # get_textpage_ocr
+)
 from tqdm import tqdm
 
 from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
@@ -79,6 +82,7 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             is_narrow = box_width < width * 0.02
             is_short = box_height < height * 0.01
             if is_short:
+                # Short boxes do not need spans added to them
                 continue
             elif is_narrow:  # TODO: Find out when too small boxes cause a problem
                 print(
@@ -91,10 +95,16 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             rect = pymupdf.Rect(abs_left, abs_top, abs_right, abs_bottom)
             page.set_cropbox(rect)
 
+            # Experimentally removed OCR textpage - Guidelines are all programmatic
             # Using lower dpi than 300 leads to scaling issues
-            tp = get_textpage_ocr(page, full=True, dpi=300)
+            # tp = get_textpage_ocr(page, full=True, dpi=300)
+
             text = get_text(
-                page, textpage=tp, option="dict", sort=True, flags=_pymupdf_flag
+                page,
+                # textpage=tp,
+                option="dict",
+                sort=True,
+                flags=_pymupdf_flag,
             )
 
             try:
