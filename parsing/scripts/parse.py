@@ -8,22 +8,7 @@ from parsing.methods.mineru import MinerUParser
 from parsing.methods.unstructured import UnstructuredParser
 from parsing.model.document_parser import DocumentParser
 from parsing.model.options import ParserOptions
-
-
-def _get_parser(parser_name: str) -> DocumentParser[Any]:
-    match Parsers.get_parser(parser_name):
-        case Parsers.LLAMA_PARSE:
-            return LlamaParseParser()
-        case Parsers.DOCLING:
-            return DoclingParser()
-        case Parsers.UNSTRUCTURED_IO:
-            return UnstructuredParser()
-        case Parsers.MINERU_PIPELINE:
-            return MinerUParser(use_vlm=False)
-        case Parsers.MINERU_VLM:
-            return MinerUParser(use_vlm=True)
-        case _:
-            raise ValueError(f'No DocumentParser specified for type "{parser_name}"')
+from parsing.scripts.get_parser import get_document_parser
 
 
 def parse_pdf(
@@ -38,7 +23,8 @@ def parse_pdf(
         ParserOptions.EXIST_OK: skip_existing,
     }
 
-    parser = _get_parser(parser_name)
+    parser_type = Parsers.get_parser_type(parser_name)
+    parser = get_document_parser(parser_type)
 
     if is_batch:
         parser.process_batch(src_name, options)

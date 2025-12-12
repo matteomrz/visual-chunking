@@ -130,7 +130,7 @@ def _annotate_file(json_path: Path, doc_path: Path) -> Document:
 
 def create_annotation(src_path: Path, parser: Parsers | str):
     if isinstance(parser, str):
-        parser = Parsers.get_parser(parser)
+        parser = Parsers.get_parser_type(parser)
 
     if not src_path.exists():
         raise ValueError(f"The source path does not exist: {src_path}")

@@ -17,6 +17,7 @@ from docling_core.types.doc import (
     GroupItem,
     NodeItem,
     PageItem,
+    SectionHeaderItem,
     TableCell,
     TableItem,
     TextItem,
@@ -28,6 +29,7 @@ from parsing.model.parsing_result import (
     ParsingBoundingBox,
     ParsingResult,
     ParsingResultType,
+    ParsingMetaData as PmD,
 )
 
 
@@ -48,6 +50,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         "PICTURE": ParsingResultType.FIGURE,
         "CAPTION": ParsingResultType.CAPTION,
         "TABLE": ParsingResultType.TABLE,
+        "DOCUMENT_INDEX": ParsingResultType.DOC_INDEX,
         "TABLE_ROW": ParsingResultType.TABLE_ROW,
         "TABLE_CELL": ParsingResultType.TABLE_CELL,
         # Miscellaneous
@@ -96,6 +99,9 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
         item_id = item.self_ref
 
+        # Additional metadata saved with the element
+        meta = {}
+
         # Handle GroupItem
         if isinstance(item, GroupItem):
             item_type = self._get_element_type(item.label.name)
@@ -110,6 +116,12 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
             # Handle TextItem
             if isinstance(item, TextItem):
+                if isinstance(item, SectionHeaderItem):
+                    level = item.level
+                    # Currently Docling only gives out Headers of Level 1
+                    # If this changes, we can use the header level to correct the
+                    # hierarchy during post-processing
+                    meta[PmD.HEADER_LEVEL.value] = level
                 item_content = item.text
 
             # Handle FloatingItem
@@ -126,6 +138,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
                 content=item_content,
                 type=item_type,
                 parent=res,
+                metadata=meta,
                 geom=[
                     _transform_b_box(prov.bbox, doc.pages[prov.page_no])
                     for prov in item.prov
@@ -161,6 +174,7 @@ def _transform_table(
         for cell in row:
             if not cell.bbox:
                 continue
+
             box = _transform_b_box(cell.bbox, page)
 
             x = cell.start_col_offset_idx

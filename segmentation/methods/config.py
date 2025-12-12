@@ -6,3 +6,7 @@ class Chunkers(Enum):
 
     FIXED_SIZE = "fixed_size"
     RECURSIVE = "recursive"
+
+    @classmethod
+    def get_chunker_type(cls, name: str):
+        return cls(name)

@@ -12,6 +12,7 @@ from parsing.model.document_parser import DocumentParser
 from parsing.model.parsing_result import (
     ParsingBoundingBox,
     ParsingResult,
+    ParsingMetaData as PmD,
 )
 
 
@@ -71,7 +72,7 @@ class LlamaParseParser(DocumentParser[JobResult]):
                     r = json_bbox.get("w", 0.0) / width + l
                     b = json_bbox.get("h", 0.0) / height + t
 
-                # Fix the wrongly rotated coordinates -- TODO: Different Angles?
+                # Fix the wrongly rotated coordinates -- TODO: Different Angles? Currently only 180 degrees
                 if page.get("originalOrientationAngle", 0) != 0:
                     l = 1 - r
                     t = 1 - b
@@ -81,29 +82,19 @@ class LlamaParseParser(DocumentParser[JobResult]):
                 )
 
                 # Find out if the element is a header and at which level
-                lvl = element.get("lvl", -1)
                 transformed = ParsingResult(
                     id=f"p{page_idx}_{idx}",
                     type=type_label,
                     content=element.get("md", ""),
                     geom=[bbox],
-                    parent=None
+                    parent=root,
                 )
 
+                lvl = element.get("lvl", -1)
                 if lvl > 0:
-                    while len(levels) > lvl:
-                        levels.pop()
-                    for index in range(lvl):
-                        if index >= len(levels) or levels[index] is None:
-                            levels.append(levels[-1])
+                    transformed.metadata[PmD.HEADER_LEVEL.value] = lvl
 
-                    parent = levels[-1]
-                    levels.append(transformed)
-                else:
-                    parent = levels[-1]
-
-                transformed.parent = parent
-                parent.children.append(transformed)
+                root.children.append(transformed)
 
         return root
 

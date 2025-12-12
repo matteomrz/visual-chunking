@@ -24,6 +24,7 @@ class ParsingResultType(Enum):
     CAPTION = "caption"  # Descriptive text immediately accompanying a table or figure.
     FIGURE = "image"  # Graphical elements, diagrams, or pictures.
     TABLE = "table"  # A container node for tabular data.
+    DOC_INDEX = "doc_index"  # A tabular node containing the TOC or other document information
     TABLE_ROW = "table_row"  # A horizontal row within a table.
     TABLE_CELL = "table_cell"  # An individual cell containing data within a table row.
 
@@ -39,14 +40,11 @@ class ParsingResultType(Enum):
     MISSING = "missing"  # Used when label mappings are absent [Debug].
 
     @classmethod
-    def get_type(cls, name: str) -> ParsingResultType | str:
+    def get_type(cls, name: str) -> ParsingResultType:
         try:
             return cls(name)
         except ValueError:
-            if not name:
-                return cls.UNKNOWN
-            else:
-                return name
+            return cls.UNKNOWN
 
 
 class ParsingMetaData(Enum):
@@ -56,6 +54,9 @@ class ParsingMetaData(Enum):
     # TIME
     PARSING_TIME = "parsing_time"
     TRANSFORMATION_TIME = "transformation_time"
+
+    # ELEMENT INFO
+    HEADER_LEVEL = "header_level"
 
 
 @dataclass
@@ -120,7 +121,7 @@ class ParsingResult:
     """
 
     id: str
-    type: ParsingResultType | str
+    type: ParsingResultType
     content: str
     geom: list[ParsingBoundingBox]
     parent: ParsingResult | None
