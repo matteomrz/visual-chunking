@@ -13,34 +13,24 @@ from segmentation.model.chunk import Chunk, ChunkingResult
 from segmentation.model.token import ElementInfo, RichToken
 from utils.create_dir import create_directory
 from utils.max_min import get_max_min
+from utils.open import open_parsing_result
 
 
-def _open(file_path: Path) -> ParsingResult:
+def add_element_delimiter(element: ParsingResult):
     """
-    Opens the JSON file of the ParsingResult.
-    Transforms it into a ParsingResult object.
-
-    Args:
-        file_path: The absolute path to the input ParsingResult JSON
-
-    Returns:
-        ParsingResult object
-
-    Raises:
-        KeyError, TypeError: If the JSON is malformed
-        FileNotFoundError: If the JSON file (``{file_name}.json``)
-                           is not found in ``src_path``
+    Adds textual delimiter to the element,
+    so that the final textual output has delimiters between the elements.
     """
-    file_name = file_path.name
-    if not (file_path.exists() and file_name and file_name.endswith(".json")):
-        raise FileNotFoundError(f"Error: Bounding Boxes not found: {file_path}")
+    delimiter = "\n\n"
+    if element.type == ParsingResultType.HEADER:
+        # Add \n to indicate new header
+        delimiter = "\n"
+    elif element.type == ParsingResultType.TABLE_CELL:
+        row = element.parent
+        if element in row.children[:-1]:
+            delimiter = " | "
 
-    with open(file_path, "r") as f:
-        document = json.load(f)
-        if not isinstance(document, dict):
-            raise ValueError(f"Error: Not a valid JSON scheme at {file_path}")
-
-        return ParsingResult.from_dict(document)
+    element.content += delimiter
 
 
 def get_chunk(
@@ -140,10 +130,9 @@ class DocumentChunker(Protocol):
 
     src_path: Path = BOUNDING_BOX_DIR
 
+    # Exclude Types with empty content, if any, their children will supply the content
     excluded_types: list[ParsingResultType] = [
-        ParsingResultType.TABLE,
         ParsingResultType.TABLE_ROW,
-        ParsingResultType.FIGURE,
     ]
 
     # Placeholder for now
@@ -153,6 +142,7 @@ class DocumentChunker(Protocol):
         """
         Transforms a ParsingResults into a list of Tokens and Information about token count and bounding boxes
         """
+        add_element_delimiter(element)
         data = self.tokenizer(element.content, return_offsets_mapping=True)
         encoded = data.get("input_ids", [])
         offsets = data.get("offset_mapping", [])
@@ -220,15 +210,18 @@ class DocumentChunker(Protocol):
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
 
-    def process_document(self, file_path: Path, with_geom: bool = True):
+    def process_document(self, file_path: Path, with_geom: bool = True) -> ChunkingResult:
         """
         Performs chunking for a single document.
 
         Args:
             file_path: Absolute path of the JSON file containing the bounding boxes
             with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
+
+        Returns:
+            Chunked document as ChunkingResult
         """
-        document = _open(file_path)
+        document = open_parsing_result(file_path)
         file_name = file_path.stem
         print(f"Chunking {file_name} using {self.module.name}...")
 
@@ -239,8 +232,9 @@ class DocumentChunker(Protocol):
         _add_metadata(result, chunk_time)
 
         self._save(file_path, result)
+        return result
 
-    def process_batch(self, batch_name: str, with_geom: bool = True):
+    def process_batch(self, batch_name: str, with_geom: bool = True) -> list[ChunkingResult]:
         """
         Performs chunking for a batch of multiple documents.
 
@@ -250,12 +244,20 @@ class DocumentChunker(Protocol):
 
         Raises:
             FileNotFoundError: If the batch directory is not found in ``src_path``
+
+        Returns:
+            List of ChunkingResults for each file in the batch
         """
         batch_path = self.src_path / batch_name
 
         if batch_path.exists() and batch_path.is_dir():
+            results = []
+
             for file_path in batch_path.glob("*.json"):
-                self.process_document(file_path, with_geom)
+                res = self.process_document(file_path, with_geom)
+                results.append(res)
+
+            return results
         else:
             raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
 

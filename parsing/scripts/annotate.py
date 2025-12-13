@@ -1,12 +1,11 @@
-import json
-
 from pathlib import Path
 
 from pymupdf import Document, Page, pymupdf
 
 from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, GUIDELINES_DIR
 from parsing.methods.config import Parsers
-from parsing.model.parsing_result import ParsingResultType
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from utils.open import open_parsing_result
 
 # If two methods produce the same output with different labels, the colors will still be identical
 # 19 colors from Tab20 color scheme (from matplotlib)
@@ -31,15 +30,16 @@ def _get_color(label: str):
     return color_mapping[label]
 
 
-def _draw_box(box: dict, page: Page, color: tuple, opacity: float = 1.0, fill: bool = False):
+def _draw_box(box: ParsingBoundingBox, page: Page, color: tuple, opacity: float = 1.0,
+              fill: bool = False):
     page_size = page.rect
     page_height = page_size.height
     page_width = page_size.width
 
-    l = box.get("l", 0.0) * page_width
-    t = box.get("t", 0.0) * page_height
-    r = box.get("r", 0.0) * page_width
-    b = box.get("b", 0.0) * page_height
+    l = box.left * page_width
+    t = box.top * page_height
+    r = box.right * page_width
+    b = box.bottom * page_height
 
     rect = pymupdf.Rect(l, t, r, b)
 
@@ -59,12 +59,12 @@ def _draw_box(box: dict, page: Page, color: tuple, opacity: float = 1.0, fill: b
     )
 
 
-def _draw_element(element: dict, doc: Document):
+def _draw_element(element: ParsingResult, doc: Document):
     loaded_idx = -1
     page = None
 
-    for box in element.get("geom", []):
-        page_idx = box.get("page", 1) - 1
+    for box in element.geom:
+        page_idx = box.page - 1
 
         if page_idx < 0 or page_idx >= doc.page_count:
             print(f"Warning: Malformed page number [{page_idx + 1}] in {str(box)}")
@@ -77,10 +77,10 @@ def _draw_element(element: dict, doc: Document):
         page_height = page_size.height
         page_width = page_size.width
 
-        l = box.get("l", 0.0) * page_width
-        t = box.get("t", 0.0) * page_height
+        l = box.left * page_width
+        t = box.top * page_height
 
-        label = element.get("type", ParsingResultType.UNKNOWN.value)
+        label = element.type.value
         color = _get_color(label)
 
         _draw_box(box, page, color)
@@ -93,39 +93,24 @@ def _draw_element(element: dict, doc: Document):
         )
 
         # Draw spans if available
-        for child in box.get("spans", []):
+        for child in box.spans:
             _draw_box(child, page, color, opacity=0.3, fill=True)
 
-    for child in element.get("children", []):
-        if isinstance(child, dict):
-            _draw_element(child, doc)
-        else:
-            print(f"Warning invalid child element of type: {type(child)}")
+    for child in element.children:
+        _draw_element(child, doc)
 
 
 def _annotate_file(json_path: Path, doc_path: Path) -> Document:
     if not doc_path.exists():
         raise ValueError(f"File not found: {doc_path}")
 
-    if not json_path.exists():
-        raise ValueError(f"File not found: {json_path}")
+    document = pymupdf.open(doc_path)
+    result = open_parsing_result(json_path)
 
-    with open(json_path) as j:
-        print(f"Creating Annotation for {doc_path.stem}")
-        annotations = json.load(j)
-        document = pymupdf.open(doc_path)
+    for elem in result.children:
+        _draw_element(elem, document)
 
-        if isinstance(annotations, dict):
-            for element in annotations.get("children", []):
-                if isinstance(element, dict):
-                    _draw_element(element, document)
-                else:
-                    print(f"Warning: invalid child element of type: {type(element)}")
-        else:
-            print(
-                f"Error: Invalid Parsing Output at: {json_path}. Expected: `dict`, Actual: `{type(annotations)}`")
-
-        return document
+    return document
 
 
 def create_annotation(src_path: Path, parser: Parsers | str):

@@ -11,6 +11,7 @@ from parsing.scripts.annotate import create_annotation
 from parsing.methods.config import Parsers
 from parsing.model.parsing_result import ParsingMetaData as PmD, ParsingResult, ParsingResultType
 from utils.create_dir import create_directory, get_directory
+from utils.open import open_parsing_result
 
 # Raw output type of the PDF parsing method
 T = TypeVar("T", default=dict)
@@ -112,16 +113,15 @@ class DocumentParser(Protocol[T]):
             Markdown representation of the initial document
         """
 
-    def _check_output_exists(self, file_path: Path) -> bool:
+    def _get_json_output_path(self, file_path: Path) -> Path:
         """
-        Checks if there already exists a JSON output for the given file.
+        Get the Path, where the final
 
         Args:
             file_path: The path of the original file
         """
         output_dir = get_directory(file_path, self.src_path, self.json_dst_path)
-        output_path = output_dir / f"{file_path.stem}.json"
-        return output_path.exists()
+        return output_dir / f"{file_path.stem}.json"
 
     def _save_md(self, file_path: Path, md: str):
         """
@@ -182,7 +182,7 @@ class DocumentParser(Protocol[T]):
         result.metadata[PmD.GUIDELINE_PATH.value] = str(file_path)
         _set_time_meta(result, start_time, parse_time, transformation_time)
 
-    def process_document(self, file_path: Path, options: dict = None):
+    def process_document(self, file_path: Path, options: dict = None) -> ParsingResult:
         """
         Performs full parsing pipeline for a single document.
 
@@ -192,6 +192,9 @@ class DocumentParser(Protocol[T]):
 
         Raises:
             FileNotFoundError: If there is no PDF file at the specified path
+
+        Returns:
+            Parsing Output as ParsingResult
         """
 
         file_name = file_path.name
@@ -221,7 +224,10 @@ class DocumentParser(Protocol[T]):
         self._save_json(file_path, transformed_result)
         self._annotate(file_path, options)
 
-    def process_batch(self, batch_name: str, options: dict[ParserOptions, Any] = None):
+        return transformed_result
+
+    def process_batch(self, batch_name: str, options: dict[ParserOptions, Any] = None) -> list[
+        ParsingResult]:
         """
         Performs full parsing pipeline for a batch of multiple documents.
 
@@ -232,15 +238,25 @@ class DocumentParser(Protocol[T]):
         Raises:
             FileNotFoundError: If the PDF file (`{file_name}.pdf`)
                                is not found in `src_path`.
+        Returns:
+            List of parsing outputs for the documents in the batch as ParsingResult
         """
         batch_path = self.src_path / batch_name
         skip_existing = options.get(ParserOptions.EXIST_OK, False)
 
         if batch_path.exists() and batch_path.is_dir():
+            results = []
+
             for file_path in tqdm(batch_path.glob("*.pdf")):
-                if skip_existing and self._check_output_exists(file_path):
+                output_path = self._get_json_output_path(file_path)
+                if skip_existing and output_path.exists():
                     print(f"Skipping Document: {file_path.stem}. Output JSON already exists.")
+                    res = open_parsing_result(output_path)
+                    results.append(res)
                 else:
-                    self.process_document(file_path, options)
+                    res = self.process_document(file_path, options)
+                    results.append(res)
+
+            return results
         else:
             raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")

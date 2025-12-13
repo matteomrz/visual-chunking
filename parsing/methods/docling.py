@@ -107,7 +107,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
             item_type = self._get_element_type(item.label.name)
 
             transformed = ParsingResult(
-                id=item_id, content=item.name, type=item_type, geom=[], parent=res
+                id=item_id, content='', type=item_type, geom=[], parent=res
             )
 
         # Handle DocItem

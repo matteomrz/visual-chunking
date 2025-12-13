@@ -1,12 +1,5 @@
-from typing import Any
-
 from config import GUIDELINES_DIR
-from parsing.methods.docling import DoclingParser
-from parsing.methods.llamaparse import LlamaParseParser
 from parsing.methods.config import Parsers
-from parsing.methods.mineru import MinerUParser
-from parsing.methods.unstructured import UnstructuredParser
-from parsing.model.document_parser import DocumentParser
 from parsing.model.options import ParserOptions
 from parsing.scripts.get_parser import get_document_parser
 

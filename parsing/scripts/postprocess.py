@@ -31,24 +31,24 @@ no_content_types = [
 ]
 
 
-def _should_remove(element: ParsingResult) -> bool:
+def _should_remove(element: ParsingResult, types_to_remove: list[ParsingResultType]) -> bool:
     """Checks whether an element should be removed."""
-    is_unneeded = element.type in unneeded_types
+    is_unneeded = element.type in types_to_remove
     needs_content = element.type not in no_content_types
     is_empty = needs_content and element.content.strip() == ""
     return is_unneeded or is_empty
 
 
-def _filter_elements(result: ParsingResult) -> bool:
+def _filter_elements(result: ParsingResult, types_to_remove: list[ParsingResultType]) -> bool:
     """Filter the parsed elements"""
     is_root = result.type == ParsingResultType.ROOT
-    if not is_root and _should_remove(result):
+    if not is_root and _should_remove(result, types_to_remove):
         return False
 
     filtered = []
 
     for child in result.children:
-        if _filter_elements(child):
+        if _filter_elements(child, types_to_remove):
             filtered.append(child)
 
     result.children = filtered
@@ -106,6 +106,6 @@ def parse_post_process(file_path: Path, result: ParsingResult):
         file_path: Path to the parsed PDF guideline
         result: Output from the DocumentParser
     """
-    _filter_elements(result)
+    _filter_elements(result, unneeded_types)
     _infer_hierarchy(result)
     add_span_boxes(file_path, result)

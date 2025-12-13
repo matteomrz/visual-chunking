@@ -167,18 +167,18 @@ class ParsingResult:
             ParsingBoundingBox.from_dict(bbox) for bbox in geom
         ]
 
-        children_parsed = [cls.from_dict(child, parent) for child in children]
-
-        return cls(
+        parsed = cls(
             id=elem_id,
             type=parsing_type,
             content=content,
             geom=geom_parsed,
             parent=parent,
-            children=children_parsed,
             metadata=metadata,
             image=image,
         )
+
+        parsed.children = [cls.from_dict(child, parsed) for child in children]
+        return parsed
 
     def to_dict(self) -> dict[str, str | dict | list]:
         """Serialize to dict."""
@@ -210,3 +210,15 @@ class ParsingResult:
         for child in self.children:
             yield child
             yield from child.flatten()
+
+    def __str__(self):
+        content = self.content
+        if content != "":
+            content += "\n\n"
+
+        # Table Row already contains all the contents of its children
+        if self.type != ParsingResultType.TABLE_ROW:
+            for child in self.children:
+                content += str(child)
+
+        return content

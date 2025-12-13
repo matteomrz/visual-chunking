@@ -48,7 +48,6 @@ class LlamaParseParser(DocumentParser[JobResult]):
         pages = json_result.get("pages", [])
 
         root = ParsingResult.root()
-        levels: list[ParsingResult | None] = [root]
 
         for page_idx, page in enumerate(pages):
             height = page.get("height", 0)

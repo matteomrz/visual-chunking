@@ -1,6 +1,6 @@
 from typing import Optional
 
-from parsing.model.parsing_result import ParsingResult, ParsingResultType
+from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
 from segmentation.model.chunk import ChunkingResult
 from segmentation.model.document_chunker import DocumentChunker, get_chunk
@@ -50,19 +50,6 @@ class RecursiveChunker(DocumentChunker):
 
             if len(elem_tokens) == 0:
                 continue
-
-            last_token = elem_tokens[-1]
-            if elem.type == ParsingResultType.HEADER:
-                # Add \n to indicate new header
-                last_token.text += header_limiter
-
-                if len(tokens) > 0:
-                    prev_token = tokens[-1]
-                    if not prev_token.text.endswith(header_limiter):
-                        prev_token.text += markers[1]
-            else:
-                # Add \n\n to indicate new element
-                last_token.text += markers[1]
 
             tokens.extend(elem_tokens)
 
