@@ -16,23 +16,6 @@ from utils.max_min import get_max_min
 from utils.open import open_parsing_result
 
 
-def add_element_delimiter(element: ParsingResult):
-    """
-    Adds textual delimiter to the element,
-    so that the final textual output has delimiters between the elements.
-    """
-    delimiter = "\n\n"
-    if element.type == ParsingResultType.HEADER:
-        # Add \n to indicate new header
-        delimiter = "\n"
-    elif element.type == ParsingResultType.TABLE_CELL:
-        row = element.parent
-        if element in row.children[:-1]:
-            delimiter = " | "
-
-    element.content += delimiter
-
-
 def get_chunk(
     buffer_slice: list[RichToken],
     idx: int,
@@ -142,7 +125,6 @@ class DocumentChunker(Protocol):
         """
         Transforms a ParsingResults into a list of Tokens and Information about token count and bounding boxes
         """
-        add_element_delimiter(element)
         data = self.tokenizer(element.content, return_offsets_mapping=True)
         encoded = data.get("input_ids", [])
         offsets = data.get("offset_mapping", [])

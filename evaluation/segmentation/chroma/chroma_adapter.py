@@ -12,12 +12,13 @@ from segmentation.model.document_chunker import DocumentChunker
 
 def _transform_to_parsing_result(text: str) -> ParsingResult:
     root = ParsingResult.root()
+    # The text in the general evaluation is just plain text with newlines in between
     elements = text.split("\n\n")
 
     for idx, elem in enumerate(elements):
         res = ParsingResult(
             id=f"text_{idx}",
-            content=f"{elem}\n\n",
+            content=elem,
             type=ParsingResultType.PARAGRAPH,
             parent=root,
             geom=[],
@@ -37,6 +38,16 @@ class ChromaChunker(BaseChunker):
 
     def __init__(self, chunker: DocumentChunker):
         self._inner_chunker = chunker
+
+    def get_info(self) -> dict:
+        info = {"method": self._inner_chunker.__class__.__name__}
+        if hasattr(self._inner_chunker, "max_tokens"):
+            info["max_tokens"] = self._inner_chunker.__getattribute__("max_tokens")
+
+        if hasattr(self._inner_chunker, "overlap"):
+            info["overlap"] = self._inner_chunker.__getattribute__("overlap")
+
+        return info
 
     def split_text(self, text: str) -> List[str]:
         doc = _transform_to_parsing_result(text)

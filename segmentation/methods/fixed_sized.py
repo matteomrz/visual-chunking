@@ -29,6 +29,7 @@ class FixedSizeChunker(DocumentChunker):
 
     def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         result = ChunkingResult(metadata=document.metadata)
+        document.add_delimiters()
 
         chunk_idx = 0
         tokens: list[RichToken] = []  # Token Queue

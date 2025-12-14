@@ -22,7 +22,7 @@ class RecursiveChunker(DocumentChunker):
 
     def __init__(self, max_tokens: Optional[int] = None, overlap: Optional[int] = None):
         self.max_tokens = max_tokens if max_tokens else 128
-        self.overlap = overlap if overlap else 32
+        self.overlap = overlap if overlap else 0
 
     @classmethod
     def from_options(cls, options: dict = None):
@@ -36,6 +36,7 @@ class RecursiveChunker(DocumentChunker):
 
     def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         result = ChunkingResult(metadata=document.metadata)
+        document.add_delimiters()
 
         chunk_idx = 0
         tokens: list[RichToken] = []  # Token Queue

@@ -212,13 +212,40 @@ class ParsingResult:
             yield from child.flatten()
 
     def __str__(self):
-        content = self.content
-        if content != "":
-            content += "\n\n"
+        content = self.content + self.get_delimiter()
 
         # Table Row already contains all the contents of its children
         if self.type != ParsingResultType.TABLE_ROW:
             for child in self.children:
                 content += str(child)
 
-        return content
+        return content.strip()
+
+    def add_delimiters(self):
+        """
+        Adds delimiters to the content of the ParsingResult.
+        Used as a preprocessing step for Chunking.
+        """
+        self.content += self.get_delimiter()
+        for child in self.children:
+            child.add_delimiters()
+
+    def get_delimiter(self) -> str:
+        """
+        Gets the appropriate delimiter for the ParsingResult.
+        Parents: "\n"
+        TableCells: " | "
+        Default: "\n\n"
+        """
+        delimiter = "\n\n"
+
+        if self.content == "":
+            delimiter = ""
+        elif self.type == ParsingResultType.TABLE_CELL:
+            row = self.parent
+            if self in row.children[:-1]:
+                delimiter = " | "
+        elif self.children:
+            delimiter = "\n"
+
+        return delimiter
