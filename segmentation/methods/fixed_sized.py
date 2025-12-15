@@ -3,7 +3,7 @@ from typing import Optional
 from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
 from segmentation.model.chunk import ChunkingResult
-from segmentation.model.document_chunker import DocumentChunker, get_chunk
+from segmentation.model.document_chunker import DocumentChunker
 from segmentation.model.token import ElementInfo, RichToken
 
 
@@ -14,18 +14,15 @@ class FixedSizeChunker(DocumentChunker):
     module = Chunkers.FIXED_SIZE
 
     def __init__(self, max_tokens: Optional[int] = None, overlap: Optional[int] = None):
-        self.max_tokens = max_tokens if max_tokens else 128
-        self.overlap = overlap if overlap else 32
+        self.max_tokens = max_tokens if max_tokens is not None else 128
+        self.overlap = overlap if overlap is not None else 32
 
     @classmethod
-    def from_options(cls, options: dict = None):
-        if options:
-            return cls(
-                max_tokens=options.get("max_tokens", None),
-                overlap=options.get("overlap", None),
-            )
-        else:
-            return cls()
+    def from_options(cls, options: dict):
+        return cls(
+            max_tokens=options.get("max_tokens", None),
+            overlap=options.get("overlap", None),
+        )
 
     def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         result = ChunkingResult(metadata=document.metadata)
@@ -49,7 +46,7 @@ class FixedSizeChunker(DocumentChunker):
             while len(tokens) > self.max_tokens:
                 chunk_tokens = tokens[: self.max_tokens]
 
-                chunk = get_chunk(chunk_tokens, chunk_idx, elem_info, with_geom)
+                chunk = self.get_chunk(chunk_tokens, chunk_idx, elem_info, with_geom)
                 result.chunks.append(chunk)
                 chunk_idx += 1
 
@@ -58,7 +55,7 @@ class FixedSizeChunker(DocumentChunker):
 
         # Handle trailing undersized chunk
         if tokens:
-            chunk = get_chunk(tokens, chunk_idx, elem_info, with_geom)
+            chunk = self.get_chunk(tokens, chunk_idx, elem_info, with_geom)
             result.chunks.append(chunk)
 
         return result

@@ -18,6 +18,8 @@ dependencies = [
     "mineru[core]>=2.6.4",
     "chunking-evaluation",
     "notebook>=7.5.0",
+    "sentence-transformers>=5.2.0",
+    "jupyter>=1.1.1",
 ]
 
 [tool.uv.sources]

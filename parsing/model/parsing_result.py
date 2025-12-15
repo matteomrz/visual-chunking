@@ -212,14 +212,18 @@ class ParsingResult:
             yield from child.flatten()
 
     def __str__(self):
+        return self._rstr().strip()
+
+    def _rstr(self):
+        """Recursively creates a string of the entire subtree."""
         content = self.content + self.get_delimiter()
 
         # Table Row already contains all the contents of its children
         if self.type != ParsingResultType.TABLE_ROW:
             for child in self.children:
-                content += str(child)
+                content += child._rstr()
 
-        return content.strip()
+        return content
 
     def add_delimiters(self):
         """
@@ -247,5 +251,8 @@ class ParsingResult:
                 delimiter = " | "
         elif self.children:
             delimiter = "\n"
+
+        if self.content.endswith(delimiter):
+            delimiter = ""
 
         return delimiter
