@@ -85,7 +85,7 @@ class DocumentParser(Protocol[T]):
             Corresponding ParsingResultType
         """
         if raw_type not in self.label_mapping.keys():
-            print(f"Warning: No mapping for label '{raw_type}' in {self.module}.")
+            print(f"Warning: No mapping for label '{raw_type}' in {self.module.name}.")
             return ParsingResultType.MISSING
 
         return self.label_mapping[raw_type]

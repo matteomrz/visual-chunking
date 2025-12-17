@@ -34,6 +34,7 @@ class ParsingResultType(Enum):
     PAGE_HEADER = "page_header"  # Repeating header found at the top of pages (e.g., journal name).
     KEY_VALUE_AREA = "key_value_area"  # A distinct region grouped by key-value pairs (e.g., article info).
     FORM_AREA = "form_area"  # A region indicating form content (e.g., text-fields).
+    FORMULA = "formula"  # A mathematical formula
 
     # FALLBACK
     UNKNOWN = "unknown"  # Used when the parser cannot determine the element type.

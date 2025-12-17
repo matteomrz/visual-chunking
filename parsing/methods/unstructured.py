@@ -6,7 +6,7 @@ from unstructured.staging.base import elements_to_md
 
 from parsing.methods.config import Parsers
 from parsing.model.document_parser import DocumentParser
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
 
 default_strat = "hi_res"
 valid_strats = ["auto", "hi_res", "fast", "ocr_only"]
@@ -14,6 +14,23 @@ valid_strats = ["auto", "hi_res", "fast", "ocr_only"]
 
 class UnstructuredParser(DocumentParser[list[Element]]):
     module = Parsers.UNSTRUCTURED_IO
+
+    label_mapping = {
+        # TEXT
+        "Title": ParsingResultType.HEADER,
+        "NarrativeText": ParsingResultType.PARAGRAPH,
+        # LIST
+        "ListItem": ParsingResultType.LIST_ITEM,
+        # FIGURES & TABLES
+        "FigureCaption": ParsingResultType.CAPTION,
+        "Image": ParsingResultType.FIGURE,
+        "Table": ParsingResultType.TABLE,
+        # MISC
+        "Formula": ParsingResultType.FORMULA,
+        "Footer": ParsingResultType.PAGE_FOOTER,
+        "Header": ParsingResultType.PAGE_HEADER,
+        "UncategorizedText": ParsingResultType.UNKNOWN,
+    }
 
     def _parse(self, file_path: Path, options=None) -> list[Element]:
         if not options:
@@ -74,10 +91,12 @@ class UnstructuredParser(DocumentParser[list[Element]]):
                 page=metadata.get("page_number", 0), left=l, top=t, right=r, bottom=b
             )
 
+            elem_type = self._get_element_type(element.category)
+
             transformed = ParsingResult(
                 id=element.id,
                 content=element.text,
-                type=element.category,
+                type=elem_type,
                 parent=root,
                 geom=[b_box],
             )

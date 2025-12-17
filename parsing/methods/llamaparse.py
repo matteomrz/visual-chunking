@@ -13,6 +13,7 @@ from parsing.model.parsing_result import (
     ParsingBoundingBox,
     ParsingResult,
     ParsingMetaData as PmD,
+    ParsingResultType,
 )
 
 
@@ -20,6 +21,12 @@ class LlamaParseParser(DocumentParser[JobResult]):
     """Uses the LlamaParse API for parsing PDF documents"""
 
     module = Parsers.LLAMA_PARSE
+
+    label_mapping = {
+        "heading": ParsingResultType.HEADER,
+        "text": ParsingResultType.PARAGRAPH,
+        "table": ParsingResultType.TABLE,
+    }
 
     def __init__(self):
         load_dotenv()
@@ -54,12 +61,14 @@ class LlamaParseParser(DocumentParser[JobResult]):
             width = page.get("width", 0)
             layout_elems = page.get("layout", [])
             for idx, element in enumerate(page.get("items", [])):
-                type_label = element.get("type", "Unknown")
+                raw_type = element.get("type", "Unknown")
+                type_label = self._get_element_type(raw_type)
 
                 # Use the values from the layout section -> way more accurate
-                l_elm = _find_first_and_remove(layout_elems, "type", type_label)
+                l_elm = _find_first_and_remove(layout_elems, "label", raw_type)
+
                 if l_elm:
-                    bbox = l_elm.get["bbox", {}]
+                    bbox = l_elm.get("bbox", {})
                     l = bbox.get("x", 0.0)
                     t = bbox.get("y", 0.0)
                     r = bbox.get("w", 0.0) + l
