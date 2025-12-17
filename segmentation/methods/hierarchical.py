@@ -1,8 +1,8 @@
-from typing import Any, Generator, Optional
+from math import floor
 
 from parsing.model.parsing_result import ParsingResult, ParsingResultType
 from segmentation.methods.config import Chunkers
-from segmentation.methods.recursive import find_rec_split
+from segmentation.methods.recursive import find_splits
 from segmentation.model.document_chunker import DocumentChunker
 from segmentation.model.token import RichToken
 
@@ -12,74 +12,92 @@ class HierarchicalChunker(DocumentChunker):
 
     module = Chunkers.HIERARCHICAL
 
-    def __init__(self, max_tokens: Optional[int] = None):
-        self.max_tokens = max_tokens if max_tokens else 128
+    max_tokens: int
+    # Limit how much of our chunk can be taken up by parent headers
+    max_parent_tokens: int
 
-    @classmethod
-    def from_options(cls, options: dict):
-        return cls(
-            max_tokens=options.get("max_tokens", None)
-        )
+    def __init__(self, **kwargs):
+        self.max_tokens = kwargs.get("max_tokens", 128)
+        self.max_parent_tokens = floor(self.max_tokens * 0.5)
 
-    @property
-    def min_content_tokens(self):
-        return self.max_tokens * 0.5
-
-    def _get_chunk_tokens(self, document: ParsingResult) -> Generator[list[RichToken], Any, None]:
+    def _get_chunk_tokens(self, document: ParsingResult):
         yield from self._get_from_element(document, [])
 
-    def _get_from_element(self, element: ParsingResult, parents: list[int]):
-        parent_cnt = sum(parents)
-
-        subtree_content = str(element)
-        subtree_content_cnt = self._get_token_count(subtree_content)
-
-        elem_tokens = self._encode(element)
-        elem_token_cnt = len(elem_tokens)
+    def _get_from_element(self, element: ParsingResult, parent_tokens: list[int]):
+        # While recursively iterating each element adds their token count to the end of parents
+        # This way we always know how many elements are above us and how much space they need
+        parent_cnt = sum(parent_tokens)
         max_content_tokens = self.max_tokens - parent_cnt
 
-        if subtree_content_cnt > max_content_tokens:
+        # subtree includes all the children of the element
+        # we always check if we have enough space to save the entire subtree
+        subtree = str(element)
+        subtree_cnt = self._get_token_count(subtree)
+
+        # elem_tokens only have the tokens of the element itself
+        elem_tokens = self._encode(element)
+        elem_token_cnt = len(elem_tokens)
+
+        if subtree_cnt > max_content_tokens:
             # Go down one step further in the tree to perform the split
             if element.children:
-                parents.append(elem_token_cnt)
+                parent_tokens.append(elem_token_cnt)
                 parent_cnt += elem_token_cnt
 
-                while self.max_tokens - parent_cnt < self.min_content_tokens:
-                    parent_cnt -= parents[0]
-                    parents.pop(0)
+                # If headers are too long, highest ones are removed
+                while self.max_tokens - parent_cnt < self.max_parent_tokens:
+                    parent_cnt -= parent_tokens[0]
+                    parent_tokens.pop(0)
 
-                children_res: list[list[RichToken]] = []
+                # Two children can be merged if they were not merged in a lower stage
+                # If a child was not split we keep it so we can merge the next child into it
+                prev_tokens: list[RichToken] = []
+
                 for child in element.children:
-                    c_res = self._get_from_element(child, parents[:])
-                    children_res.extend(c_res)
+                    iterator = self._get_from_element(child, parent_tokens[:])
 
-                # Find if there are any children which could be merged
-                # Merge if they were not split at a lower stage and their length is ok
-                i = 0
-                while i < len(children_res) - 1:
-                    c_1 = children_res[i]
-                    c_2 = children_res[i + 1]
+                    first_tokens = next(iterator)
 
-                    resulting_length = len(c_1) + len(c_2) + parent_cnt
-                    if resulting_length < self.max_tokens:
-                        c_1.extend(c_2)
-                        children_res.pop(i + 1)
+                    # If our iterator returns any more elements we know that our child was split
+                    for curr_tokens in iterator:
+                        # Previous child and current child can not be merged
+                        # Return tokens in the correct order
+
+                        # Tokens from previous child
+                        if prev_tokens:
+                            yield self._add_parent_tokens(prev_tokens, elem_tokens)
+                            prev_tokens = []
+
+                        # Tokens from current child
+                        if first_tokens:
+                            yield self._add_parent_tokens(first_tokens, elem_tokens)
+                            first_tokens = []
+
+                        yield self._add_parent_tokens(curr_tokens, elem_tokens)
+
+                    # Both the previous child and the current child were not split further
+                    if prev_tokens and first_tokens:
+                        resulting_length = len(prev_tokens) + len(first_tokens) + parent_cnt
+
+                        if resulting_length <= self.max_tokens:
+                            prev_tokens.extend(first_tokens)
+
+                        else:
+                            yield self._add_parent_tokens(prev_tokens, elem_tokens)
+                            prev_tokens = first_tokens
+
                     else:
-                        i += 1
+                        prev_tokens = first_tokens
 
-                for c_res in children_res:
-                    if len(c_res) + elem_token_cnt < self.max_tokens:
-                        c_res[0:0] = elem_tokens
-                    yield c_res
-
-            # Split the current Element content
+            # element is a leaf node -> split content itself
             else:
-                splits = find_rec_split(elem_tokens, max_content_tokens)
+                splits = find_splits(elem_tokens, max_content_tokens)
                 last_split = 0
                 for split in splits:
                     yield elem_tokens[last_split: split]
                     last_split = split
 
+        # subtree fits in the same chunk
         else:
             if element.type != ParsingResultType.TABLE_ROW:
                 for child in element.children:
@@ -87,3 +105,8 @@ class HierarchicalChunker(DocumentChunker):
                     elem_tokens.extend(child_tokens)
 
             yield elem_tokens
+
+    def _add_parent_tokens(self, child: list, parent: list) -> list:
+        if len(child) + len(parent) <= self.max_tokens:
+            child[0:0] = parent
+        return child

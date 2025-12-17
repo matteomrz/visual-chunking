@@ -115,7 +115,7 @@ class DocumentParser(Protocol[T]):
 
     def _get_json_output_path(self, file_path: Path) -> Path:
         """
-        Get the Path, where the final
+        Get the Path, where the final JSON will be saved.
 
         Args:
             file_path: The path of the original file
@@ -162,7 +162,7 @@ class DocumentParser(Protocol[T]):
     def _annotate(self, file_path: Path, options: dict = None):
         """
         Call drawing method if requested.
-        To request drawing, set options["draw"] = True
+        To request drawing, set options[ParserOptions.ANNOTATE] = True
 
         Args:
             file_path: The path of the input PDF file
