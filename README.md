@@ -25,11 +25,11 @@ uv sync
 
 ### General usage pattern
 
-All parsing and drawing workflows are orchestrated through `parsing/interface.py`. Invoke it via
+All parsing and drawing workflows are orchestrated through `lib/parsing/interface.py`. Invoke it via
 `uv run`:
 
 ```bash
-uv run python -m parsing.interface [options]
+uv run python -m lib.parsing.interface [options]
 ```
 
 **Key flags:**
@@ -46,13 +46,13 @@ uv run python -m parsing.interface [options]
 
 ```bash
 # Parse the default guideline with the default parser
-uv run python -m parsing.interface
+uv run python -m lib.parsing.interface
 
 # Parse a specific file with LlamaParse, then draw results
-uv run python -m parsing.interface -f example-guideline -p llamaparse -d
+uv run python -m lib.parsing.interface -f example-guideline -p llamaparse -d
 
 # Batch process every PDF in data/guidelines/pubLayNet/ without drawing
-uv run python -m parsing.interface -b pubLayNet
+uv run python -m lib.parsing.interface -b pubLayNet
 ```
 
 ### Parsing result schema
