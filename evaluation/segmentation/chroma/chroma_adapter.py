@@ -42,10 +42,10 @@ class ChromaChunker(BaseChunker):
     def get_info(self) -> dict:
         info = {"method": self._inner_chunker.__class__.__name__}
         if hasattr(self._inner_chunker, "max_tokens"):
-            info["max_tokens"] = self._inner_chunker.__getattribute__("max_tokens")
+            info["max_tokens"] = self._inner_chunker.max_tokens
 
         if hasattr(self._inner_chunker, "overlap"):
-            info["overlap"] = self._inner_chunker.__getattribute__("overlap")
+            info["overlap"] = self._inner_chunker.overlap
 
         return info
 

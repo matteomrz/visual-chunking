@@ -2,9 +2,8 @@ from typing import Optional
 
 from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
-from segmentation.model.chunk import ChunkingResult
 from segmentation.model.document_chunker import DocumentChunker
-from segmentation.model.token import ElementInfo, RichToken
+from segmentation.model.token import RichToken
 
 markers: list[str] = [
     "\n\n", "\n", ";", ".", ",", " ", ""
@@ -31,23 +30,14 @@ class RecursiveChunker(DocumentChunker):
             overlap=options.get("overlap", None),
         )
 
-    def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
-        result = ChunkingResult(metadata=document.metadata)
-        document.add_delimiters()
-
-        chunk_idx = 0
+    def _get_chunk_tokens(self, document: ParsingResult):
         tokens: list[RichToken] = []  # Token Queue
-        elem_info: dict[str, ElementInfo] = {}
 
         for elem in document.flatten():
             if elem.type in self.excluded_types:
                 continue
 
-            elem_tokens, info = self._encode(elem)
-            elem_info[elem.id] = info
-
-            if len(elem_tokens) == 0:
-                continue
+            elem_tokens = self._encode(elem)
 
             tokens.extend(elem_tokens)
 
@@ -57,22 +47,14 @@ class RecursiveChunker(DocumentChunker):
 
                 prev_split = 0
                 for split in splits:
-                    token_slice = tokens[prev_split:split]
-
-                    chunk = self.get_chunk(token_slice, chunk_idx, elem_info, with_geom)
-                    result.chunks.append(chunk)
-                    chunk_idx += 1
-
+                    yield tokens[prev_split:split]
                     prev_split = split
 
-                cutoff = prev_split - self.overlap
+                cutoff = max(0, prev_split - self.overlap)
                 tokens = tokens[cutoff:]
 
-        if len(tokens) > 0:
-            chunk = self.get_chunk(tokens, chunk_idx, elem_info, with_geom)
-            result.chunks.append(chunk)
-
-        return result
+        if tokens:
+            yield tokens
 
 
 def find_rec_split(
@@ -97,12 +79,13 @@ def find_rec_split(
     prev_distance = 0
     for split in splits:
         distance = split - prev_split
+
         if distance > max_tokens:
             token_slice = tokens[prev_split:split]
             new_start_idx = start_idx + prev_split
             lower = find_rec_split(token_slice, max_tokens, level + 1, new_start_idx)
             rec_splits.extend(lower)
-            prev_distance = lower[1] - lower[0]
+
         else:
             can_merge = distance + prev_distance <= max_tokens
             if prev_split > 0 and can_merge:
@@ -110,7 +93,8 @@ def find_rec_split(
                 distance += prev_distance
 
             rec_splits.append(start_idx + split)
-            prev_distance = distance
+
+        prev_distance = distance
         prev_split = split
 
     return rec_splits

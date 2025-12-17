@@ -2,9 +2,8 @@ from typing import Optional
 
 from parsing.model.parsing_result import ParsingResult
 from segmentation.methods.config import Chunkers
-from segmentation.model.chunk import ChunkingResult
 from segmentation.model.document_chunker import DocumentChunker
-from segmentation.model.token import ElementInfo, RichToken
+from segmentation.model.token import RichToken
 
 
 class FixedSizeChunker(DocumentChunker):
@@ -24,38 +23,20 @@ class FixedSizeChunker(DocumentChunker):
             overlap=options.get("overlap", None),
         )
 
-    def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
-        result = ChunkingResult(metadata=document.metadata)
-        document.add_delimiters()
-
-        chunk_idx = 0
-        tokens: list[RichToken] = []  # Token Queue
-        elem_info: dict[str, ElementInfo] = {}
-
+    def _get_chunk_tokens(self, document: ParsingResult):
+        tokens: list[RichToken] = []
         for elem in document.flatten():
             if elem.type in self.excluded_types:
                 continue
 
             # Get tokens and element info
-            elem_tokens, info = self._encode(elem)
-            elem_info[elem.id] = info
+            elem_tokens = self._encode(elem)
 
-            # Add tokens to the end of the token queue
             tokens.extend(elem_tokens)
 
             while len(tokens) > self.max_tokens:
-                chunk_tokens = tokens[: self.max_tokens]
-
-                chunk = self.get_chunk(chunk_tokens, chunk_idx, elem_info, with_geom)
-                result.chunks.append(chunk)
-                chunk_idx += 1
-
-                # Leave overlap tokens in the token queue
+                yield tokens[: self.max_tokens]
                 tokens = tokens[self.max_tokens - self.overlap:]
 
-        # Handle trailing undersized chunk
         if tokens:
-            chunk = self.get_chunk(tokens, chunk_idx, elem_info, with_geom)
-            result.chunks.append(chunk)
-
-        return result
+            yield tokens

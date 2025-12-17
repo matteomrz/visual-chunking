@@ -4,7 +4,7 @@ from pymupdf import Document, Page, pymupdf
 
 from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, GUIDELINES_DIR
 from parsing.methods.config import Parsers
-from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
 from utils.open import open_parsing_result
 
 # If two methods produce the same output with different labels, the colors will still be identical
