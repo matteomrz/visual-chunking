@@ -3,7 +3,7 @@ import argparse
 from config import DEFAULT_GUIDELINE, GUIDELINES_DIR
 from lib.parsing.scripts.annotate import create_annotation
 from lib.parsing.scripts.parse import parse_pdf
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 
 DEFAULT_PARSER = Parsers.default().value
 arg_parser = argparse.ArgumentParser()

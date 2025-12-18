@@ -7,7 +7,7 @@ from llama_cloud_services import LlamaParse
 from llama_cloud_services.parse import ResultType
 from llama_cloud_services.parse.types import JobResult
 
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import (
     ParsingBoundingBox,
@@ -23,7 +23,7 @@ class LlamaParseParser(DocumentParser[JobResult]):
     module = Parsers.LLAMA_PARSE
 
     label_mapping = {
-        "heading": ParsingResultType.HEADER,
+        "heading": ParsingResultType.SECTION_HEADER,
         "text": ParsingResultType.PARAGRAPH,
         "table": ParsingResultType.TABLE,
     }

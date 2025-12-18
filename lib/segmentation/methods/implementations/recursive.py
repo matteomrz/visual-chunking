@@ -1,5 +1,5 @@
 from lib.parsing.model.parsing_result import ParsingResult
-from lib.segmentation.methods.config import Chunkers
+from lib.segmentation.methods.chunkers import Chunkers
 from lib.segmentation.model.document_chunker import DocumentChunker
 from lib.segmentation.model.token import RichToken
 

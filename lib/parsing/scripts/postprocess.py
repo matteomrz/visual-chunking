@@ -72,7 +72,7 @@ def _infer_hierarchy(root: ParsingResult):
     children = [c for c in root.children]
 
     for child in children:
-        if child.type == ParsingResultType.HEADER:
+        if child.type == ParsingResultType.SECTION_HEADER:
             lvl = child.metadata.get(PmD.HEADER_LEVEL.value, 1)
 
             while len(level_headings) > lvl:

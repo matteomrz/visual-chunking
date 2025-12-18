@@ -24,7 +24,7 @@ from docling_core.types.doc import (
     TextItem,
 )
 
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import (
     ParsingBoundingBox,
@@ -44,7 +44,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
     label_mapping = {
         # Texts
         "TEXT": ParsingResultType.PARAGRAPH,
-        "SECTION_HEADER": ParsingResultType.HEADER,
+        "SECTION_HEADER": ParsingResultType.SECTION_HEADER,
         "FOOTNOTE": ParsingResultType.FOOTNOTE,
         # Lists
         "LIST": ParsingResultType.LIST,

@@ -11,7 +11,7 @@ class ParsingResultType(Enum):
     # TEXTS
     TITLE = "title"  # The specific main title of the document.
     PARAGRAPH = "text"  # Standard body text content.
-    HEADER = "header"  # Section headings or subheaders within the text body.
+    SECTION_HEADER = "section_header"  # Section headings or subheaders within the text body.
     FOOTNOTE = "footnote"  # Explanatory notes usually placed at the bottom of a page/text.
 
     # LISTS

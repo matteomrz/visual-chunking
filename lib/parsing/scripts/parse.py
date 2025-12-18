@@ -1,5 +1,5 @@
 from config import GUIDELINES_DIR
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.scripts.get_parser import get_document_parser
 

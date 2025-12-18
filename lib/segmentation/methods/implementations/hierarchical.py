@@ -1,8 +1,8 @@
 from math import floor
 
 from lib.parsing.model.parsing_result import ParsingResult, ParsingResultType
-from lib.segmentation.methods.config import Chunkers
-from lib.segmentation.methods.recursive import find_splits
+from lib.segmentation.methods.chunkers import Chunkers
+from lib.segmentation.methods.implementations.recursive import find_splits
 from lib.segmentation.model.document_chunker import DocumentChunker
 from lib.segmentation.model.token import RichToken
 

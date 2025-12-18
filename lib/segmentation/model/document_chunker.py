@@ -9,7 +9,7 @@ from transformers import AutoTokenizer
 
 from config import BOUNDING_BOX_DIR, SEGMENTATION_OUTPUT_DIR
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
-from lib.segmentation.methods.config import Chunkers
+from lib.segmentation.methods.chunkers import Chunkers
 from lib.segmentation.model.chunk import Chunk, ChunkingResult
 from lib.segmentation.model.token import RichToken
 from lib.utils.create_dir import create_directory

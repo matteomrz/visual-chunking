@@ -4,7 +4,7 @@ from pathlib import Path
 from pymupdf import Document, Page, pymupdf
 
 from config import ANNOTATED_DIR, BOUNDING_BOX_DIR, GUIDELINES_DIR
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult
 from lib.utils.open import open_parsing_result
 

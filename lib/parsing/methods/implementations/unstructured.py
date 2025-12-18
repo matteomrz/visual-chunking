@@ -5,7 +5,7 @@ from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
 from unstructured.staging.base import elements_to_md
 
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
 
@@ -20,7 +20,7 @@ class UnstructuredParser(DocumentParser[list[Element]]):
 
     label_mapping = {
         # TEXT
-        "Title": ParsingResultType.HEADER,
+        "Title": ParsingResultType.SECTION_HEADER,
         "NarrativeText": ParsingResultType.PARAGRAPH,
         # LIST
         "ListItem": ParsingResultType.LIST_ITEM,

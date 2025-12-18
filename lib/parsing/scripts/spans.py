@@ -23,7 +23,7 @@ skip_types = [
     ParsingResultType.FIGURE,
     # We don't want to split up title bounding boxes in our chunks
     ParsingResultType.TITLE,
-    ParsingResultType.HEADER,
+    ParsingResultType.SECTION_HEADER,
 ]
 
 
@@ -113,6 +113,22 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             try:
                 for block in text.get("blocks", []):
                     raw_lines = block.get("lines", [])
+
+                    # Sometimes spans which only have very small intersect with element get retrieved
+                    line_cnt = len(raw_lines)
+                    for idx in reversed(range(line_cnt)):
+                        line = raw_lines[idx]["bbox"]
+
+                        # Remove line if any side extends more than threshold pixels out of the bounding box
+                        threshold_pixels = 10
+                        if (
+                            line[0] < -threshold_pixels or
+                            line[1] < -threshold_pixels or
+                            line[2] > box_width + threshold_pixels or
+                            line[3] > box_height + threshold_pixels
+                        ):
+                            raw_lines.pop(idx)
+
                     lines = _merge_adjacent_spans(raw_lines)
 
                     for line in lines:

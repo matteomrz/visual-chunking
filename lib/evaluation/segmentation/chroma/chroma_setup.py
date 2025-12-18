@@ -6,7 +6,7 @@ from chunking_evaluation import SyntheticEvaluation
 from dotenv import load_dotenv
 
 from config import CONFIG_DIR, GUIDELINES_DIR
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.model.parsing_result import ParsingMetaData as PmD, ParsingResult
 from lib.parsing.scripts.get_parser import get_document_parser

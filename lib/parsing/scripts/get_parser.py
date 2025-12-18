@@ -1,10 +1,11 @@
 from typing import Any
 
-from lib.parsing.methods.config import Parsers
-from lib.parsing.methods.docling import DoclingParser
-from lib.parsing.methods.llamaparse import LlamaParseParser
-from lib.parsing.methods.mineru import MinerUParser
-from lib.parsing.methods.unstructured import UnstructuredParser
+from lib.parsing.methods.parsers import Parsers
+from lib.parsing.methods.implementations.docling import DoclingParser
+from lib.parsing.methods.implementations.llamaparse import LlamaParseParser
+from lib.parsing.methods.implementations.mineru import MinerUParser
+from lib.parsing.methods.implementations.unstructured import UnstructuredParser
+from lib.parsing.methods.vlm import VLMParser
 from lib.parsing.model.document_parser import DocumentParser
 
 
@@ -20,5 +21,7 @@ def get_document_parser(parser_type: Parsers) -> DocumentParser[Any]:
             return MinerUParser(use_vlm=False)
         case Parsers.MINERU_VLM:
             return MinerUParser(use_vlm=True)
+        case Parsers.VLM:
+            return VLMParser()
         case _:
             raise ValueError(f'No DocumentParser specified for type "{parser_type}"')

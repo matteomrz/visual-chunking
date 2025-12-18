@@ -9,7 +9,7 @@ from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.scripts.postprocess import parse_post_process
 from lib.parsing.scripts.annotate import create_annotation
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.parsing_result import ParsingMetaData as PmD, ParsingResult, \
     ParsingResultType
 from lib.utils.create_dir import create_directory, get_directory

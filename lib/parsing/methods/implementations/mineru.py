@@ -21,7 +21,7 @@ from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
 from mineru.data.data_reader_writer import FileBasedDataWriter
 from mineru.utils.enum_class import MakeMode
 
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import (
     ParsingBoundingBox,
@@ -38,7 +38,7 @@ class MinerUParser(DocumentParser):
     label_mapping = {
         # Texts
         "text": ParsingResultType.PARAGRAPH,
-        "title": ParsingResultType.HEADER,
+        "title": ParsingResultType.SECTION_HEADER,
         # Lists
         "list": ParsingResultType.LIST,
         "list_text": ParsingResultType.LIST,

@@ -5,7 +5,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 import pymupdf
 
 from config import CONFIG_DIR, GUIDELINES_DIR, PARSING_DIR
-from lib.parsing.methods.config import Parsers
+from lib.parsing.methods.parsers import Parsers
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
 omni_doc_name = "omni_doc_bench"
