@@ -46,7 +46,7 @@ Rules for Categorization:
 </bounding_boxes>
 
 <extraction_rules>
-- **Text Fidelity:** Extract text exactly as it appears.  Do not fix spelling or grammar. You MAY use any formatting that is available for a standard Markdown document.
+- **Text Fidelity:** Extract text EXACTLY as it appears.  Do NOT fix spelling or grammar. You MAY use any formatting that is available for a standard Markdown document.
 - **Character Escaping:** You MUST escape any special characters that can break the final JSON output.
 - **Reading Order:** Sort elements by natural human reading order.
 - **Special Formatting:**

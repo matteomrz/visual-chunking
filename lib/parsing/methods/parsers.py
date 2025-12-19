@@ -10,7 +10,6 @@ class Parsers(Enum):
     # PADDLEOCR = "paddle_ocr"
     MINERU_PIPELINE = "mineru_pipeline"
     MINERU_VLM = "mineru_vlm"
-    VLM = "vlm"
 
     @classmethod
     def default(cls):

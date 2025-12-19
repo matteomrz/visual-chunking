@@ -21,7 +21,5 @@ def get_document_parser(parser_type: Parsers) -> DocumentParser[Any]:
             return MinerUParser(use_vlm=False)
         case Parsers.MINERU_VLM:
             return MinerUParser(use_vlm=True)
-        case Parsers.VLM:
-            return VLMParser()
         case _:
             raise ValueError(f'No DocumentParser specified for type "{parser_type}"')
