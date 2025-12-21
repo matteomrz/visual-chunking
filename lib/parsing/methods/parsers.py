@@ -11,6 +11,7 @@ class Parsers(Enum):
     MINERU_PIPELINE = "mineru_pipeline"
     MINERU_VLM = "mineru_vlm"
     GEMINI = "gemini"
+    DOCUMENT_AI = "document_ai"
 
     @classmethod
     def default(cls):

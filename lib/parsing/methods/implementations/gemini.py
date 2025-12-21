@@ -10,6 +10,8 @@ from lib.utils.pdf_to_page_img import pdf_to_page_img_bytes
 
 
 class GeminiParser(VLMParser):
+    """Uses Google's Gemini Model for Document Parsing."""
+
     module = Parsers.GEMINI
 
     client: genai.Client
