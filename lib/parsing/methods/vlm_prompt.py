@@ -18,7 +18,7 @@ _categories = [
 
 _category_strings = [t.value for t in _categories]
 
-VLM_PROMPT = f"""
+_VLM_PROMPT = f"""
 <system_role>
 You are an expert Document Layout Analysis AI. Your goal is to perfectly transcribe and segment PDF documents into structured data.
 </system_role>
@@ -42,7 +42,7 @@ Rules for Categorization:
 2. **Success conditions:** 
 - The bounding box MUST enclose the entire layout element while minimizing unnecessary white space.
 - If a character belongs to the content ALL of its pixels MUST BE CONTAINED inside the bounding box.
-3. **Page Index:** The first page is "page_number": 1.
+3. **Page Index:** {{PAGE_INDEX_TEXT}}
 </bounding_boxes>
 
 <extraction_rules>
@@ -77,5 +77,12 @@ YOU MUST ENSURE THAT YOUR OUTPUT IS A VALID JSON OBJECT!
 </output_schema>
 """
 
-if __name__ == "__main__":
-    print(VLM_PROMPT)
+
+def get_vlm_prompt() -> str:
+    page_index_text = 'The first page is "page_number": 1.'
+    return _VLM_PROMPT.replace("{{PAGE_INDEX_TEXT}}", page_index_text)
+
+
+def get_prompt_for_page_wise(page: int) -> str:
+    page_index_text = f'The current page is "page_number": {page}.'
+    return _VLM_PROMPT.replace("{{PAGE_INDEX_TEXT}}", page_index_text)

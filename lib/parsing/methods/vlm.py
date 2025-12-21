@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import Protocol
 
-from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import (
     ParsingBoundingBox,
