@@ -1,6 +1,6 @@
 import logging
+from abc import ABC
 from pathlib import Path
-from typing import Protocol
 
 from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.parsing_result import (
@@ -18,7 +18,7 @@ md_filter_types = [
 ]
 
 
-class VLMParser(DocumentParser, Protocol):
+class VLMParser(DocumentParser, ABC):
     """Base class that uses a single-stage VLM for document parsing."""
 
     label_mapping = {

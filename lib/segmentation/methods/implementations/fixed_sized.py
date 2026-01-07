@@ -13,7 +13,7 @@ class FixedSizeChunker(DocumentChunker):
     overlap: int
 
     def __init__(self, **kwargs):
-        self.max_tokens = kwargs.get("max_tokens", 128)
+        super().__init__(**kwargs)
         self.overlap = kwargs.get("overlap", 32)
 
     def _get_chunk_tokens(self, document: ParsingResult):

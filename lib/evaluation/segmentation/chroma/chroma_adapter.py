@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from chunking_evaluation import BaseChunker
 
@@ -42,8 +42,8 @@ class ChromaChunker(BaseChunker):
     def __init__(self, chunker: DocumentChunker):
         self._inner_chunker = chunker
 
-    def get_info(self) -> dict:
-        info = {"method": self._inner_chunker.__class__.__name__}
+    def get_info(self) -> dict[str, Any]:
+        info: dict[str, Any] = {"method": self._inner_chunker.__class__.__name__}
         if hasattr(self._inner_chunker, "max_tokens"):
             info["max_tokens"] = self._inner_chunker.max_tokens
 

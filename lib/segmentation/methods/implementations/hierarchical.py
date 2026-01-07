@@ -17,6 +17,7 @@ class HierarchicalChunker(DocumentChunker):
     max_parent_tokens: int
 
     def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.max_tokens = kwargs.get("max_tokens", 128)
         self.max_parent_tokens = floor(self.max_tokens * 0.5)
 

@@ -50,6 +50,7 @@ class ParsingResultType(Enum):
 
 class ParsingMetaData(Enum):
     GUIDELINE_PATH = "file_path"
+    JSON_PATH = "json_path"
     PARSER = "parsing_method"
 
     # TIME
@@ -74,6 +75,16 @@ class ParsingBoundingBox:
     right: float
     bottom: float
     spans: list[ParsingBoundingBox] = field(default_factory=list)
+
+    @classmethod
+    def origin(cls) -> ParsingBoundingBox:
+        return cls(
+            page=1,
+            left=0,
+            top=0,
+            right=0,
+            bottom=0
+        )
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> ParsingBoundingBox:

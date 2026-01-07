@@ -7,6 +7,7 @@ class Chunkers(Enum):
     FIXED_SIZE = "fixed_size"
     RECURSIVE = "recursive"
     HIERARCHICAL = "hierarchical"
+    SEMANTIC = "semantic"
 
     @classmethod
     def get_chunker_type(cls, name: str):

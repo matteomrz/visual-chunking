@@ -1,8 +1,9 @@
 import json
 import logging
 import time
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Protocol, TypeVar
+from typing import Any, Generic, TypeVar
 from tqdm import tqdm
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
@@ -32,7 +33,7 @@ def _set_time_meta(
     result.metadata[PmD.TRANSFORMATION_TIME.value] = transformation_duration
 
 
-class DocumentParser(Protocol[T]):
+class DocumentParser(ABC, Generic[T]):
     """
     Standard Interface for a PDF Document Parser.
     Transforms a PDF file into a structured JSON format.
@@ -65,6 +66,7 @@ class DocumentParser(Protocol[T]):
             with_file=True,
         )
 
+    @abstractmethod
     def _parse(self, file_path: Path, options: dict = None) -> T:
         """
         Parses the document at the given file path.
@@ -94,6 +96,7 @@ class DocumentParser(Protocol[T]):
 
         return self.label_mapping[raw_type]
 
+    @abstractmethod
     def _transform(self, raw_result: T) -> ParsingResult:
         """
         Transforms the raw parser output into a ParsingResult object.
@@ -105,6 +108,7 @@ class DocumentParser(Protocol[T]):
             ParsingResult representation of the initial document
         """
 
+    @abstractmethod
     def _get_md(self, raw_result: T, file_path: Path) -> str:
         """
         Get the model output in Markdown format.
@@ -158,6 +162,8 @@ class DocumentParser(Protocol[T]):
         """
         output_dir = create_directory(file_path, self.src_path, self.json_dst_path)
         output_path = output_dir / f"{file_path.stem}.json"
+
+        result.metadata[PmD.JSON_PATH.value] = str(output_path)
 
         with open(output_path, "w") as f:
             json.dump(result.to_dict(), f, indent=2)
@@ -246,7 +252,7 @@ class DocumentParser(Protocol[T]):
             List of parsing outputs for the documents in the batch as ParsingResult
         """
         batch_path = self.src_path / batch_name
-        skip_existing = options.get(ParserOptions.EXIST_OK, False)
+        skip_existing = options.get(ParserOptions.EXIST_OK, False) if options else False
 
         if batch_path.exists() and batch_path.is_dir():
             results = []

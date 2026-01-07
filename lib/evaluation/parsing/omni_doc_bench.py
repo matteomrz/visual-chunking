@@ -131,7 +131,7 @@ def create_config_files(exist_ok: bool = False):
         p_name = parser.value
         p_path = output_dir / f"{p_name}.yaml"
         if exist_ok and p_path.exists():
-            logger.info(f"Skipping existing config file for method: {p_name}")
+            logger.debug(f"Skipping existing config file for method: {p_name}")
             continue
 
         p_content = template.replace("{{method_name}}", p_name)

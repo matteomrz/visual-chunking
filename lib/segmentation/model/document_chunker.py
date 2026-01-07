@@ -2,8 +2,9 @@ import json
 import logging
 import math
 import time
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generator, Protocol
+from typing import Any, Generator
 
 from transformers import AutoTokenizer
 
@@ -104,7 +105,7 @@ def get_chunk(
     return Chunk(id=chunk_id, content=content, metadata=meta, geom=boxes)
 
 
-class DocumentChunker(Protocol):
+class DocumentChunker(ABC):
     """
     Standard Interface for a Document Chunker.
     Transforms a ParsingResult into a ChunkingResult.
@@ -121,6 +122,11 @@ class DocumentChunker(Protocol):
 
     # Placeholder for now
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
+    max_tokens: int
+
+    def __init__(self, **kwargs):
+        self.max_tokens = kwargs.get("max_tokens", 128)
 
     def _encode(self, element: ParsingResult) -> list[RichToken]:
         """
@@ -167,6 +173,7 @@ class DocumentChunker(Protocol):
     def dst_path(self) -> Path:
         return SEGMENTATION_OUTPUT_DIR / self.module.value
 
+    @abstractmethod
     def _get_chunk_tokens(self, document: ParsingResult) -> Generator[list[RichToken], Any, None]:
         """
         Splits up a document into lists of RichTokens.

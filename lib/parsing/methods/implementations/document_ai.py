@@ -7,7 +7,7 @@ from google.cloud import documentai_v1 as document_ai
 from google.cloud.documentai_v1 import Document
 
 from lib.parsing.methods.parsers import Parsers
-from lib.parsing.model.document_parser import DocumentParser
+from lib.parsing.model.document_parser import DocumentParser, T
 from lib.parsing.model.parsing_result import ParsingResult
 
 PDF_MIME_TYPE = "application/pdf"
@@ -50,3 +50,7 @@ class DocumentAIParser(DocumentParser[Document]):
 
     def _get_md(self, raw_result: Document, file_path: Path) -> str:
         return raw_result.text
+
+    # TODO: Implement Transformation
+    def _transform(self, raw_result: T) -> ParsingResult:
+        return ParsingResult.root()
