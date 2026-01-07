@@ -6,7 +6,6 @@ from pymupdf.utils import (
     get_text,
     # get_textpage_ocr
 )
-from tqdm import tqdm
 
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
 
@@ -45,11 +44,10 @@ def add_span_boxes(file_path: Path, root: ParsingResult):
     doc = pymupdf.open(file_path)
     logger.info(f"Adding span-level bounding boxes for: {file_path.stem}")
 
-    for child in tqdm(root.children):
+    for child in root.children:
         _add_spans_to_element(child, doc)
 
 
-# TODO: Add filtering for element types (Don't do it for figures...)
 def _add_spans_to_element(element: ParsingResult, pdf: Document):
     """
     Recursively extracts text spans using PyMuPDF from a PDF page cropped to the elements bounding boxes.

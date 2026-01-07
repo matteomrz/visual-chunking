@@ -4,7 +4,6 @@ import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, TypeVar
-from tqdm import tqdm
 
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from lib.parsing.model.options import ParserOptions
@@ -257,7 +256,7 @@ class DocumentParser(ABC, Generic[T]):
         if batch_path.exists() and batch_path.is_dir():
             results = []
 
-            for file_path in tqdm(batch_path.glob("*.pdf")):
+            for file_path in batch_path.glob("*.pdf"):
                 output_path = self._get_json_output_path(file_path)
                 if skip_existing and output_path.exists():
                     logger.info(f"Skipping Document: {file_path.stem}. Output JSON already exists.")
