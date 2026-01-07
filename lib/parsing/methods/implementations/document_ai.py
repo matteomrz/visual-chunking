@@ -41,8 +41,13 @@ class DocumentAIParser(DocumentParser[Document]):
         with open(file_path, "rb") as f:
             file_bytes = f.read()
 
-        raw_doc = document_ai.RawDocument(content=file_bytes, mime_type=PDF_MIME_TYPE)
-        request = document_ai.ProcessRequest(name=self.processor_path, raw_docuemnt=raw_doc)
+        raw_doc = document_ai.RawDocument()
+        raw_doc.content = file_bytes
+        raw_doc.mime_type = PDF_MIME_TYPE
+
+        request = document_ai.ProcessRequest()
+        request.name = self.processor_path
+        request.raw_document = raw_doc
 
         response = self.client.process_document(request)
 
