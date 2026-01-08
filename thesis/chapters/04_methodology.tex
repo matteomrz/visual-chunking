@@ -1,0 +1,39 @@
+% !Tex root = ../main.tex
+
+\chapter{Methodology}\label{chapter:methodology}
+
+\section{Pipeline Architecture}
+
+\section{Data Formats}
+
+\subsection{ParsingResult}
+
+\subsection{ChunkingResult}
+
+\section{Pipeline Functionality}
+
+\begin{itemize}
+\item Take PDF guideline document
+\item Transform into ParsingResult
+\item Create annotated documents showing the recognized elements
+\item Save ParsingResult and Markdown for evaluations
+\item Schedule Chunking
+\item Save output chunks
+\end{itemize}
+
+\section{Parsing Module}
+
+Give an overview over the different available parsing methods and the ParsingResult Datatype (the tree structure)
+
+\begin{itemize}
+\item Available methods
+\item Post-Processing: What steps are performed? Element Type filtering, adding spans to the output, Aggregating tables into rows?...
+\end{itemize}
+
+\section{Chunking Module}
+
+\begin{itemize}
+\item Embedding Module used
+\item Novelty: Retaining bounding boxes during chunking
+\item Available Chunking Methods
+\end{itemize}
