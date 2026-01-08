@@ -27,7 +27,7 @@ dependencies = [
     "docling-core>=2.57.0",
     "nltk>=3.9.2",
     "transformers>=4.57.3",
-    "faster-coco-eval",
+    "faster-coco-eval>=1.7.1",
 ]
 
 [dependency-groups]
@@ -39,7 +39,6 @@ dev = [
 
 [tool.uv.sources]
 chunking-evaluation = { git = "https://github.com/matteomrz/chunking_evaluation_fix.git" }
-faster-coco-eval = { git = "https://github.com/matteomrz/faster_coco_eval_fix.git", branch = "fix_extended_metrics" }
 
 [tool.deptry.package_module_name_map]
 pyyaml = "yaml"

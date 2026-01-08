@@ -1299,10 +1299,18 @@ wheels = [
 
 [[package]]
 name = "faster-coco-eval"
-version = "1.7.0"
-source = { git = "https://github.com/matteomrz/faster_coco_eval_fix.git?branch=fix_extended_metrics#b687db1615a1b56e945f9b77674626eb97697fb2" }
+version = "1.7.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/ce/8f754b094e38e3d4f7edccbe186aeb7bc0d1ecf3324aa9c796432e0a90e5/faster_coco_eval-1.7.1.tar.gz", hash = "sha256:23d470688ffdb3956ddf23bb22f401d8eb765d51df8afc156bf0d9cf9e58d8ea", size = 94267, upload-time = "2026-01-07T23:46:39.564Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/ca/7e098f6efeb954304f77607dba7215c4ced7d3b7ac647c956ff0581a679f/faster_coco_eval-1.7.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:27bf702cf1688eaf4c86c94cbf958e701d1abe6d7c68d8c1c2775a6823936b02", size = 355026, upload-time = "2026-01-07T23:46:20.793Z" },
+    { url = "https://files.pythonhosted.org/packages/91/eb/e352e13e8db9f48ff9315cbaaba28483444590a2cc5fb38bef5e36314427/faster_coco_eval-1.7.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e4bc401eb86939a0a9eac65f74eec60e8a86976c52b59c4ada85661d3a8b8173", size = 580957, upload-time = "2026-01-07T23:46:22.14Z" },
+    { url = "https://files.pythonhosted.org/packages/37/55/2ad05a79b2315c16ec71ea98133f1c5c32b5b8bf2ea4b29ccdedb547e3c6/faster_coco_eval-1.7.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6997f99ada4fa3895f86fd16ab7be0e974e97501a580f5216ff3e8f3a924df7d", size = 585379, upload-time = "2026-01-07T23:46:23.425Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/51/fb5a14d4c870df204148f33fd9b8bb9b9210e5ef79f9c8f7c1cce90027bd/faster_coco_eval-1.7.1-cp313-cp313-win_amd64.whl", hash = "sha256:2a6597da854333532b2566f62090cb78631c366763123b34d68b358e57dfdcb3", size = 321365, upload-time = "2026-01-07T23:46:24.548Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/14/4acf6d1daef79cf02c674d7d6047e44426db2ae7b831adda6eadbf49bf72/faster_coco_eval-1.7.1-cp313-cp313-win_arm64.whl", hash = "sha256:17641ba8c9cdbb4f28a3a25bf4c7e30f8524a707b6dfe011b98eac22b7d952be", size = 314489, upload-time = "2026-01-07T23:46:25.932Z" },
 ]
 
 [[package]]
@@ -6737,7 +6745,7 @@ requires-dist = [
     { name = "datasets", specifier = ">=4.4.2" },
     { name = "docling", specifier = ">=2.61.1" },
     { name = "docling-core", specifier = ">=2.57.0" },
-    { name = "faster-coco-eval", git = "https://github.com/matteomrz/faster_coco_eval_fix.git?branch=fix_extended_metrics" },
+    { name = "faster-coco-eval", specifier = ">=1.7.1" },
     { name = "google-cloud-documentai", specifier = ">=3.7.0" },
     { name = "google-genai", specifier = ">=1.56.0" },
     { name = "huggingface-hub", specifier = ">=0.36.0" },
