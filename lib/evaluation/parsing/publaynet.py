@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from pandas import Series
 from PIL.Image import Image
 from datasets import load_dataset
 from faster_coco_eval import COCO, COCOeval_faster
@@ -44,7 +45,7 @@ PUBLAYNET_CATEGORIES = {
 }
 
 
-def create_publaynet_gt(max_items: int = 200):
+def create_publaynet_gt(max_items: int = 200, exist_ok: bool = False):
     """
     Creates the ground truth file for the COCO Evaluation of PubLayNet.
     The ground truth must follow the format from: https://cocodataset.org/#format-data
@@ -52,7 +53,25 @@ def create_publaynet_gt(max_items: int = 200):
     Args:
         max_items: How many rows from the dataset should be included for the evaluation.
         Set to <=0 to include all. Default: 200.
+        exist_ok: Skip creating the ground truth file if it already exists.
+        Skips if the file has the same amount of items. Default: False
     """
+
+    if PUBLAYNET_GT_PATH.exists():
+        with open(PUBLAYNET_GT_PATH, "r") as gt:
+            try:
+                gt_obj = json.load(gt)
+                # Check if the object is a valid coco file
+                coco = COCO(PUBLAYNET_GT_PATH)
+                item_cnt = len(gt_obj["images"])
+                if item_cnt == max_items:
+                    logger.info(f"Ground truth file already exists at: {PUBLAYNET_GT_PATH}")
+                    return
+            except Any as e:
+                logger.warning(
+                    f"Malformed PubLayNet ground truth file at: {PUBLAYNET_GT_PATH}. "
+                    f"Error: {str(e)}"
+                )
 
     logger.info("Started generating new PubLayNet ground truth file.")
     logger.debug(f"Downloading dataset from {PUBLAYNET_DATASET}...")
@@ -181,7 +200,23 @@ _parsing_options = {
 }
 
 
-def evaluate_parser(parser: DocumentParser[Any]):
+def _get_metrics(coco_eval: COCOeval_faster) -> dict:
+    classes = coco_eval.extended_metrics["class_map"]
+    return {
+        c["class"]: c["map@50:95"]
+        for c in classes
+    }
+
+
+def evaluate_parser(parser: DocumentParser[Any]) -> Series:
+    """
+    Evaluates a DocumentParser on the PubLayNet dataset.
+    Returns the mean average precision over IoU thresholds from 0.5 to 0.95 (map@50:95).
+
+    Returns:
+        Series containing mAP per category and overall. Name is set to the Parsers name.
+    """
+
     if not PUBLAYNET_GT_PATH.exists():
         logger.info(f"Missing PubLayNet ground truth file at: {PUBLAYNET_GT_PATH}."
                     "Generating new ground truth file with default settings.")
@@ -196,4 +231,6 @@ def evaluate_parser(parser: DocumentParser[Any]):
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
-    return coco_eval
+
+    metrics = _get_metrics(coco_eval)
+    return Series(metrics, name=parser.module.value)

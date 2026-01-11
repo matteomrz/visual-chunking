@@ -4,7 +4,11 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
 
+THESIS_DIR = ROOT_DIR / "thesis"  # Latex Thesis directory
+FIGURE_DIR = THESIS_DIR / "figures"  # Tex files for tables and other graphics
+
 LIB_DIR = ROOT_DIR / "lib"  # Code directory
+
 PARSING_DIR = LIB_DIR / "parsing"  # Code for Parsing Module
 SEGMENTATION_DIR = LIB_DIR / "segmentation"  # Code for Segmentation Module
 
