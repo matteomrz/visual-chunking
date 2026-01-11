@@ -45,6 +45,28 @@ PUBLAYNET_CATEGORIES = {
 }
 
 
+def publaynet_gt_exists(expected_cnt: int) -> bool:
+    """Check if the Ground truth file already exists for a number of items."""
+
+    if PUBLAYNET_GT_PATH.exists():
+        with open(PUBLAYNET_GT_PATH, "r") as gt:
+            try:
+                gt_obj = json.load(gt)
+                # Check if the object is a valid coco file
+                COCO(PUBLAYNET_GT_PATH)
+
+                item_cnt = len(gt_obj["images"])
+                return item_cnt == expected_cnt
+
+            except Any as e:
+                logger.warning(
+                    f"Malformed PubLayNet ground truth file at: {PUBLAYNET_GT_PATH}. "
+                    f"Error: {str(e)}"
+                )
+
+    return False
+
+
 def create_publaynet_gt(max_items: int = 200, exist_ok: bool = False):
     """
     Creates the ground truth file for the COCO Evaluation of PubLayNet.
@@ -57,21 +79,9 @@ def create_publaynet_gt(max_items: int = 200, exist_ok: bool = False):
         Skips if the file has the same amount of items. Default: False
     """
 
-    if PUBLAYNET_GT_PATH.exists():
-        with open(PUBLAYNET_GT_PATH, "r") as gt:
-            try:
-                gt_obj = json.load(gt)
-                # Check if the object is a valid coco file
-                coco = COCO(PUBLAYNET_GT_PATH)
-                item_cnt = len(gt_obj["images"])
-                if item_cnt == max_items:
-                    logger.info(f"Ground truth file already exists at: {PUBLAYNET_GT_PATH}")
-                    return
-            except Any as e:
-                logger.warning(
-                    f"Malformed PubLayNet ground truth file at: {PUBLAYNET_GT_PATH}. "
-                    f"Error: {str(e)}"
-                )
+    if exist_ok and publaynet_gt_exists(max_items):
+        logger.info(f"Ground truth file already exists at: {PUBLAYNET_GT_PATH}")
+        return
 
     logger.info("Started generating new PubLayNet ground truth file.")
     logger.debug(f"Downloading dataset from {PUBLAYNET_DATASET}...")
@@ -179,6 +189,7 @@ def _create_dt(result_dir: Path) -> list:
 
 
 def _create_evaluation(res: ParsingResult, parser: DocumentParser[Any]) -> COCOeval_faster:
+    """Create the evaluation object for the DocumentParser."""
     res_path = res.metadata[ParsingMetaData.JSON_PATH.value]
     res_dir = Path(res_path).parent
 
