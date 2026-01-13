@@ -58,7 +58,7 @@ def publaynet_gt_exists(expected_cnt: int) -> bool:
                 item_cnt = len(gt_obj["images"])
                 return item_cnt == expected_cnt
 
-            except Any as e:
+            except BaseException as e:
                 logger.warning(
                     f"Malformed PubLayNet ground truth file at: {PUBLAYNET_GT_PATH}. "
                     f"Error: {str(e)}"
@@ -211,21 +211,32 @@ _parsing_options = {
 }
 
 
-def _get_metrics(coco_eval: COCOeval_faster) -> dict:
+def get_class_metrics(coco_eval: COCOeval_faster, parser: DocumentParser[Any]) -> Series:
+    """
+    Get the mean average precision over IoU thresholds from 0.5 to 0.95 (map@50:95).
+
+    Args:
+        coco_eval: COCOEval_faster returned from evaluate_parser()
+        parser: The DocumentParser belonging to the evaluation
+
+    Returns:
+        Series containing mAP per category and overall. Name is set to the Parsers name.
+    """
     classes = coco_eval.extended_metrics["class_map"]
-    return {
+    filtered = {
         c["class"]: c["map@50:95"]
         for c in classes
     }
 
+    return Series(filtered, name=parser.module.value)
 
-def evaluate_parser(parser: DocumentParser[Any]) -> Series:
+
+def evaluate_parser(parser: DocumentParser[Any]) -> COCOeval_faster:
     """
     Evaluates a DocumentParser on the PubLayNet dataset.
-    Returns the mean average precision over IoU thresholds from 0.5 to 0.95 (map@50:95).
 
     Returns:
-        Series containing mAP per category and overall. Name is set to the Parsers name.
+        COCOEval_faster containing the evaluation results
     """
 
     if not PUBLAYNET_GT_PATH.exists():
@@ -234,6 +245,7 @@ def evaluate_parser(parser: DocumentParser[Any]) -> Series:
         create_publaynet_gt()
 
     # Process PubLayNet files
+    logger.info(f"Evaluating {parser.module.value} on PubLayNet...")
     results = parser.process_batch(PUBLAYNET_NAME, _parsing_options)
     coco_eval = _create_evaluation(results[0], parser)
 
@@ -243,5 +255,5 @@ def evaluate_parser(parser: DocumentParser[Any]) -> Series:
     coco_eval.accumulate()
     coco_eval.summarize()
 
-    metrics = _get_metrics(coco_eval)
-    return Series(metrics, name=parser.module.value)
+    logger.info(f"Finished evaluating {parser.module.value}.")
+    return coco_eval

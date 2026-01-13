@@ -170,6 +170,10 @@ def _merge_adjacent_spans(
     Returns:
         A list of merged bounding box coordinates [l, t, r, b]
     """
+
+    if len(lines) == 0:
+        return []
+
     first_line = list(lines[0]["bbox"])
     merged_lines = [first_line]
 
