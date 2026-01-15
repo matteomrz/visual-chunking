@@ -38,7 +38,7 @@ Rules for Categorization:
 </categories>
 
 <bounding_boxes>
-1. **Format:** [x_min, y_min, x_max, y_max] (Top-Left to Bottom-Right). You MUST provide the coordinates in this exact order.
+1. **Format:** [y0, x0, y1, x1] (Top-Left to Bottom-Right). You MUST provide the coordinates in this exact order.
 2. **Success conditions:** 
 - The bounding box MUST enclose the entire layout element while minimizing unnecessary white space.
 - If a character belongs to the content ALL of its pixels MUST BE CONTAINED inside the bounding box.
@@ -46,7 +46,7 @@ Rules for Categorization:
 </bounding_boxes>
 
 <extraction_rules>
-- **Text Fidelity:** Extract text EXACTLY as it appears.  Do NOT fix spelling or grammar. You MAY use any formatting that is available for a standard Markdown document.
+- **Text Fidelity:** Extract text EXACTLY as it appears. Do NOT fix spelling or grammar. You MAY use any formatting that is available for a standard Markdown document.
 - **Character Escaping:** You MUST escape any special characters that can break the final JSON output.
 - **Reading Order:** Sort elements by natural human reading order.
 - **Special Formatting:**
@@ -64,12 +64,12 @@ Return a SINGLE JSON object with this exact structure:
   "layout_elements": [
     {{
       "category": "string (from list)",
-      "content": "string",
-      "heading_level": integer (include only for headers),
       "bbox": {{
         "page_number": integer,
-        "points": list[integer] (must be [x1, y1, x2, y2]) 
-      }}
+        "box_2d": list[integer]
+      }},
+      "heading_level": integer (include only for headers),
+      "content": "string"
     }}
   ]
 }}

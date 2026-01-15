@@ -70,7 +70,7 @@ class VLMParser(DocumentParser, ABC):
             raw_box = elem.get("bbox", {})
             try:
                 page_num = raw_box["page_number"]
-                points = raw_box["points"]
+                points = raw_box["box_2d"]
 
                 if len(points) != 4:
                     raise ValueError()
@@ -88,10 +88,10 @@ class VLMParser(DocumentParser, ABC):
 
             box = ParsingBoundingBox(
                 page=page_num,
-                left=points[0],
-                top=points[1],
-                right=points[2],
-                bottom=points[3]
+                left=points[1],
+                top=points[0],
+                right=points[3],
+                bottom=points[2]
             )
 
             res = ParsingResult(

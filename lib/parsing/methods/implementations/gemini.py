@@ -27,7 +27,7 @@ class GeminiParser(VLMParser):
 
     def __init__(self):
         self.client = genai.Client()
-        self.model_name = "gemini-2.5-flash-image"
+        self.model_name = "gemini-2.5-flash-image"  # TODO: Specify date
         # self.model_config = types.GenerateContentConfig(
         #     media_resolution=types.MediaResolution.MEDIA_RESOLUTION_MEDIUM
         # )
