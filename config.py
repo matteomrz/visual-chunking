@@ -11,6 +11,7 @@ LIB_DIR = ROOT_DIR / "lib"  # Code directory
 
 PARSING_DIR = LIB_DIR / "parsing"  # Code for Parsing Module
 SEGMENTATION_DIR = LIB_DIR / "segmentation"  # Code for Segmentation Module
+EVAL_DIR = LIB_DIR / "evaluation"  # Code for Evaluating the Parsing and Segmentation Modules
 
 DATA_DIR = ROOT_DIR / "data"  # Contains all input and output files
 GUIDELINES_DIR = DATA_DIR / "guidelines"  # Input Guideline PDF files

@@ -4,7 +4,7 @@ import logging
 from huggingface_hub import hf_hub_download, snapshot_download
 import pymupdf
 
-from config import CONFIG_DIR, GUIDELINES_DIR, PARSING_DIR
+from config import CONFIG_DIR, EVAL_DIR, GUIDELINES_DIR, PARSING_DIR
 from lib.parsing.methods.parsers import Parsers
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
@@ -13,6 +13,8 @@ omni_doc_name = "omni_doc_bench"
 omni_doc_dir = GUIDELINES_DIR / omni_doc_name
 image_dir = omni_doc_dir / "images"
 pdf_dir = omni_doc_dir / "pdfs"
+
+schema_path = EVAL_DIR / "parsing" / "omni_doc_schema.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +121,14 @@ def _images_to_pdfs(exist_ok: bool = False):
 
 
 def create_config_files(exist_ok: bool = False):
-    template_path = PARSING_DIR / "datasets" / "omni_doc_schema.yaml"
+    if not schema_path.exists():
+        logger.error(
+            "Missing OmniDocBench config schema "
+            f"at: {schema_path}"
+        )
+        return
 
-    with open(template_path, "r") as t:
+    with open(schema_path, "r") as t:
         template = t.read()
 
     output_dir = CONFIG_DIR / omni_doc_name
