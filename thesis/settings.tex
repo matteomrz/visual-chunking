@@ -52,7 +52,7 @@
 \usepackage[svgnames]{xcolor}
 
 
-\usepackage[acronym,xindy,toc]{glossaries} % TODO: include "acronym" if glossary and acronym should be separated
+\usepackage[acronym,nomain,toc]{glossaries} % TODO: include "acronym" if glossary and acronym should be separated
 \makeglossaries
 \loadglsentries{pages/glossary.tex} % important update for glossaries, before document
 
@@ -127,14 +127,14 @@
 
 % Settings for search order of pictures
 \graphicspath{
-    {logos/}
+  {logos/}
     {figures/}
 }
 
 % Set up hyphenation rules for the language package when mistakes happen
 \babelhyphenation[english]{
-an-oth-er
-ex-am-ple
+  an-oth-er
+  ex-am-ple
 }
 
 % Decide between

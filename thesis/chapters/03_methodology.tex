@@ -3,7 +3,7 @@
 \chapter{Methodology}\label{chapter:methodology}
 
 \section{Data Formats}
-In the scope of this thesis, we aim to compare multiple different Document Parsing and Chunking techniques with each other. As of the time of writing, every DP implementation defines their own datatypes, making comparisons very complex. For the purpose of this thesis, we define our own universal datatypes.
+In the scope of this thesis, we compare multiple different Document Parsing and Chunking techniques with each other. As of the time of writing, every DP implementation defines their own datatypes, making comparisons very complex. For the purpose of this thesis, we define our own universal datatypes.
 
 \subsection{ParsingBoundingBox}
 The ParsingBoundingBox  (\autoref{fig:parsing-bounding-box}) datatype adds additional fields to a traditional bounding box tuple. Since the guideline documents usually contain multiple pages, we include a \lstinline!page! field indicating the page number that the bounding box belongs to. The coordinates of the bounding box are saved as a normalized tuple in the $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ format. Additionally, the spans field allows for saving more granular bounding boxes such as boxes for every line of text inside the bounding box.
