@@ -1,0 +1,94 @@
+% !Tex root = ../main.tex
+
+\chapter{Methodology}\label{chapter:methodology}
+
+\section{Data Formats}
+In the scope of this thesis, we aim to compare multiple different Document Parsing and Chunking techniques with each other. As of the time of writing, every DP implementation defines their own datatypes, making comparisons very complex. For the purpose of this thesis, we define our own universal datatypes.
+
+\subsection{ParsingBoundingBox}
+The ParsingBoundingBox  (\autoref{fig:parsing-bounding-box}) datatype adds additional fields to a traditional bounding box tuple. Since the guideline documents usually contain multiple pages, we include a \lstinline!page! field indicating the page number that the bounding box belongs to. The coordinates of the bounding box are saved as a normalized tuple in the $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ format. Additionally, the spans field allows for saving more granular bounding boxes such as boxes for every line of text inside the bounding box.
+
+\begin{figure}[htpb]
+  \centering
+  \input{figures/parsing_bounding_box}
+  \caption[ParsingBoundingBox]{ParsingBoundingBox datatype.}\label{fig:parsing-bounding-box}
+\end{figure}
+
+\subsection{ParsingResultType}
+One problem with comparing multiple DP methods is their lack of universal categories. This leads to two specific issues. Firstly, the naming of element types differs between implementations. For example, a paragraph gets classified as \lstinline!NarrativeText! by the Unstructured.io framework\todo{citation}, while Docling\todo{citation} names the same category as simply \lstinline!TEXT!. Secondly, some methods provide classifications, which are not provided by others. One example for this is the addition of a \lstinline!ref\_text! in the MinerU implementation\todo{citation}, referring to an entry in a bibliography. For our purposes, we aggregated all possible categories from the tested implementations and provided mappings to the universal types for each DP implementation. The full list of ParsingResultTypes can be found in \todo{reference}.
+
+\subsection{ParsingResult}
+The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing module. It is inspired by the DoclingDocument datatype from the Docling framework.\todo{citation} Mainly, ParsingResult adopts the tree structure proposed by Docling to represent hierarchical relationships between document elements.\todo{Explain difference to doclingdoc: no different classes, easier bounding boxes, only tree structure with no group or text lists}
+
+\begin{figure}[htpb]
+  \centering
+  \input{figures/parsing_result}
+  \caption[ParsingResult]{ParsingResult datatype.}\label{fig:parsing-result}
+\end{figure}
+
+The \lstinline!geom! attribute contains a list of bounding boxes related to the element. This allows elements, such as tables, to span multiple pages by containing multiple bounding boxes. Using the \lstinline!parent! and \lstinline!children! attributes of the ParsingResult, the hierarchy of the input document is represented as a tree of ParsingResult nodes. This way, hierarchical relationships between the elements can be represented. For example, a section header has all text paragraphs contained in it's section as children.
+
+\subsection{ChunkingResult}
+The ChunkingResult is the output of the chunking module. It provides a wrapper around a list of Chunks, adding a metadata field for information about the document and the preceeding processes.
+
+\subsection{Chunk}
+
+\section{Pipeline Architecture}
+The architecture of the data processing pipeline is illustrated in \todo{reference}. As shown, the pipeline takes in any file in PDF format and transforms it into the desired list of chunks through a series of steps.
+
+\subsection{Parsing Module}
+The Parsing Module provides an interface for a Document Parser. It performs DP on an input PDF document and provides two files as its output: a JSON file containing the ParsingResult tree structure and a Markdown representation of the document. Any implementation of the Parsing Module has to implement the following functions.
+
+\begin{figure}[htpb]
+  \centering
+  \input{figures/parsing_module_func.tex}
+  \caption[Parsing module abstract functions]{Abstract functions of the Parsing Module to be fulfilled by the implementation.}\label{fig:parsing-functionality}
+\end{figure}
+
+\subsection{Chunking Module}
+The Chunking Module takes the Output from the
+
+\begin{itemize}
+  \item Embedding Module used
+  \item Novelty: Retaining bounding boxes during chunking
+  \item Available Chunking Methods
+\end{itemize}
+
+% \section{Pipeline Functionality}
+
+% \begin{itemize}
+%   \item Take PDF guideline document
+%   \item Transform into ParsingResult
+%   \item Create annotated documents showing the recognized elements
+%   \item Save ParsingResult and Markdown for evaluations
+%   \item Schedule Chunking
+%   \item Save output chunks
+% \end{itemize}
+
+\section{Document Parsing Evaluation}
+\subsection{OmniDocBench}
+Content:
+\begin{itemize}
+  \item Data Creation
+  \item Evaluation Modes (End2End $to$ Evaluate Markdown output (Content))
+  \item Usages in other papers
+  \item State of the art evaluations (if I find any, most for all kinds of documents)
+  \item Types of Documents (English and Chinese, different kinds: Scientific Paper\dots) all single page
+  \item Subset for the thesis: English Scientific Papers
+\end{itemize}
+
+\subsection{PubLayNet}
+Content:
+\begin{itemize}
+  \item Data Format
+  \item Data creation (Matching Pdf file with xml representation)
+  \item Dataset size (>190.000 pages)
+  \item Subset selection (Huggingface 500 pages, put exact element counts)
+  \item Explain evaluation using COCOEval \todo{I think this belongs into Evaluation}
+\end{itemize}
+
+\section{Document Chunking Evaluation}
+\subsection{Chroma Evaluation}
+
+\section{Metrics}
+\todo{Should I put evaluation metrics here? Or into the foundations?}

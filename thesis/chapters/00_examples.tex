@@ -5,7 +5,7 @@
 Use with pdfLaTeX and Biber.
 
 \section{Section}
-Citation test (with Biber)~\parencite{latex}.
+% Citation test (with Biber)~\parencite{latex}.
 
 \subsection{Subsection}
 
@@ -16,10 +16,10 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
   \centering
   \begin{tabular}{l l l l}
     \toprule
-      A & B & C & D \\
+    A & B & C & D \\
     \midrule
-      1 & 2 & 1 & 2 \\
-      2 & 3 & 2 & 3 \\
+    1 & 2 & 1 & 2 \\
+    2 & 3 & 2 & 3 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -35,11 +35,11 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
     \node (R4) [right of=R1] {$R_5$};
 
     \path[every node]
-      (R0) edge (R1)
-      (R0) edge (R3)
-      (R3) edge (R2)
-      (R2) edge (R1)
-      (R1) edge (R4);
+    (R0) edge (R1)
+    (R0) edge (R3)
+    (R3) edge (R2)
+    (R2) edge (R1)
+    (R1) edge (R4);
   \end{tikzpicture}
   \caption[Example drawing]{An example for a simple drawing.}\label{fig:sample-drawing}
 \end{figure}
@@ -83,7 +83,7 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
 \begin{figure}[htpb]
   \centering
   \begin{tabular}{c}
-  \begin{lstlisting}[language=SQL]
+    \begin{lstlisting}[language=SQL]
     SELECT * FROM tbl WHERE tbl.str = "str"
   \end{lstlisting}
   \end{tabular}
@@ -112,7 +112,7 @@ See~\autoref{tab:sample}, \autoref{fig:sample-drawing}, \autoref{fig:sample-plot
 
 This is how the glossary will be used.
 
-\Glspl{ddye}, \gls{r0}, \gls{R0}, and \gls{kdeac}. Also, the \glspl{tum} has many \glspl{computer}, not only one \Gls{computer}. Subsequent acronym usage will only print the short version of \glspl{tuma} (take care of plural, if needed!), like here with \gls{tuma}, too. It can also be --> \glsdisp{tum}{hidden}\footnote{Example for a hidden TUM glossary entry.} <--.
+Also, the \glspl{tum} has many \glspl{computer}, not only one \Gls{computer}. Subsequent acronym usage will only print the short version of \glspl{tuma} (take care of plural, if needed!), like here with \gls{tuma}, too. It can also be --> \glsdisp{tum}{hidden}\footnote{Example for a hidden TUM glossary entry.} <--.
 
 \todo{Now it is your turn to write your thesis. This will be a few tough weeks.}
 

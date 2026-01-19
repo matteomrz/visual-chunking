@@ -5,46 +5,77 @@
 \section{Retrieval-Augmented Generation}
 Content:
 \begin{itemize}
-    \item Definition
-    \item Components
-    \item Use cases
+  \item Definition
+  \item Components
+  \item Use cases
 \end{itemize}
-
-\subsection{Semantic Similarity}
-Content:
-\begin{itemize}
-    \item Definition
-    \item Role in RAG
-\end{itemize}
+\todo{Other usages of chunking than RAG}
 
 \subsection{Tokenization}
 Content:
 \begin{itemize}
-    \item Definition
-    \item What is a token?
+  \item Definition
+  \item What is a token?
 \end{itemize}
 
 \subsection{Text Embeddings}
 Content:
 \begin{itemize}
-    \item Definition
-    \item Types of embeddings
+  \item Definition
+  \item Types of embeddings
+\end{itemize}
+
+\subsection{Semantic Similarity}
+Content:
+\begin{itemize}
+  \item Definition
+  \item Role in RAG
+\end{itemize}
+
+\section{Visual Source Attribution}
+\subsection{Bounding Boxes}
+\begin{itemize}
+  \item Definition
+  \item Formats of Bounding boxes
+  \item What do we mean when we say bounding boxes in the thesis? (normalized, ltrb)
 \end{itemize}
 
 \section{Vision-Language Models}
 \todo{Maybe need to add explanations for transformers?}\\
+Content:
+\begin{itemize}
+  \item Definition
+  \item Role in RAG
+\end{itemize}
 
 \section{Document Parsing}
 
-\subsection{Document Layout Analysis}
-\todo{Maybe add something about History?}
+Also known as document content extraction, document parsing (DP) aims to convert unstructured and semi-structured documents into structured data formats.\cite{parsingunveiled} During this process elements such as headings, tables, and figures are extracted from the document while preserving their structural relationships. \\
 
-\subsection{Element Parsing}
+While there are many tools available for document parsing, most of them can be categorized into either modular pipeline systems or end-to-end VLM models.
+
+\subsection{Modular Pipeline Systems}
+\begin{itemize}
+  \item Definition
+  \item Common Pipeline Stages
+  \item Types of Pipelines (with VLM, VLM only for Element Recognition)
+  \item Examples (Docling, Unstructured.io, many proprietary solutions)
+  \item Problems (Error Propagation)
+\end{itemize}
+
+\subsection{End-to-End VLM models}
 \todo{Maybe add something about History?}
+\begin{itemize}
+  \item Definition
+  \item Difference between Specialized and general vlms
+  \item Examples
+  \item Problems
+\end{itemize}
 
 \section{Document Chunking}
 Content:
 \begin{itemize}
-    \item Definition
-    \item Role in RAG systems
+  \item Definition
+  \item Role in RAG systems
+  \item Different Types: Rule based, File dependent
 \end{itemize}
