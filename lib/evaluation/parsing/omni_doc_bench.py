@@ -76,7 +76,7 @@ def _get_images(omni_doc, exist_ok: bool = False) -> list[str]:
                 img = info["image_path"]
                 images.append(img)
 
-        except KeyError | ValueError as e:
+        except (KeyError, ValueError) as e:
             logger.warning(f"OmniDocItem is malformed: {str(e)}")
 
     if exist_ok:

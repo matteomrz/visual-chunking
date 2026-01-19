@@ -16,6 +16,7 @@ unneeded_types = [
     ParsingResultType.PAGE_HEADER,
     # MISC
     ParsingResultType.FORM_AREA,
+    ParsingResultType.WATERMARK
 ]
 
 # Types where content == "" is acceptable

@@ -35,6 +35,7 @@ class ParsingResultType(Enum):
     KEY_VALUE_AREA = "key_value_area"  # A distinct region grouped by key-value pairs (e.g., article info).
     FORM_AREA = "form_area"  # A region indicating form content (e.g., text-fields).
     FORMULA = "formula"  # A mathematical formula
+    WATERMARK = "watermark"  # A watermark from the publishing organization
 
     # FALLBACK
     UNKNOWN = "unknown"  # Used when the parser cannot determine the element type.

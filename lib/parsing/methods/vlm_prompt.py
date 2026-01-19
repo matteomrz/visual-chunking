@@ -13,7 +13,8 @@ _categories = [
     ParsingResultType.CAPTION,
 
     ParsingResultType.PAGE_HEADER,
-    ParsingResultType.PAGE_FOOTER
+    ParsingResultType.PAGE_FOOTER,
+    ParsingResultType.WATERMARK
 ]
 
 _category_strings = [t.value for t in _categories]
