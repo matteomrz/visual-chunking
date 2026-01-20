@@ -2,14 +2,17 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from docling.datamodel import vlm_model_specs
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
     PdfPipelineOptions,
     TableFormerMode,
     TableStructureOptions,
+    VlmPipelineOptions,
 )
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline
+from docling.pipeline.vlm_pipeline import VlmPipeline
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import (
     BoundingBox,
@@ -39,8 +42,6 @@ logger = logging.getLogger(__name__)
 class DoclingParser(DocumentParser[DoclingDocument]):
     """Uses the Docling Package for parsing PDF documents"""
 
-    module = Parsers.DOCLING
-
     label_mapping = {
         # Texts
         "TEXT": ParsingResultType.PARAGRAPH,
@@ -63,18 +64,31 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         "FORM_AREA": ParsingResultType.FORM_AREA,
     }
 
-    def __init__(self):
-        pipeline_options = PdfPipelineOptions(
-            do_table_structure=True,
-            force_backend_text=False,
-            do_ocr=True,
-            table_structure_options=TableStructureOptions(
-                do_cell_matching=True, mode=TableFormerMode.ACCURATE
-            ),
-        )
-        pdf_format_option = PdfFormatOption(
-            pipeline_cls=StandardPdfPipeline, pipeline_options=pipeline_options
-        )
+    def __init__(self, use_vlm=False):
+        if use_vlm:
+            self.module = Parsers.DOCLING_GRANITE
+
+            pipeline_options = VlmPipelineOptions(
+                vlm_options=vlm_model_specs.GRANITEDOCLING_MLX
+            )
+            pdf_format_option = PdfFormatOption(
+                pipeline_cls=VlmPipeline, pipeline_options=pipeline_options
+            )
+
+        else:
+            self.module = Parsers.DOCLING
+
+            pipeline_options = PdfPipelineOptions(
+                do_table_structure=True,
+                force_backend_text=False,
+                do_ocr=True,
+                table_structure_options=TableStructureOptions(
+                    do_cell_matching=True, mode=TableFormerMode.ACCURATE
+                ),
+            )
+            pdf_format_option = PdfFormatOption(
+                pipeline_cls=StandardPdfPipeline, pipeline_options=pipeline_options
+            )
 
         self.parser = DocumentConverter(
             format_options={InputFormat.PDF: pdf_format_option}

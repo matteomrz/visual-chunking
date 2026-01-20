@@ -15,7 +15,12 @@ def get_document_parser(parser_type: Parsers) -> DocumentParser[Any]:
         case Parsers.DOCLING:
             from lib.parsing.methods.implementations.docling import DoclingParser
 
-            return DoclingParser()
+            return DoclingParser(use_vlm=False)
+
+        case Parsers.DOCLING_GRANITE:
+            from lib.parsing.methods.implementations.docling import DoclingParser
+
+            return DoclingParser(use_vlm=True)
 
         case Parsers.UNSTRUCTURED_IO:
             from lib.parsing.methods.implementations.unstructured import UnstructuredParser

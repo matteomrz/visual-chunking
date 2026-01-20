@@ -83,6 +83,7 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
         return response.document
 
     def _get_md(self, raw_result: document_ai.Document, file_path: Path) -> str:
+        # TODO: text field is empty...
         return raw_result.text
 
     def _transform(self, raw_result: document_ai.Document) -> ParsingResult:

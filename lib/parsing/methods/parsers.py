@@ -7,6 +7,7 @@ class Parsers(Enum):
     LLAMA_PARSE = "llamaparse"
     UNSTRUCTURED_IO = "unstructured_io"
     DOCLING = "docling"
+    DOCLING_GRANITE = "docling_granite"
     # PADDLEOCR = "paddle_ocr"
     MINERU_PIPELINE = "mineru_pipeline"
     MINERU_VLM = "mineru_vlm"
