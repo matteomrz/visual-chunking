@@ -192,14 +192,14 @@ def _transform_table(
             if not cell.bbox:
                 continue
 
-            box = _transform_b_box(cell.bbox, page)
-
             x = cell.start_col_offset_idx
             y = cell.start_row_offset_idx
 
             # If there is a merged cell it will appear multiple times with the same index
             if x < len(cell_results):
                 continue
+
+            box = _transform_b_box(cell.bbox, page)
 
             if min_l is None or box.left < min_l:
                 min_l = box.left

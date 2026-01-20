@@ -19,6 +19,7 @@ from mineru.backend.pipeline.pipeline_middle_json_mkcontent import (
 )
 from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
 from mineru.data.data_reader_writer import FileBasedDataWriter
+from mineru.utils.engine_utils import get_vlm_engine
 from mineru.utils.enum_class import MakeMode
 
 from lib.parsing.methods.parsers import Parsers
@@ -39,6 +40,7 @@ class MinerUParser(DocumentParser):
         # Texts
         "text": ParsingResultType.PARAGRAPH,
         "title": ParsingResultType.SECTION_HEADER,
+        "interline_equation": ParsingResultType.FORMULA,
         # Lists
         "list": ParsingResultType.LIST,
         "list_text": ParsingResultType.LIST,
@@ -59,8 +61,9 @@ class MinerUParser(DocumentParser):
 
         if self.is_vlm:
             self.module = Parsers.MINERU_VLM
+            vlm_type = get_vlm_engine("auto")  # Automatically determine correct vlm engine
             self.model = VlmModelSingleton().get_model(
-                backend="mlx-engine", model_path=None, server_url=None
+                backend=vlm_type, model_path=None, server_url=None
             )
         else:
             self.module = Parsers.MINERU_PIPELINE
