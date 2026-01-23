@@ -40,6 +40,14 @@ Content:
   \item What do we mean when we say bounding boxes in the thesis? (normalized, ltrb)
 \end{itemize}
 
+\subsection{Intersection over Union}
+According to the definition from \textcite{object_detection}, the \gls{iou} between two bounding boxes $BB_{a}$ and $BB_{b}$ is defined as described in \autoref{eq:iou}. The \gls{iou} can take on any value between 0 and 1, where a value of 0 means that there is no overlap between the two bounding boxes, and a value of 1 means that the two bounding boxes are identical. In the context of object detection, \gls{iou} is commonly used to evaluate the accuracy of predicted bounding boxes against ground truth bounding boxes \autocite{object_detection}.
+
+\begin{equation}
+  IoU(BB_{a}, BB_{b}) = \frac{\text{Area of intersection of } BB_{a} \text{ and } BB_{b}}{\text{Area of union of } BB_{a} \text{ and } BB_{b}}
+  \label{eq:iou}
+\end{equation}
+
 \section{Vision-Language Models}
 \todo{Maybe need to add explanations for transformers?}\\
 Content:
@@ -47,6 +55,8 @@ Content:
   \item Definition
   \item Role in RAG
 \end{itemize}
+
+\section{PDF format}
 
 \section{Document Parsing}
 
@@ -57,7 +67,7 @@ While there are many tools available for document parsing, most of them can be c
 \subsection{Modular Pipeline Systems}
 \begin{itemize}
   \item Definition
-  \item Common Pipeline Stages
+  \item Common Pipeline Stages (Document Layout Analysis, OCR, element type dependent modules)
   \item Types of Pipelines (with VLM, VLM only for Element Recognition)
   \item Examples (Docling, Unstructured.io, many proprietary solutions)
   \item Problems (Error Propagation)

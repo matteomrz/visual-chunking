@@ -2,11 +2,20 @@
 
 \chapter{Methodology}\label{chapter:methodology}
 
-\section{Data Formats}
-In the scope of this thesis, we compare multiple different Document Parsing and Chunking techniques with each other. As of the time of writing, every DP implementation defines their own datatypes, making comparisons very complex. For the purpose of this thesis, we define our own universal datatypes.
+\section{Pipeline overview}
+\todo{add figure for the pipeline}
+
+The architecture of the data processing pipeline is illustrated in \todo{ref}. The system is designed as a modular pipeline that transforms the raw \gls{pdf} documents into chunks through a two-stage process.
+
+\textbf{Parsing module:} The parsing module is the first step of the pipeline. It provides a unified interface for various \gls{dp} implementations. Firstly, document elements and their structural information are extracted from the document using the underlying \gls{dp} implementation. The output then gets converted into a standardized data format and further post-processed to prepare the data for the chunking module.
+
+\textbf{Chunking module:} In the chunking module the structured data gets split into smaller chunks using one of the multiple available methods. The resulting chunks contain a bounding box inside their metadata, linking them to their position inside the document.
+
+\section{Data representations}
+As of the time of writing, every \gls{dp} implementation defines their own datatypes, making comparisons very complex. In order to consolidate multiple different \gls{dp} implementations into our modular pipeline and evaluate them against each other, the output of each implementation needs to be transformed into a uniform type. For this purpose, we define our own universal datatypes to be used in the data processing pipeline.
 
 \subsection{ParsingBoundingBox}
-The ParsingBoundingBox  (\autoref{fig:parsing-bounding-box}) datatype adds additional fields to a traditional bounding box tuple. Since the guideline documents usually contain multiple pages, we include a \lstinline!page! field indicating the page number that the bounding box belongs to. The coordinates of the bounding box are saved as a normalized tuple in the $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ format. Additionally, the spans field allows for saving more granular bounding boxes such as boxes for every line of text inside the bounding box.
+The ParsingBoundingBox (\autoref{fig:parsing-bounding-box}) datatype adds additional fields to a traditional bounding box tuple. Since the guideline documents usually contain multiple pages, we include a \lstinline!page! field indicating the page number that the bounding box belongs to. The coordinates of the bounding box are saved as a normalized tuple in the $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ format. Additionally, the spans field allows for saving more granular bounding boxes such as boxes for every line of text inside the bounding box.
 
 \begin{figure}[htpb]
   \centering
@@ -15,10 +24,14 @@ The ParsingBoundingBox  (\autoref{fig:parsing-bounding-box}) datatype adds addit
 \end{figure}
 
 \subsection{ParsingResultType}
-One problem with comparing multiple DP methods is their lack of universal categories. This leads to two specific issues. Firstly, the naming of element types differs between implementations. For example, a paragraph gets classified as \lstinline!NarrativeText! by the Unstructured.io framework\todo{citation}, while Docling\todo{citation} names the same category as simply \lstinline!TEXT!. Secondly, some methods provide classifications, which are not provided by others. One example for this is the addition of a \lstinline!ref\_text! in the MinerU implementation\todo{citation}, referring to an entry in a bibliography. For our purposes, we aggregated all possible categories from the tested implementations and provided mappings to the universal types for each DP implementation. The full list of ParsingResultTypes can be found in \todo{reference}.
+One problem with comparing multiple \gls{dp} methods is their lack of universal categories. This leads to two specific issues.
+
+Firstly, the naming of element types differs between implementations. For example, a paragraph gets classified as \lstinline!NarrativeText! by the Unstructured.io framework \autocite{unstructuredio}, while Docling \autocite{docling} names the same category as simply \lstinline!TEXT!.
+
+Secondly, some methods provide classifications, which are not provided by others. One example for this is the addition of a \lstinline!ref_text! element type in the MinerU implementation \autocite{mineru,opendatalab}, referring to an entry in a bibliography. For our purposes, we aggregated all possible categories from the tested implementations and provided mappings to the universal types for each \gls{dp} implementation. The full list of ParsingResultTypes can be found in \todo{reference}.
 
 \subsection{ParsingResult}
-The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing module. It is inspired by the DoclingDocument datatype from the Docling framework.\todo{citation} Mainly, ParsingResult adopts the tree structure proposed by Docling to represent hierarchical relationships between document elements.\todo{Explain difference to doclingdoc: no different classes, easier bounding boxes, only tree structure with no group or text lists}
+The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing module. It is inspired by the DoclingDocument datatype from the Docling library \autocite{docling}. Mainly, ParsingResult adopts the tree structure proposed by Docling to represent hierarchical relationships between document elements.\todo{Explain difference to doclingdoc: no different classes, easier bounding boxes, only tree structure with no group or text lists}
 
 \begin{figure}[htpb]
   \centering
@@ -29,15 +42,12 @@ The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing mo
 The \lstinline!geom! attribute contains a list of bounding boxes related to the element. This allows elements, such as tables, to span multiple pages by containing multiple bounding boxes. Using the \lstinline!parent! and \lstinline!children! attributes of the ParsingResult, the hierarchy of the input document is represented as a tree of ParsingResult nodes. This way, hierarchical relationships between the elements can be represented. For example, a section header has all text paragraphs contained in it's section as children.
 
 \subsection{ChunkingResult}
-The ChunkingResult is the output of the chunking module. It provides a wrapper around a list of Chunks, adding a metadata field for information about the document and the preceeding processes.
+The ChunkingResult is the output of the chunking module. It provides a wrapper around a list of Chunks, adding a \lstinline!metadata! field for information about the document and the preceeding processes.
 
 \subsection{Chunk}
 
-\section{Pipeline Architecture}
-The architecture of the data processing pipeline is illustrated in \todo{reference}. As shown, the pipeline takes in any file in PDF format and transforms it into the desired list of chunks through a series of steps.
-
-\subsection{Parsing Module}
-The Parsing Module provides an interface for a Document Parser. It performs DP on an input PDF document and provides two files as its output: a JSON file containing the ParsingResult tree structure and a Markdown representation of the document. Any implementation of the Parsing Module has to implement the following functions.
+\section{Parsing module}
+The parsing module processes an incoming \gls{pdf} document in a multi-step process. Firstly, the document is passed to the internal \gls{dp} implementation using the \lstinline!_parse! function. Through the \lstinline!_transform! function, the raw output is then converted into the ParsingResult format. Additionally, the \lstinline!_get_md! function extracts the Markdown representation of the document from the raw output of the internal parser. Finally, additional metadata about the parsing process, such as the duration of the internal parsing operation, are added to the root ParsingResult. After performing additional post-processing steps, both the Markdown as well as the lossless serialization of the ParsingResult in JSON output are then persisted to the file system. As the raw types returned by the internal parser differ based on the specific implementation, each of the abstract functions mentioned above need to be implemented by the specific parser class. An overview of the abstract functions to be implemented can be found in \autoref{fig:parsing-functionality}.
 
 \begin{figure}[htpb]
   \centering
@@ -45,28 +55,78 @@ The Parsing Module provides an interface for a Document Parser. It performs DP o
   \caption[Parsing module abstract functions]{Abstract functions of the Parsing Module to be fulfilled by the implementation.}\label{fig:parsing-functionality}
 \end{figure}
 
-\subsection{Chunking Module}
-The Chunking Module takes the Output from the
+\subsection{Unstructured.io}
 
+
+\subsection{Docling}
+Docling is a popular open-source \gls{dp} library developed by IBM since 2022. While Docling offers \gls{dp} capabilities for multiple document formats, we focus solely on its \gls{pdf} parsing functionality in this thesis. Docling offers two different approaches for \gls{pdf} \gls{dp}: \\ \\
+\textbf{Parsing pipeline:} Docling's processing pipeline consists of a \gls{pdf} backend, which extracts any programmatic information from the document, an internal model pipeline containing multiple \gls{ai} models and a post-processing stage. The model pipeline is responsible for extracting features and their content from the document. It consists of three stages: \gls{ocr}, \gls{dla} and table structure recognition. Docling provides their own models for table structure recognition with the TableFormer model as well as for \gls{dla} with their Heron model \autocite{docling_heron}.
+\todo{Derived from RT-DETR, retrained on DocLayNet}
+\\ \\
+\textbf{Docling Granite:} Docling Granite is an end-to-end \gls{vlm} for document parsing, released in \todo{date}. \\ \\
+Both methods return their output in the DoclingDocument format. DoclingDocument
+
+\subsection{MinerU}
+Another popular choice for open-source on-device \gls{dp} is the MinerU framework. Similar to Docling, MinerU also offers both a pipeline as well as a \gls{vlm} based approach for \gls{dp} \autocite{mineru,mineru_vlm}. \\ \\
+\textbf{Parsing pipeline:}
+
+\subsection{Google Gemini}
+
+\subsection{LlamaParse}
+
+\subsection{Google Document AI Layout Parser}
+
+\section{Post-processing methods}
+
+\section{Chunking module}
+
+\section{Evaluation Framework}
+
+\subsection{Document Layout Analysis evaluation}
+The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from PubMed Central Open Access (PMCOA), PubLayNet is one of the largest datasets for \gls{dla}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use a small subset of 500 pages of the original dataset \autocite{publaynet-mini}. As seen in \todo{table with counts}, the subset contains around 5000 annotated elements from 5 different classes.
+
+To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box, class label combination. As most of the \gls{dp} implementations provide `hard-predictions', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this thesis \autocite{lrp_error,eclair}.
+
+For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{precision_recall}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, firstly the \glspl{dtbb} are classified into \glspl{tp} and \glspl{fp}. A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class, so that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $N$ \glspl{dtbb}, out of which $S, (S\leq N)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
+
+\begin{equation}
+  \text{Pr} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{N-S}\text{FP}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ detections}
+  \label{eq:precision}
+\end{equation}
+
+\begin{equation}
+  \text{Re} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{G-S}\text{FN}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ ground\ truths}
+  \label{eq:recall}
+\end{equation}
+
+The F1 score is the weighted harmonic mean between both precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The F1 score is calculated for a single class at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T.
+
+\begin{equation}
+  F_1 = 2\frac{\text{Pr}\cdot\text{Rc}}{\text{Pr}+\text{Rc}}
+  \label{eq:f1score}
+\end{equation}
+
+For scenarios with multiple classes, such as the evaluation on the PubLayNet dataset, the Macro F1 score is used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the average of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $N_{:j}$ and $G_{:j}$ refer to the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
+
+\begin{equation}
+  F_{1_\text{Macro}}(N, G) = \frac{1}{m}\sum_{j=1}^{m}F_1(N_{:j}, G_{:j})
+  \label{eq:macrof1}
+\end{equation}
+
+The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and $F1@50:95$ will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes. F1@50 is chosen as, a threshold of 50\% is one of the most used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline!faster-coco-eval! package is used \autocite{faster-coco-eval}.
+
+PubLayNet
+Content:
 \begin{itemize}
-  \item Embedding Module used
-  \item Novelty: Retaining bounding boxes during chunking
-  \item Available Chunking Methods
+  \item Data Format
+  \item Data creation (Matching Pdf file with xml representation)
+  \item Dataset size (>190.000 pages)
+  \item Subset selection (Huggingface 500 pages, put exact element counts)
+  \item Explain evaluation using COCOEval \todo{I think this belongs into Evaluation}
 \end{itemize}
 
-% \section{Pipeline Functionality}
-
-% \begin{itemize}
-%   \item Take PDF guideline document
-%   \item Transform into ParsingResult
-%   \item Create annotated documents showing the recognized elements
-%   \item Save ParsingResult and Markdown for evaluations
-%   \item Schedule Chunking
-%   \item Save output chunks
-% \end{itemize}
-
-\section{Document Parsing Evaluation}
-\subsection{OmniDocBench}
+\subsection{Content Parsing Evaluation}
+OmniDocBench
 Content:
 \begin{itemize}
   \item Data Creation
@@ -77,18 +137,22 @@ Content:
   \item Subset for the thesis: English Scientific Papers
 \end{itemize}
 
-\subsection{PubLayNet}
-Content:
-\begin{itemize}
-  \item Data Format
-  \item Data creation (Matching Pdf file with xml representation)
-  \item Dataset size (>190.000 pages)
-  \item Subset selection (Huggingface 500 pages, put exact element counts)
-  \item Explain evaluation using COCOEval \todo{I think this belongs into Evaluation}
-\end{itemize}
+\subsection{Chunking Evaluation}
+Chroma Evaluation
 
-\section{Document Chunking Evaluation}
-\subsection{Chroma Evaluation}
 
-\section{Metrics}
-\todo{Should I put evaluation metrics here? Or into the foundations?}
+
+% \subsection{Chunking Module}
+% The Chunking Module takes the Output from the
+
+% \begin{itemize}
+%   \item Embedding Module used
+%   \item Novelty: Retaining bounding boxes during chunking
+%   \item Available Chunking Methods
+% \end{itemize}
+
+% \section{Document Parsing Evaluation}
+% \subsection{OmniDocBench}
+
+% \section{Metrics}
+% \todo{Should I put evaluation metrics here? Or into the foundations?}
