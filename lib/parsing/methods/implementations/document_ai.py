@@ -47,13 +47,16 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
     }
 
     client: document_ai.DocumentProcessorServiceClient
-    processor_path: str
+
+    layout_path: str
+    ocr_path: str
 
     def __init__(self):
         load_dotenv()
         location = os.getenv("DOC_AI_LOCATION")
         project = os.getenv("DOC_AI_PROJECT_ID")
-        processor = os.getenv("DOC_AI_PROCESSOR_ID")
+        layout_processor = os.getenv("DOC_AI_LAYOUT_PROCESSOR_ID")
+        ocr_processor = os.getenv("DOC_AI_OCR_PROCESSOR_ID")
 
         client_options = ClientOptions(
             api_endpoint=f"{location}-documentai.googleapis.com"
@@ -63,9 +66,10 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
             client_options=client_options
         )
 
-        self.processor_path = self.client.processor_path(project, location, processor)
+        self.layout_path = self.client.processor_path(project, location, layout_processor)
+        self.ocr_path = self.client.processor_path(project, location, ocr_processor)
 
-    def _parse(self, file_path: Path, options: dict = None):
+    def _request_doc_ai(self, file_path: Path, processor_path: str) -> document_ai.Document:
         with open(file_path, "rb") as f:
             file_bytes = f.read()
 
@@ -74,7 +78,7 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
         raw_doc.mime_type = PDF_MIME_TYPE
 
         request = document_ai.ProcessRequest()
-        request.name = self.processor_path
+        request.name = processor_path
         request.raw_document = raw_doc
         request.process_options = PROCESS_OPTIONS
 
@@ -82,9 +86,12 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
 
         return response.document
 
+    def _parse(self, file_path: Path, options: dict = None):
+        return self._request_doc_ai(file_path, self.layout_path)
+
     def _get_md(self, raw_result: document_ai.Document, file_path: Path) -> str:
-        # TODO: text field is empty...
-        return raw_result.text
+        document = self._request_doc_ai(file_path, self.ocr_path)
+        return document.text
 
     def _transform(self, raw_result: document_ai.Document) -> ParsingResult:
         root = ParsingResult.root()
