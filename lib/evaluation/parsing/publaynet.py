@@ -14,6 +14,7 @@ from lib.parsing.model.document_parser import DocumentParser
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingMetaData, ParsingResult, \
     ParsingResultType
+from lib.utils.f1_coco import get_f1_metrics
 from lib.utils.merge_boxes import merge_adjacent_boxes
 from lib.utils.open import open_parsing_result
 from lib.utils.to_coco import get_coco_annotations
@@ -213,18 +214,20 @@ _parsing_options = {
 
 def get_class_metrics(coco_eval: COCOeval_faster, parser: DocumentParser[Any]) -> Series:
     """
-    Get the mean average precision over IoU thresholds from 0.5 to 0.95 (map@50:95).
+    Get the per-class and overall F1 Score over IoU thresholds from 0.5 to 0.95 (f1@50:95).
 
     Args:
         coco_eval: COCOEval_faster returned from evaluate_parser()
         parser: The DocumentParser belonging to the evaluation
 
     Returns:
-        Series containing mAP per category and overall. Name is set to the Parsers name.
+        Series containing F1@50:95 per category and overall. Name is set to the Parsers name.
     """
-    classes = coco_eval.extended_metrics["class_map"]
+
+    classes = get_f1_metrics(coco_eval)
+
     filtered = {
-        c["class"]: c["map@50:95"]
+        c["class"]: c["f1@50"]
         for c in classes
     }
 

@@ -12,7 +12,6 @@ class HierarchicalChunker(DocumentChunker):
 
     module = Chunkers.HIERARCHICAL
 
-    max_tokens: int
     # Limit how much of our chunk can be taken up by parent headers
     max_parent_tokens: int
 
