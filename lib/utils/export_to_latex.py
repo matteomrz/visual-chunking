@@ -2,14 +2,14 @@ from logging import getLogger
 
 from pandas import DataFrame
 
-from config import FIGURE_DIR
+from config import TABLE_DIR
 
 logger = getLogger(__name__)
 
 
 def export_table_to_latex(df: DataFrame, name: str, axis: int = 0, precision: int = 4):
     """
-    Saves the content from a DataFrame to 'FIGURE_DIR / ```name```.tex'.
+    Saves the content from a DataFrame to 'TABLE_DIR / ```name```.tex'.
     Automatically highlights the max values.
 
     Args:
@@ -25,14 +25,14 @@ def export_table_to_latex(df: DataFrame, name: str, axis: int = 0, precision: in
     # Escape characters in headers
     styler.format_index(escape="latex", axis=1)
     styler.format_index(escape="latex", axis=0)
-    styler.format(precision=4)
+    styler.format(precision=precision)
 
     tex_content = styler.to_latex(hrules=True, convert_css=True)
 
-    if not FIGURE_DIR.exists():
-        FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    if not TABLE_DIR.exists():
+        TABLE_DIR.mkdir(parents=True, exist_ok=True)
 
-    output_path = FIGURE_DIR / f"{name}.tex"
+    output_path = TABLE_DIR / f"{name}.tex"
 
     with open(output_path, "w") as f:
         f.write(tex_content)

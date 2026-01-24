@@ -108,7 +108,7 @@ class SemanticChunker(DocumentChunker):
 
     def _get_sentence_tokens(self, element: ParsingResult) -> list[list[RichToken]]:
         sentences = get_sentences(element.content)
-        tokens = self._encode(element)
+        tokens = self._tokenize(element)
 
         result = [[]]
         s_idx = 0

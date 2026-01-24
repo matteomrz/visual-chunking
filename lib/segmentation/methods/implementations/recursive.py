@@ -35,7 +35,7 @@ class RecursiveChunker(DocumentChunker):
                 continue
 
             # Add the new tokens to the queue
-            elem_tokens = self._encode(elem)
+            elem_tokens = self._tokenize(elem)
             tokens.extend(elem_tokens)
 
             if len(tokens) > self.max_tokens:

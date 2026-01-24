@@ -212,26 +212,35 @@ _parsing_options = {
 }
 
 
-def get_class_metrics(coco_eval: COCOeval_faster, parser: DocumentParser[Any]) -> Series:
+def get_class_metrics(coco_eval: COCOeval_faster, parser: DocumentParser[Any]) -> tuple[
+    Series, Series]:
     """
-    Get the per-class and overall F1 Score over IoU thresholds from 0.5 to 0.95 (f1@50:95).
+    Get the per-class and macro F1@50 and F1@50:95.
 
     Args:
         coco_eval: COCOEval_faster returned from evaluate_parser()
         parser: The DocumentParser belonging to the evaluation
 
     Returns:
-        Series containing F1@50:95 per category and overall. Name is set to the Parsers name.
+        (Series, Series): Tuple of Series (F1@50, F1@50:95) per category and macro.
+        Name is set to the Parsers name.
     """
 
     classes = get_f1_metrics(coco_eval)
 
-    filtered = {
+    f_50 = {
         c["class"]: c["f1@50"]
         for c in classes
     }
+    f_50_series = Series(f_50, name=parser.module.value)
 
-    return Series(filtered, name=parser.module.value)
+    f_50_95 = {
+        c["class"]: c["f1@50:95"]
+        for c in classes
+    }
+    f_50_95_series = Series(f_50_95, name=parser.module.value)
+
+    return f_50_series, f_50_95_series
 
 
 def evaluate_parser(parser: DocumentParser[Any]) -> COCOeval_faster:

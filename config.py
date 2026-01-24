@@ -5,7 +5,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 
 THESIS_DIR = ROOT_DIR / "thesis"  # Latex Thesis directory
-FIGURE_DIR = THESIS_DIR / "figures"  # Tex files for tables and other graphics
+FIGURE_DIR = THESIS_DIR / "figures"  # Tex files for all figures
+TABLE_DIR = FIGURE_DIR / "tables"  # Tex files for tables
 
 LIB_DIR = ROOT_DIR / "lib"  # Code directory
 

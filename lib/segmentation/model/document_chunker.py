@@ -128,9 +128,16 @@ class DocumentChunker(ABC):
     def __init__(self, **kwargs):
         self.max_tokens = kwargs.get("max_tokens", 128)
 
-    def _encode(self, element: ParsingResult) -> list[RichToken]:
+    def _tokenize(self, element: ParsingResult) -> list[RichToken]:
         """
-        Transforms a ParsingResults into a list of Tokens and Information about token count and bounding boxes
+        Transforms a ParsingResults into a list of Tokens.
+        Additionally, adds the total token count of the element to the element's metadata.
+
+        Args:
+            element: ParsingResult to be tokenized
+
+        Returns:
+            list[RichToken]: Tokens including metadata about their position in the element.
         """
         data = self.tokenizer(element.content, return_offsets_mapping=True)
         encoded = data.get("input_ids", [])

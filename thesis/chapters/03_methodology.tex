@@ -19,8 +19,8 @@ The ParsingBoundingBox (\autoref{fig:parsing-bounding-box}) datatype adds additi
 
 \begin{figure}[htpb]
   \centering
-  \input{figures/parsing_bounding_box}
-  \caption[ParsingBoundingBox]{ParsingBoundingBox datatype.}\label{fig:parsing-bounding-box}
+  \input{figures/code/parsing_bounding_box}
+  \caption[ParsingBoundingBox]{Python implementation of the ParsingBoundingBox datatype.}\label{fig:parsing-bounding-box}
 \end{figure}
 
 \subsection{ParsingResultType}
@@ -35,25 +35,34 @@ The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing mo
 
 \begin{figure}[htpb]
   \centering
-  \input{figures/parsing_result}
-  \caption[ParsingResult]{ParsingResult datatype.}\label{fig:parsing-result}
+  \input{figures/code/parsing_result}
+  \caption[ParsingResult]{Python implementation of the ParsingResult datatype.}\label{fig:parsing-result}
 \end{figure}
 
 The \lstinline!geom! attribute contains a list of bounding boxes related to the element. This allows elements, such as tables, to span multiple pages by containing multiple bounding boxes. Using the \lstinline!parent! and \lstinline!children! attributes of the ParsingResult, the hierarchy of the input document is represented as a tree of ParsingResult nodes. This way, hierarchical relationships between the elements can be represented. For example, a section header has all text paragraphs contained in it's section as children.
 
 \subsection{ChunkingResult}
-The ChunkingResult is the output of the chunking module. It provides a wrapper around a list of Chunks, adding a \lstinline!metadata! field for information about the document and the preceeding processes.
+The ChunkingResult (\autoref{fig:chunks}) is the output of the chunking module. It provides a wrapper around a list of Chunks, adding a \lstinline!metadata! field for information about the document and the preceeding processes.
+
+\begin{figure}[htpb]
+  \centering
+  \input{figures/code/chunking_result}
+  \qquad
+  \input{figures/code/chunk}
+  \caption[ChunkingResult]{Python implementation of the ChunkingResult and Chunk datatypes.}\label{fig:chunks}
+\end{figure}
+
 
 \subsection{Chunk}
 
 \section{Parsing module}
-The parsing module processes an incoming \gls{pdf} document in a multi-step process. Firstly, the document is passed to the internal \gls{dp} implementation using the \lstinline!_parse! function. Through the \lstinline!_transform! function, the raw output is then converted into the ParsingResult format. Additionally, the \lstinline!_get_md! function extracts the Markdown representation of the document from the raw output of the internal parser. Finally, additional metadata about the parsing process, such as the duration of the internal parsing operation, are added to the root ParsingResult. After performing additional post-processing steps, both the Markdown as well as the lossless serialization of the ParsingResult in JSON output are then persisted to the file system. As the raw types returned by the internal parser differ based on the specific implementation, each of the abstract functions mentioned above need to be implemented by the specific parser class. An overview of the abstract functions to be implemented can be found in \autoref{fig:parsing-functionality}.
+The parsing module processes an incoming \gls{pdf} document in a multi-step process. Firstly, the document is passed to the internal \gls{dp} implementation using the \lstinline!_parse! function. Through the \lstinline!_transform! function, the raw output is then converted into the ParsingResult format. Additionally, the \lstinline!_get_md! function extracts the Markdown representation of the document from the raw output of the internal parser. Finally, additional metadata about the parsing process, such as the duration of the internal parsing operation, are added to the root ParsingResult. After performing additional post-processing steps, both the Markdown as well as the lossless serialization of the ParsingResult in JSON output are then persisted to the file system. As the raw types returned by the internal parser differ based on the specific implementation, each of the abstract functions mentioned above need to be implemented by the specific parser class. An overview of the abstract functions to be implemented can be found in \autoref{tab:parsing-functionality}.
 
-\begin{figure}[htpb]
+\begin{table}[htpb]
   \centering
-  \input{figures/parsing_module_func.tex}
-  \caption[Parsing module abstract functions]{Abstract functions of the Parsing Module to be fulfilled by the implementation.}\label{fig:parsing-functionality}
-\end{figure}
+  \input{figures/tables/parsing_module_func.tex}
+  \caption[Parsing module abstract functions]{Abstract functions of the Parsing Module to be fulfilled by the implementation.}
+\end{table}\label{tab:parsing-functionality}
 
 \subsection{Unstructured.io}
 
@@ -79,15 +88,36 @@ Another popular choice for open-source on-device \gls{dp} is the MinerU framewor
 \section{Post-processing methods}
 
 \section{Chunking module}
+The chunking module provides an interface to perform document chunking on the ParsingResult tree representation of the \gls{pdf} document. We propose a novel solution aimed at increasing the traceability of the chunk content to its constituent ParsingResults. Prominent implementations of document chunking methods, such as the ones found in the \gls{rag} frameworks LlamaIndex \todo{cite} and Llangchain \todo{cite} treat the chunking process as a transformation of a single string, typically the Markdown representation of the document, into multiple smaller strings. Following this approach, resulting chunks lose their direct connection to the underlying structural elements, complicating source attribution.
+
+Domain-specific implementations, such as Docling's Hybrid and Hierarchical Chunkers \todo{cite}, improve upon this by including a list of elements associated with the resulting chunk. Additionally, they take advantage of the document's hierarchy by including relevant section headers in the chunk text. However, these implementations do not distinguish between partially and fully included elements. This results in chunk bounding boxes which always contain the entire element, regardless of how much of it's text is actually included in the text of the chunk. Furthermore, while the content of the section headers is included in the chunk, their corresponding bounding boxes are not retained.
+
+Our solution addresses these limitations by enabling traceability at the highest relevant granularity for \gls{rag} chunking. While in traditional text segmentation, characters are the smallest instance that a text can be broken up at, the same can not be said about gls{ai} models.\ \gls{ai} models are not directly constrained by the character length of their input and are instead limited by the amount of tokens that can fit into their context window. This means that the smallest instance that a text should be broken up into in the context of RAG is a token. To enable the tracing of every token inside the chunk to a token inside an element, we introduce the RichToken. A RichToken (\autoref{fig:rich-token}) is an object that wraps around a single token and it's original text, the id of the element that the token belongs to, and it's corresponding index inside that element. When the module performs the chunking operation on a ParsingResult, the specific chunking implementation processes the tree and returns the content of each chunk as a list of RichTokens. The module then creates a Chunk object using the RichTokens. By aggregating the content of the RichToken, the module can reconstruct the content of the entire Chunk, while maintaining the relationships to the constructing ParsingResults. Since the module is aware of the specific tokens that are included in the Chunk, we can determine tighter chunk bounding boxes using the span-level bounding boxes added to the elements in the \gls{dp} post-processing.
+
+\begin{figure}[htpb]
+  \centering
+  \input{figures/code/rich_token.tex}
+  \caption[RichToken]{Python implementation of the RichToken datatype.}\label{fig:rich-token}
+\end{figure}
+
+How the RichTokens are grouped together into chunks is to be decided by the specific chunking evaluation. However, the process usually involves the traversal of the ParsingResult tree. When a new node is reached, the RichTokens of the element are provided through the \lstinline!_tokenize! function. Internally, the module uses the \lstinline!all-MiniLM-L6-v2! sentence transform as a tokenizer. As the implementation traverses the tree further it returns a continuous stream of RichTokens lists. To avoid creating chunks, which are too big for the embedding function's context window, a limit for the maximum amount of tokens per chunk can be set on the chunking module. We provide implementations for four different document chunking strategies.
+
+\subsection{Fixed-Size Chunking}
+
+\subsection{Recursive Character Chunking}
+
+\subsection{Semantic Chunking}
+
+\subsection{Hierarchical Chunking}
 
 \section{Evaluation Framework}
 
 \subsection{Document Layout Analysis evaluation}
-The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from PubMed Central Open Access (PMCOA), PubLayNet is one of the largest datasets for \gls{dla}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use a small subset of 500 pages of the original dataset \autocite{publaynet-mini}. As seen in \todo{table with counts}, the subset contains around 5000 annotated elements from 5 different classes.
+The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from PubMed Central Open Access (PMCOA), PubLayNet is one of the largest datasets for \gls{dla}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use a small subset of 500 pages of the original dataset for this evaluation \autocite{publaynet-mini}. As seen in \todo{table with counts}, the subset contains around 5000 ground truth elements from 5 different classes.
 
-To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box, class label combination. As most of the \gls{dp} implementations provide `hard-predictions', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this thesis \autocite{lrp_error,eclair}.
+To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide `hard-predictions', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this thesis \autocite{lrp_error,eclair}.
 
-For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{precision_recall}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, firstly the \glspl{dtbb} are classified into \glspl{tp} and \glspl{fp}. A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class, so that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $N$ \glspl{dtbb}, out of which $S, (S\leq N)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
+For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{object_detection_metrics}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, firstly the \glspl{dtbb} are classified into \glspl{tp} and \glspl{fp}. A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class, so that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $N$ \glspl{dtbb}, out of which $S, (S\leq N)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
 
 \begin{equation}
   \text{Pr} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{N-S}\text{FP}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ detections}
@@ -99,31 +129,21 @@ For this reason, we will compare the implementations based on their achieved F1 
   \label{eq:recall}
 \end{equation}
 
-The F1 score is the weighted harmonic mean between both precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The F1 score is calculated for a single class at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T.
+The F1 score is the weighted harmonic mean between precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The F1 score is calculated for a single class at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as a \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T \autocite{scenescript}.
 
 \begin{equation}
   F_1 = 2\frac{\text{Pr}\cdot\text{Rc}}{\text{Pr}+\text{Rc}}
   \label{eq:f1score}
 \end{equation}
 
-For scenarios with multiple classes, such as the evaluation on the PubLayNet dataset, the Macro F1 score is used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the average of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $N_{:j}$ and $G_{:j}$ refer to the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
+For scenarios with multiple classes, such as the PubLayNet dataset, the Macro F1 score can be used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the mean of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $N_{:j}$ and $G_{:j}$ denote the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
 
 \begin{equation}
-  F_{1_\text{Macro}}(N, G) = \frac{1}{m}\sum_{j=1}^{m}F_1(N_{:j}, G_{:j})
+  F_{1_\text{Macro}}(N, G) = \frac{1}{M}\sum_{j=1}^{M}F_1(N_{:j}, G_{:j})
   \label{eq:macrof1}
 \end{equation}
 
-The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and $F1@50:95$ will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes. F1@50 is chosen as, a threshold of 50\% is one of the most used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline!faster-coco-eval! package is used \autocite{faster-coco-eval}.
-
-PubLayNet
-Content:
-\begin{itemize}
-  \item Data Format
-  \item Data creation (Matching Pdf file with xml representation)
-  \item Dataset size (>190.000 pages)
-  \item Subset selection (Huggingface 500 pages, put exact element counts)
-  \item Explain evaluation using COCOEval \todo{I think this belongs into Evaluation}
-\end{itemize}
+The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and $F1@50:95$ will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes \autocite{coco}. F1@50 is chosen, as a threshold of 50\% is one of the most commonly used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline!faster-coco-eval! package is used to determine the recall and precision values at the \gls{iou} thresholds \autocite{faster-coco-eval}.
 
 \subsection{Content Parsing Evaluation}
 OmniDocBench

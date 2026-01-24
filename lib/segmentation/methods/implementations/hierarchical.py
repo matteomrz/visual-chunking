@@ -35,7 +35,7 @@ class HierarchicalChunker(DocumentChunker):
         subtree_cnt = self._get_token_count(subtree)
 
         # elem_tokens only have the tokens of the element itself
-        elem_tokens = self._encode(element)
+        elem_tokens = self._tokenize(element)
         elem_token_cnt = len(elem_tokens)
 
         if subtree_cnt > max_content_tokens:
@@ -101,7 +101,7 @@ class HierarchicalChunker(DocumentChunker):
         else:
             if element.type != ParsingResultType.TABLE_ROW:
                 for child in element.children:
-                    child_tokens = self._encode(child)
+                    child_tokens = self._tokenize(child)
                     elem_tokens.extend(child_tokens)
 
             yield elem_tokens
