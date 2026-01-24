@@ -1,0 +1,11 @@
+\begin{tabular}{c}
+  \begin{lstlisting}[language=Python]
+    class ParsingBoundingBox:
+      page: int
+      left: float
+      top: float
+      right: float
+      bottom: float
+      spans: list[ParsingBoundingBox] = field(default_factory=list)
+  \end{lstlisting}
+\end{tabular}
