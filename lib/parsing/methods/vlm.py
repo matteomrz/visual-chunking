@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 md_filter_types = [
     ParsingResultType.PAGE_HEADER,
-    ParsingResultType.PAGE_FOOTER
+    ParsingResultType.PAGE_FOOTER,
+    ParsingResultType.WATERMARK
 ]
 
 

@@ -3,6 +3,12 @@
 \chapter{Introduction}\label{chapter:Introduction}
 
 \section{Problem Statement}
+Clinical guideline documents are fundamental to efficient and reliable treatment of variuos illnesses. Especially oncology guidelines, which revolve around the treatment of cancer, are an important part of the therapy process. These guideline documents not only aid doctors in deciding on the correct treatment options but also support patients in understanding their illness. In recent years, due to advancements in technology, novel therapeutics, and personalized medicine, clinical guidelines have drastically increased in size and complexity. As of 2019, the average oncology guideline published by the \gls{nccn} was 198 pages long, showing an annual increase of 7.5 percent over the previous 23 years \autocite{guidelines_length}. This increase of complexity forces medical personel to invest more time in order to be able to provide optimal care for cancer patients. Especially for individual practicioners this additional strain might become unsustainable if complexity continues increasing.
+
+The Aidvice project proposes to adress this problem by leveraging recent advantages in \gls{ai}. Specifically, the project revolves around the development of a \gls{rag} based knowledge assistant \autocite{aidvice}.\ \gls{rag} is an emerging paradigm which addresses a fundamental problem of traditional \glspl{llm} \autocite{rag}. While \glspl{llm} excel at many \gls{nlp} tasks, they are prone to `hallucinations' and inaccurate answers, when sought information goes beyond the model's training data \autocite{rag_survey}. This provides a major obstacle for the usage of \glspl{llm} in the medical field, where accurate and reliable answers are of the highest priority \autocite{lins}.\ \gls{rag} mitigates these drawbacks by providing additional context to the \gls{llm} during answer generation \autocite{chunk_size_effect_on_rag}. This is achieved by introducing an external knowledge source comprised of application-relevant text passages, typically stored in a high-dimensionality vector database \autocite{rag}. Before the model generates the answer, the knowledge source is queried and the most relevant passages are prepended to the user's original input. By providing this additional context, the \gls{llm} can synthesize answers grounded in the retrieved passages instead of relying purely on it's training data \autocite{rag,rag_survey}.
+
+\todo{Explain the preprocessing steps that need to be performed on the documents}
+
 Content:
 \begin{itemize}
   \item What are rag systems? What do they do?
@@ -10,10 +16,6 @@ Content:
   \item What are problems with oncology guidelines specifically?
   \item Why is chunking important for rag systems? What are positive benefits of good chunking?
 \end{itemize}
-
-Ever since the release of the original ChatGPT model by OpenAI in November 2022, large language models (LLMs) have seen widespread adoption across various domains. Since then, LLMs have revolutionized how we access and retrieve information, enabling users to interact with vast amounts of data through natural language queries alone.
-
-% Recently, retrieval augmented generation (RAG) systems have been proposed as a solution to mitigate these issues. 
 
 \section{Objectives}
 Research questions:

@@ -1,0 +1,42 @@
+\begin{tabular}{ll}
+  \toprule
+  Classification               & Description                                                               \\
+  \midrule
+
+  ROOT                         & The top-level node containing the entire document structure               \\
+
+  \bfseries TEXTS              &
+  TITLE                        & The specific main title of the document                                   \\
+  PARAGRAPH                    & Standard body text content                                                \\
+  SECTION_HEADER               & Section headings or subheaders within the text body                       \\
+  FOOTNOTE                     & Explanatory notes usually placed at the bottom of a page/text             \\
+
+  \bfseries LISTS              &
+  LIST                         & A container node for a list of items                                      \\
+  LIST_ITEM                    & An individual item within a list                                          \\
+  REFERENCE_LIST               & A container node for a list of reference items                            \\
+  REFERENCE_ITEM               & An individual item within a reference list                                \\
+
+  \bfseries FIGURES AND TABLES &
+  CAPTION                      & Descriptive text immediately accompanying a table or figure               \\
+  FIGURE                       & Graphical elements, diagrams, or pictures                                 \\
+  TABLE                        & A container node for tabular data                                         \\
+  DOC_INDEX                    & A tabular node containing the TOC or other document information
+  TABLE_ROW                    & A horizontal row within a table                                           \\
+  TABLE_CELL                   & An individual cell containing data within a table row                     \\
+
+  \bfseries MISCELLANEOUS      &
+  PAGE_FOOTER                  & Repeating page footer (page numbers, copyright, etc.)                     \\
+  KEY_VALUE                    & A specific key-value pair                                                 \\
+  PAGE_HEADER                  & Repeating header found at the top of pages (e.g., journal name)           \\
+  KEY_VALUE_AREA               & A distinct region grouped by key-value pairs (e.g., article info)         \\
+  FORM_AREA                    & A region indicating form content (e.g., text-fields)                      \\
+  FORMULA                      & A mathematical formula
+  WATERMARK                    & A watermark from the publishing organization
+
+  \bfseries FALLBACK           &
+  UNKNOWN                      & Used when the parser cannot determine the element type                    \\
+  MISSING                      & Used when the parser returns a classification for which no mapping exists \\
+  \bottomrule
+\end{tabular}
+

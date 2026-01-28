@@ -53,6 +53,8 @@ class ParsingMetaData(Enum):
     GUIDELINE_PATH = "file_path"
     JSON_PATH = "json_path"
     PARSER = "parsing_method"
+    PAGE_COUNT = "page_count"
+    ELEMENT_COUNT = "element_count"
 
     # TIME
     PARSING_TIME = "parsing_time"
@@ -234,6 +236,17 @@ class ParsingResult:
         # TODO: Change to depend on the height of the bounding box
         token_cnt = self.metadata.get("token_cnt", 0)
         return token_cnt / self.geom_count
+
+    @property
+    def rec_children_cnt(self) -> int:
+        """Recursively counts the number of elements assigned as children to this ParsingResult."""
+
+        length = 0
+
+        for child in self.children:
+            length += child.rec_children_cnt + 1
+
+        return length
 
     def __str__(self):
         return self._rstr().strip()

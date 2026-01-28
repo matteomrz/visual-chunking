@@ -34,13 +34,14 @@ class SemanticChunker(DocumentChunker):
         self.similarity_threshold_percentile = kwargs.get("similarity_threshold", 95)
         self.min_tokens = kwargs.get("min_tokens", 0)
 
+        assert self.min_tokens < self.max_tokens
+
     def _get_chunk_tokens(self, document: ParsingResult) -> Generator[list[RichToken], Any, None]:
         # Import NLTK packages needed for sentence splitting
         setup_nltk()
 
         prev_embedding: Optional[torch.Tensor] = None
         sentences: list[Sentence] = []
-        similarities = []
 
         for element in document.flatten():
             if element.type in self.excluded_types:
@@ -59,7 +60,6 @@ class SemanticChunker(DocumentChunker):
                     distance = torch.zeros(1, 1)
                 else:
                     similarity = self.embedding_model.similarity(prev_embedding, embedding)
-                    similarities.append(similarity)
                     distance = 1 - similarity
 
                 sentence: Sentence = {

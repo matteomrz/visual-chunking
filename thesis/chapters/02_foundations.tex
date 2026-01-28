@@ -2,6 +2,9 @@
 
 \chapter{Foundations}\label{chapter:foundations}
 
+\section{Oncology guideline documents}
+
+
 \section{Retrieval-Augmented Generation}
 Content:
 \begin{itemize}
@@ -12,11 +15,7 @@ Content:
 \todo{Other usages of chunking than RAG}
 
 \subsection{Tokenization}
-Content:
-\begin{itemize}
-  \item Definition
-  \item What is a token?
-\end{itemize}
+Tokenization refers to the segmentation of text into subword units called tokens \autocite{fast_tokenization}. Tokens are the fundamental text representation for most \gls{nlp} tasks. With a granularity located between characters and words, tokens can retain linguistic meaning while also being able to represent arbitrary text with a relatively concise vocabulary \autocite{fast_tokenization}. Using tokenization any given text can essentially be represented as a list of integers, with each integer being the identifier to a specific token in the tokenizer's dictionary \autocite{token_history}. During training, the tokenizer creates it's dictionary by finding character pairings that occur with the highest frequency in the training data \autocite{token_history}. Additionally, with the multitude of different techniques for modern subword tokenization \autocite{wordpiece,sentencepiece,unigram}, the same input text can lead to drastically different outputs depending on the specific tokenizer and training data. Therefore, tokenizers always need to match the \gls{nlp} models they are used with.
 
 \subsection{Text Embeddings}
 Content:
@@ -61,12 +60,18 @@ Content:
 \section{PDF format}
 
 \section{Document Parsing}
+Also known as document content extraction, \gls{dp} aims to convert unstructured and semi-structured documents into structured, machine readable data formats \autocite{parsingunveiled,omnidocbench}. During this process elements such as headings, tables, and figures are extracted from the document while preserving their structural relationships.\ \gls{dp} is crucial for many document-related tasks, providing access to previously unavailable information sources. Especially for \glspl{llm}, where leveraging additional training data is crucial for enhancing the model's factual accuracy and knowledge grounding, \gls{dp} plays an important rule \autocite{omnidocbench,mineru}. With the emergence of the \gls{rag} pardigm, \gls{dp} has also been critical in the creation of the knowledge database, as important information is often stored inside file formats which can not directly be processed by machines \autocite{docling}. While \gls{dp} is used for converting a range of document formats into machine-readable content, we will focus solely on the parsing of \gls{pdf} documents for the purposes of this thesis, as this is the datatype that the oncology guidelines are stored as.
 
-Also known as document content extraction, \gls{dp} aims to convert unstructured and semi-structured documents into structured data formats.\cite{parsingunveiled} During this process elements such as headings, tables, and figures are extracted from the document while preserving their structural relationships. \\
-
-While there are many tools available for document parsing, most of them can be categorized into either modular pipeline systems or end-to-end VLM models.
+Converting \gls{pdf} documents is particularly challenging due to their variable formatting, lack of standardization and focus on visual characteristics \autocite{docling}. The format not only includes digitally-born files but also includes photographed and scanned documents. Therefore \gls{dp} systems need to be able to adapt to a wide range of different layouts, image qualities and document types, such as academic papers, invoices or presentation slides \autocite{omnidocbench,intelligent_doc_parsing}. While there are many tools and implementations available for \gls{dp}, most of them can be categorized into either modular pipeline systems or end-to-end VLM models.
 
 \subsection{Modular Pipeline Systems}
+Modular pipeline systems employ various different modules in a sequential order to perform \gls{dp}. This modular design enables the targeted optimization of individual components and flexibility integration of new modules and techniques \autocite{monkeyocr}. While different formations are possible, most implementations consist of three different stages: \gls{dla}, content extraction, and relation integration \autocite{parsingunveiled}.
+
+\textbf{\gls{dla}:} According to \textcite{parsingunveiled}, \gls{dla} identifies the structural elements of a document, such as paragraphs, section headers, tables, figures, and mathematical equations as well as their respective bounding boxes \autocite{parsingunveiled,docling_heron}. There are two types of methods for performing \gls{dla}. Unimodal methods focus purely on visual features of the document in order to identify structural elements \autocite{parsingunveiled,pp_doclayout}. Notably, \gls{cnn}- and transformer-based methods adapt models initially designed for object detection tasks, such as the YOLO \autocite{yolo} and DETR \autocite{detr} families of models, to accurately identify structural elements in document images \autocite{parsingunveiled,docling_heron}. Hereby, transformer-based methods excell at capturing global relationships between structural elements at the cost of computational intensivity and expensive pretraining \autocite{parsingunveiled}.
+The second type of \gls{dla} methods are multi-modal methods. Additionally to the visual representations, multi-modal methods also rely on the content and position of the pages' textual content as inputs to perform \gls{dla} using a \gls{vlm} \autocite{pp_doclayout,layoutlm_v3}. This approach allows more granular classifications and the analysis of highly complex layouts \autocite{parsingunveiled,pp_doclayout}.
+
+\textbf{Content Extraction:}
+
 \begin{itemize}
   \item Definition
   \item Common Pipeline Stages (Document Layout Analysis, OCR, element type dependent modules)

@@ -48,7 +48,7 @@ Rules for Categorization:
 
 <extraction_rules>
 - **Text Fidelity:** Extract text EXACTLY as it appears. Do NOT fix spelling or grammar. You MAY use any formatting that is available for a standard Markdown document.
-- **Character Escaping:** You MUST escape any special characters that can break the final JSON output.
+- **Character Escaping:** You MUST escape any special characters that can break the final JSON output. Also you must escape any quotation marks.
 - **Reading Order:** Sort elements by natural human reading order.
 - **Special Formatting:**
     - {ParsingResultType.FIGURE.value}: Content must be an empty string "".
@@ -65,12 +65,12 @@ Return a SINGLE JSON object with this exact structure:
   "layout_elements": [
     {{
       "category": "string (from list)",
+      "heading_level": integer (include only for headers),
+      "content": "string",
       "bbox": {{
         "page_number": integer,
-        "box_2d": list[integer]
-      }},
-      "heading_level": integer (include only for headers),
-      "content": "string"
+        "box_2d": bounding_box (list[integer]) (SINGLE bounding box)
+      }}
     }}
   ]
 }}

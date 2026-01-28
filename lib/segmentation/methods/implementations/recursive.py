@@ -7,7 +7,7 @@ from lib.segmentation.model.token import RichToken
 # Adapted from: https://github.com/langchain-ai/langchain/blob/master/libs/text-splitters/langchain_text_splitters/character.py
 # Added punctuation for more meaningful splitting
 delimiters: list[str] = [
-    "\n\n", "\n", ".", ";", ",", " ", ""
+    "\n\n", "\n", ".", "!", "?", " ", ""
 ]
 
 
@@ -19,12 +19,13 @@ class RecursiveChunker(DocumentChunker):
 
     module = Chunkers.RECURSIVE
 
-    max_tokens: int
     overlap: int
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.overlap = kwargs.get("overlap", 0)
+
+        assert self.overlap < self.max_tokens
 
     def _get_chunk_tokens(self, document: ParsingResult):
         tokens: list[RichToken] = []
@@ -40,20 +41,28 @@ class RecursiveChunker(DocumentChunker):
 
             if len(tokens) > self.max_tokens:
                 # Get chunk breakpoints
-                splits = find_splits(tokens, self.max_tokens)
+                # As we always include the overlap tokens of the previous chunk,
+                # we want to find splits which are at most max_tokens - overlap long
+                max_split_len = self.max_tokens - self.overlap
+                splits = find_splits(
+                    tokens[self.overlap:],
+                    max_split_len,
+                    start_idx=self.overlap
+                )
 
                 # Maybe last split can be merged with the first split of the next iteration
                 # Therefore leave the last split in the queue
                 splits.pop()
 
-                prev_split = 0
+                split_start = 0
                 for split in splits:
                     # Return tokens as indicated by the splits
-                    yield tokens[prev_split:split]
-                    prev_split = split
+                    yield tokens[split_start:split]
 
-                cutoff = max(0, prev_split - self.overlap)
-                tokens = tokens[cutoff:]
+                    # Include overlap in the following chunk
+                    split_start = max(0, split - self.overlap)
+
+                tokens = tokens[split_start:]
 
         # Residual tokens form undersized chunk
         if tokens:

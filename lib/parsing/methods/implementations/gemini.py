@@ -1,8 +1,8 @@
 import json
 from logging import getLogger
 from pathlib import Path
-from typing import Any
 
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
@@ -22,15 +22,13 @@ class GeminiParser(VLMParser):
 
     client: genai.Client
     model_name: str
+    max_retries: int
 
-    # model_config: types.GenerateContentConfig
-
-    def __init__(self):
+    def __init__(self, **kwargs):
+        load_dotenv()
         self.client = genai.Client()
-        self.model_name = "gemini-2.5-flash-image"  # TODO: Specify date
-        # self.model_config = types.GenerateContentConfig(
-        #     media_resolution=types.MediaResolution.MEDIA_RESOLUTION_MEDIUM
-        # )
+        self.model_name = "gemini-2.5-flash-image"
+        self.max_retries = kwargs.get("max_retries", 2)
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
         page_image_bytes = pdf_to_page_img_bytes(file_path, "jpeg")
@@ -40,25 +38,32 @@ class GeminiParser(VLMParser):
         for idx, page_bytes in enumerate(page_image_bytes):
             doc_part = types.Part.from_bytes(data=page_bytes, mime_type="image/jpeg")
             prompt = get_prompt_for_page_wise(idx + 1)
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                # config=self.model_config,
-                contents=[
-                    doc_part,
-                    prompt
-                ]
-            )
 
-            res_json = trim_json_string(response.text)
-
-            try:
-                res = json.loads(res_json)
-                res_elems = res["layout_elements"]
-                results["layout_elements"].extend(res_elems)
-            except BaseException as e:
-                logger.error(
-                    f"Malformed response from {self.module.value}. "
-                    f"Error: {e}. Received response: {response.text}"
+            for retry in range(self.max_retries):
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=[
+                        doc_part,
+                        prompt
+                    ]
                 )
+
+                try:
+                    res_json = trim_json_string(response.text)
+
+                    res = json.loads(res_json)
+                    res_elems = res["layout_elements"]
+                    results["layout_elements"].extend(res_elems)
+
+                    break
+                except BaseException as e:
+                    malformed_msg = f"Malformed response from {self.module.value}. "
+
+                    if retry == self.max_retries - 1:
+                        error_msg = f"Error: {e}. Received response: {response.text}"
+                        raise ValueError(malformed_msg + error_msg)
+                    else:
+                        retry_msg = f"Retrying {file_path.stem}... ({retry + 1}/{self.max_retries})"
+                        logger.warning(malformed_msg + retry_msg)
 
         return results

@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
+import pymupdf
+
 from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.scripts.postprocess import parse_post_process
@@ -189,6 +191,11 @@ class DocumentParser(ABC, Generic[T]):
         """Set the metadata for the ParsingResult."""
         result.metadata[PmD.PARSER.value] = self.module.value
         result.metadata[PmD.GUIDELINE_PATH.value] = str(file_path)
+        result.metadata[PmD.ELEMENT_COUNT.value] = result.rec_children_cnt
+
+        page_cnt = pymupdf.open(file_path).page_count
+        result.metadata[PmD.PAGE_COUNT.value] = page_cnt
+
         _set_time_meta(result, start_time, parse_time, transformation_time)
 
     def process_document(self, file_path: Path, options: dict = None) -> ParsingResult:
@@ -255,6 +262,7 @@ class DocumentParser(ABC, Generic[T]):
 
         if batch_path.exists() and batch_path.is_dir():
             results = []
+            failed = []
 
             for file_path in batch_path.glob("*.pdf"):
                 output_path = self._get_json_output_path(file_path)
@@ -263,8 +271,15 @@ class DocumentParser(ABC, Generic[T]):
                     res = open_parsing_result(output_path)
                     results.append(res)
                 else:
-                    res = self.process_document(file_path, options)
-                    results.append(res)
+                    try:
+                        res = self.process_document(file_path, options)
+                        results.append(res)
+
+                    except BaseException:
+                        failed.append(file_path.name)
+
+            if failed:
+                logger.warning(f"Processing failed for: {failed}")
 
             return results
         else:
