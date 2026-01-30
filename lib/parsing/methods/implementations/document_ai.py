@@ -22,12 +22,8 @@ PDF_MIME_TYPE = "application/pdf"
 layout_config = document_ai.types.ProcessOptions.LayoutConfig()
 layout_config.return_bounding_boxes = True
 
-ocr_config = document_ai.types.OcrConfig()
-ocr_config.enable_native_pdf_parsing = False
-
 PROCESS_OPTIONS = document_ai.ProcessOptions()
 PROCESS_OPTIONS.layout_config = layout_config
-PROCESS_OPTIONS.ocr_config = ocr_config
 
 
 # TODO: Give more info about how to use document ai

@@ -4,6 +4,18 @@
 
 \begin{table}[htpb]
   \centering
-  \input{figures/tables/example_table}
-  \caption{mean Average Precision of the parsing methods per element type in the PubLayNet dataset.}
-\end{table}\label{tab:example_table}
+  \input{figures/tables/f_50_publaynet}
+  \caption[F1@50 on the PubLayNet dataset]{F1@50 values of the evaluated \gls{dp} implementations on the PubLayNet dataset. Values are reported per element type. The column \lstinline!all! reports the Macro F1@50 for each implementation. Highest values are bolded and smallest values are underlined. Higher values are better.}
+\end{table}\label{tab:f1_50_publaynet}
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/f_50_95_publaynet}
+  \caption[F1@50:95 on the PubLayNet dataset]{F1@50:95 values of the evaluated \gls{dp} implementations on the PubLayNet dataset. Values are reported per element type. The column \lstinline!all! reports the Macro F1@50:95 for each implementation. Highest values are bolded and smallest values are underlined. Higher values are better.}
+\end{table}\label{tab:f1_50_95_publaynet}
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/time_per_page}
+  \caption[Parsing and transformation times per page]{Mean and standard deviation of the \gls{dp} implementation's parsing and transformation times per page. Times are reported in seconds. Fastest times are bolded and slowest times are underlined. Lower values are better.}
+\end{table}\label{tab:time_per_page}

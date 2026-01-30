@@ -1,5 +1,10 @@
 # LaTeX build files
-build/
+build/*
+
+# Add the PDF output
+!build
+!build/main.pdf
+
 *.aux
 *.bbl
 *.bcf
@@ -34,7 +39,3 @@ build/
 # Backup files
 *.bak
 *.backup
-
-# Keep the final PDF if you want (remove this line if you don't)
-# !build/main.pdf
-

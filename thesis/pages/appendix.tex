@@ -1,13 +1,7 @@
 \chapter{General Addenda}
 
-If there are several additions you want to add, but they do not fit into the thesis itself, they belong here.
-
-\section{Detailed Addition}
-
-Even sections are possible, but usually only used for several elements in, e.g.\ tables, images, etc.
-
-\chapter{Figures}
-\section{Example 1}
-\cmark
-\section{Example 2}
-\xmark
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/parsing_result_type}
+  \caption[ParsingResultType]{Complete list of classifications permitted to be returned by a \gls{dp} implementation. Each implementation provides a mapping from their native output classifications to the standard set defined here. Some ParsingResultTypes may only be returned from a subset of these implementations.}
+\end{table}\label{tab:parsing-result-type}

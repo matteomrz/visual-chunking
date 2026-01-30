@@ -42,8 +42,8 @@ def get_time_stats():
     df = pd.DataFrame(stats)
 
     comp_table = df.groupby("Method").agg({
-        "Parsing": ["mean", "std", "min", "max"],
-        "Transformation": ["mean", "std", "min", "max"]
+        "Parsing": ["mean", "std"],
+        "Transformation": ["mean", "std"]
     })
 
     return comp_table

@@ -3,9 +3,13 @@
 \chapter{Methodology}\label{chapter:methodology}
 
 \section{Pipeline overview}
-\todo{add figure for the pipeline}
+In order to be able to compare different \gls{dp} implementations and chunking strategies, we developed a modular document segmentation pipeline. The system transforms the raw \gls{pdf} documents into chunks through a two-stage process. Due to this modular approach, the pipeline allows to easily swap out both the used \gls{dp} implementation and chunking strategy, while maintaining a unified interface for both modules. The architecture of the data processing pipeline is illustrated in \autoref{fig:pipeline-overview}.
 
-The architecture of the data processing pipeline is illustrated in \todo{ref}. The system is designed as a modular pipeline that transforms the raw \gls{pdf} documents into chunks through a two-stage process.
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{pipeline_diagram}
+  \caption[Document Segmentation Pipeline]{Overview of the document segmentation pipeline architecture. The pipeline consists of two main modules: the parsing module and the chunking module. The parsing module transforms unstructured \gls{pdf} documents into the structured ParsingResult format while extracting it's textual content as a Markdown file. The chunking module then splits the ParsingResult into smaller chunks suitable for \gls{rag} applications, while maintaining positional information for visual source attribution.}\label{fig:pipeline-overview}
+\end{figure}
 
 \textbf{Parsing module:} The parsing module is the first step of the pipeline. It provides a unified interface for various \gls{dp} implementations. Firstly, document elements and their structural information are extracted from the document using the underlying \gls{dp} implementation. The output then gets converted into a standardized data format and further post-processed to prepare the data for the chunking module.
 
@@ -28,7 +32,7 @@ One problem with comparing multiple \gls{dp} methods is their lack of universal 
 
 Firstly, the naming of element types differs between implementations. For example, a paragraph gets classified as \lstinline!NarrativeText! by the Unstructured.io framework \autocite{unstructuredio}, while Docling \autocite{docling} names the same category as simply \lstinline!TEXT!.
 
-Secondly, some methods provide classifications, which are not provided by others. One example for this is the addition of a \lstinline!ref_text! element type in the MinerU implementation \autocite{mineru,opendatalab}, referring to an entry in a bibliography. For our purposes, we aggregated all possible categories from the tested implementations and provided mappings to the universal types for each \gls{dp} implementation. The full list of ParsingResultTypes can be found in \todo{reference}.
+Secondly, some methods provide classifications, which are not provided by others. One example for this is the addition of a \lstinline!ref_text! element type in the MinerU implementation \autocite{mineru,opendatalab}, referring to an entry in a bibliography. For our purposes, we aggregated all possible categories from the tested implementations and provided mappings to the universal types for each \gls{dp} implementation. The full list of ParsingResultTypes can be found in \autoref{tab:parsing-result-type}.
 
 \subsection{ParsingResult}
 The ParsingResult (\autoref{fig:parsing-result}) is the output of the parsing module. It is inspired by the DoclingDocument datatype from the Docling library \autocite{docling}. Mainly, ParsingResult adopts the tree structure proposed by multiple \gls{dp} implementations to represent hierarchical relationships between document elements.
@@ -110,7 +114,7 @@ Fixed-size chunking segments the document into chunks of the chunking module's m
 The strategy traverses the ParsingResult tree in reading order (e.g., depth-first), creating a queue of the document's RichTokens in the progress. When the queue reaches a length larger then $N$, the first $N$ tokens inside the queue are combined into a chunk while $N-O$ tokens are removed from the queue. This sliding window approach, leaving $O$ tokens inside the queue after the chunk is created, aims to maintain some contextual continuity between the chunks, leading to improved recall during the retrieval phase \autocite{semantic_chunking,chunking_comparison}.
 
 \subsection{Recursive Character Chunking}
-Recursive character chunking encapsulates a similar approach to fixed-size chunking. However, instead of naively setting the border of a chunk at a fixed token count, recursive character chunking utilizes an hierarchical list of delimiters (e.g., paragraphs, sentences, words) to define chunk boundaries \autocite{chunking_comparison,langchain_splitting_recursively,langchain}. When the RichToken queue exceeds the maximum chunk length $N$, the strategy splits the tokens using the highest priority delimiter. If there still exists a split which is larger than $N$, the process recurses on the oversized split with the next delimiter in the list. This `coarse-to-fine' approach preserves logical groupings while avoiding unnecessary fragmentation \autocite{chunking_comparison}. Similar to fixed-size chunking, recursive character chunking also incorporates sliding window chunking with an overlap of $O$ tokens between adjacent chunks. The delimiters used in this implementation are adapted from LangChain's \lstinline!RecursiveCharacterTextSplitter! \autocite{langchain,langchain_splitting_recursively}, with punctuation added to better identify sentence endings, as suggested by \textcite{chroma_eval}. This results in the following delimiters: \lstinline|["\n\n", "\n", ".", "!", "?", " ", ""]|.
+Recursive character chunking encapsulates a similar approach to fixed-size chunking. However, instead of naively setting the border of a chunk at a fixed token count, recursive character chunking utilizes an hierarchical list of delimiters (e.g., paragraphs, sentences, words) to define chunk boundaries \autocite{chunking_comparison,langchain_splitting_recursively,langchain}. When the RichToken queue exceeds the maximum chunk length $N$, the strategy splits the tokens using the highest priority delimiter. If there still exists a split which is larger than $N$, the process recurses on the oversized split with the next delimiter in the list. This `coarse-to-fine' approach preserves logical groupings while avoiding unnecessary fragmentation \autocite{chunking_comparison}. Similar to fixed-size chunking, recursive character chunking also incorporates sliding window chunking with an overlap of $O$ tokens between adjacent chunks. The delimiters used in this implementation are adapted from LangChain's \lstinline!RecursiveCharacterTextSplitter! \autocite{langchain,langchain_splitting_recursively}, with punctuation added to better identify sentence endings, as suggested by \textcite{chroma_eval}. This results in the following delimiters: \lstinline|[\"\n\n\", \"\n\", \".\", \"!\", \"?\", \" \", \"\"]|.
 
 \subsection{Breakpoint-based Semantic Chunking}
 Breakpoint-based semantic chunking separates the document at the sentence level, inserting breakpoints in between sentences to denote chunk borders \autocite{semantic_chunking}. Instead of relying on
@@ -122,7 +126,13 @@ For this strategy, the semantic distances between the embeddings of every adjace
 \section{Evaluation Framework}
 
 \subsection{Document Layout Analysis evaluation}
-The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from PubMed Central Open Access (PMCOA), PubLayNet is one of the largest datasets for \gls{dla}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use a small subset of 500 pages of the original dataset for this evaluation \autocite{publaynet-mini}. As seen in \todo{table with counts}, the subset contains around 5000 ground truth elements from 5 different classes.
+The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from PubMed Central Open Access (PMCOA), PubLayNet is one of the largest datasets for \gls{dla}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use \lstinline!publaynet-mini!, a small subset of 500 pages of the original dataset for this evaluation \autocite{publaynet-mini}. As seen in \autoref{tab:publaynet_counts}, the subset contains around 5000 ground truth annotations for elements from 5 different classes.
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/publaynet_counts}
+  \caption{Distribution of ground truth annotations across the different element types contained in the \lstinline!publaynet-mini! subset of the PubLayNet dataset.}\label{tab:publaynet_counts}
+\end{table}
 
 To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide `hard-predictions', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this thesis \autocite{lrp_error,eclair}.
 
@@ -168,20 +178,3 @@ Content:
 
 \subsection{Chunking Evaluation}
 Chroma Evaluation
-
-
-
-% \subsection{Chunking Module}
-% The Chunking Module takes the Output from the
-
-% \begin{itemize}
-%   \item Embedding Module used
-%   \item Novelty: Retaining bounding boxes during chunking
-%   \item Available Chunking Methods
-% \end{itemize}
-
-% \section{Document Parsing Evaluation}
-% \subsection{OmniDocBench}
-
-% \section{Metrics}
-% \todo{Should I put evaluation metrics here? Or into the foundations?}

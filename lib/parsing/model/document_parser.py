@@ -267,7 +267,10 @@ class DocumentParser(ABC, Generic[T]):
             for file_path in batch_path.glob("*.pdf"):
                 output_path = self._get_json_output_path(file_path)
                 if skip_existing and output_path.exists():
-                    logger.info(f"Skipping Document: {file_path.stem}. Output JSON already exists.")
+                    logger.debug(
+                        f"Skipping Document: {file_path.stem}. "
+                        "Output JSON already exists."
+                    )
                     res = open_parsing_result(output_path)
                     results.append(res)
                 else:
@@ -279,7 +282,7 @@ class DocumentParser(ABC, Generic[T]):
                         failed.append(file_path.name)
 
             if failed:
-                logger.warning(f"Processing failed for: {failed}")
+                logger.warning(f"Processing with {self.module} failed for: {failed}")
 
             return results
         else:

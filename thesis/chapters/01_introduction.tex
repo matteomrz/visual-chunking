@@ -3,24 +3,41 @@
 \chapter{Introduction}\label{chapter:Introduction}
 
 \section{Problem Statement}
-Clinical guideline documents are fundamental to efficient and reliable treatment of variuos illnesses. Especially oncology guidelines, which revolve around the treatment of cancer, are an important part of the therapy process. These guideline documents not only aid doctors in deciding on the correct treatment options but also support patients in understanding their illness. In recent years, due to advancements in technology, novel therapeutics, and personalized medicine, clinical guidelines have drastically increased in size and complexity. As of 2019, the average oncology guideline published by the \gls{nccn} was 198 pages long, showing an annual increase of 7.5 percent over the previous 23 years \autocite{guidelines_length}. This increase of complexity forces medical personel to invest more time in order to be able to provide optimal care for cancer patients. Especially for individual practicioners this additional strain might become unsustainable if complexity continues increasing.
+Clinical practice guideline documents are fundamental to efficient and reliable treatment of variuos illnesses \autocite{cpg_trust}. Oncology guidelines are a subgroup of these documents, revolving around the treatment of various forms of cancer \autocite{nccn_about_guidelines}. Guideline documents not only aid doctors in deciding on the optimal treatment options but also support patients in understanding their illness. In recent years, due to advancements in technology, novel therapeutics, and personalized medicine, clinical guidelines have drastically increased in size and complexity \autocite{guidelines_length}. As of 2019, the average oncology guideline published by the \gls{nccn} was 198 pages long, showing an annual increase of 7.5 percent over the previous 23 years \autocite{guidelines_length}. This increase of complexity forces medical personel to invest more time in order to be able to provide optimal care for cancer patients. Especially for individual practicioners this additional strain might become unsustainable if complexity continues increasing \autocite{guidelines_length}.
 
-The Aidvice project proposes to adress this problem by leveraging recent advantages in \gls{ai}. Specifically, the project revolves around the development of a \gls{rag} based knowledge assistant \autocite{aidvice}.\ \gls{rag} is an emerging paradigm which addresses a fundamental problem of traditional \glspl{llm} \autocite{rag}. While \glspl{llm} excel at many \gls{nlp} tasks, they are prone to `hallucinations' and inaccurate answers, when sought information goes beyond the model's training data \autocite{rag_survey}. This provides a major obstacle for the usage of \glspl{llm} in the medical field, where accurate and reliable answers are of the highest priority \autocite{lins}.\ \gls{rag} mitigates these drawbacks by providing additional context to the \gls{llm} during answer generation \autocite{chunk_size_effect_on_rag}. This is achieved by introducing an external knowledge source comprised of application-relevant text passages, typically stored in a high-dimensionality vector database \autocite{rag}. Before the model generates the answer, the knowledge source is queried and the most relevant passages are prepended to the user's original input. By providing this additional context, the \gls{llm} can synthesize answers grounded in the retrieved passages instead of relying purely on it's training data \autocite{rag,rag_survey}.
+The Aidvice project proposes to adress this problem by leveraging recent advantages in \gls{ai}. Specifically, the project revolves around the development of a \gls{rag} based knowledge assistant \autocite{aidvice}.\ \gls{rag} is an emerging paradigm which addresses a fundamental problem of traditional \glspl{llm} \autocite{rag}. While \glspl{llm} excel at many \gls{nlp} tasks, they are prone to `hallucinations' and inaccurate answers, when sought information goes beyond the model's training data \autocite{rag_survey}. This provides a major obstacle for the usage of \glspl{llm} in the medical field, where accurate and reliable answers are of the highest priority \autocite{lins}.\ \gls{rag} mitigates these drawbacks by retrieving additional context from an external knowledge source which the \gls{llm} can take advantage of during answer generation \autocite{chunk_size_effect_on_rag,rag}.
 
-\todo{Explain the preprocessing steps that need to be performed on the documents}
+The efficiency of such a \gls{rag} system is fundamentally constrained by the quality and relevance of the context retrieved from the knowledge base \autocite{dense_x,data_quality_rag}. The quality of the construction of the knowledge base directly determines wether the correct context can be retrieved for a given query \autocite{rag_survey}. Therefore, the construction of the knowledge base out of the oncology guidelines is a critical aspect of the project. Additionally, as the project has a clear focus on verifiability and traceability, there is an additional requirement to provide visual source attribution. This means that retrieved passages need to include accurate positional information, giving visual confirmation to the practicioner about the origin of the retrieved context \autocite{visa}.
 
-Content:
-\begin{itemize}
-  \item What are rag systems? What do they do?
-  \item What is the goal of Aidvice?
-  \item What are problems with oncology guidelines specifically?
-  \item Why is chunking important for rag systems? What are positive benefits of good chunking?
-\end{itemize}
+The guideline documents are stored in the unstructured \gls{pdf}. In order to be further processed for the knowledge base, they first need to be transformed into a machine-readable structured data format through a process called \gls{dp} \autocite{parsingunveiled}. The inherent structure of the guidelines poses multiple challenges for this process, such as complex tables, varying layouts and occasional formatting errors.
+
+As \glspl{llm} are constrained by the size of their context window, it is not feasible to store the entire guideline documents as individual entries in the knowledge base \autocite{rag_survey}. Therefore, the documents need to be split up into smaller text chunks that fit into the model's context window \autocite{rag_survey}. This process is called document chunking \autocite{semantic_chunking}.
+
+During retrieval the model identifies the most relevant passages in the knowledge base based on their semantic similarity to the user's query \autocite{rag}. If the stored text chunks are too long, important information might be lost between irrelevant details \autocite{dense_x,data_quality_rag}. On the other hand, storing too short text chunks can result in important statements being broken up into multiple chunks and losing their meaning. In order to maximize the quality of the retrieved chunks, both the chunk size as well as the document chunking strategy, used to decide where to split up the oncology guidelines, need to be optimized \autocite{data_quality_rag,}.
+
+Additionally, established implementations of popular document chunking techniques do not fulfill the requirement of visual source attribution at the granularity required by the Aidvice project \autocite{langchain,llamaindex,docling_toolkit,langchain_splitting_recursively}. Therefore there is a need for the development of a novel solution, that addreses this issue.
 
 \section{Objectives}
-Research questions:
+This study addresses three fundamental research questions regarding the data preparation for a \gls{rag} based knowledge assistant for oncology guidelines. Each of the following research questions addresses a specific aspect of the evaluation and improvement of the document segmentation process required for the construction of the knowledge base.
+
 \begin{itemize}
-  \item \textbf{RQ1:} How does a document segmentation benchmark created on oncology guidelines compare to established research document benchmarks?
-  \item \textbf{RQ2:} Which metrics are most useful to measure the effectiveness of visual segmentation methods?
-  \item \textbf{RQ3:} How can current segmentation methods be adapted or expanded on to improve performance on oncology guidelines?
+  \item \textbf{RQ1:} How are the challenges introduced by oncology guidelines reflected in established benchmarks for document parsing?
+
+        % How does a document segmentation benchmark created on oncology guidelines compare to established research document benchmarks?
+
+  \item \textbf{RQ2:} Which metrics are most useful to measure the effectiveness of document parsing and chunking methods?
+
+        % Which metrics are most useful to measure the effectiveness of visual segmentation methods?
+
+  \item \textbf{RQ3:} How can current segmentation methods be adapted or expanded on to fulfill the requirements of a \gls{rag} based knowledge assistant with visual source attribution?
+
+        % How can current segmentation methods be adapted or expanded on to improve performance on oncology guidelines?
 \end{itemize}
+
+\todo{explain title}
+
+To identify the challenges posed by the oncology guidelines to the \gls{dp} process, we perform a qualitative analysis identifying the characteristics of oncology guidelines relevant during the \gls{dp} process, such as their formatting, layout and common types of structural elements. We then identify established document benchmarks and datasets which contain documents that most closely resemble these characteristics. Through this analysis, we underline the transferability of results achieved on these datasets to our application, while identifying unrepresented characteristics which require manual comparisons. This approach allows the evaluation of various \gls{dp} techniques on established benchmarks, without the availability of a dedicated oncology guideline benchmark.
+
+In order to evaluate the effectiveness of both document parsing and chunking techniques, we identify various metrics used in existing literature. We then perform a comparative analysis of the identified metrics, evaluating their suitability for our application. Based on this analysis, we select a set of metrics which are most suitable for the evaluation of various document parsing and chunking techniques.
+
+Finally, we propose a novel solution for the visual source attribution requirement of the Aidvice project. We adapt and expand on existing document chunking techniques in order to provide accurate positional information for each text chunk. By introducing a universal dataformat for the output of the \gls{dp} implementations, we enable the direct comparison of various document parsing techniques using the benchmarks and metrics identified in RQ1 and RQ2. Through this evaluation we identify promising combinations of document parsing and chunking techniques for the creation of the knowledge base of the Aidvice project, while providing a modular framework for future experiments and improvements.
