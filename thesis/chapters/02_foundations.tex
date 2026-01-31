@@ -5,19 +5,7 @@
 \section{Oncology guideline documents}
 Qualitative analysis of the properties of oncology guideline documents.
 
-\section{Retrieval-Augmented Generation}
-While \glspl{llm} have extensive general domain knowledge due to their enormous corpora of training data, compiled from various open-domain sources \autocite{impact_dataset_rag_multi_hop}, they struggle with tasks that require domain-specific knowledge which they did not encounter during training \autocite{rag_survey}. This can lead to `hallucinations' and inaccuracies, as the model tries to synthesize a matching answer based of it's domain-wise irrelevant training data \autocite{rag_survey,chunk_size_effect_on_rag}.\ \gls{rag} addresses this limitation, extending the usage of \glspl{llm} to applications requiring extensive knowledge in a specific domain \autocite{rag}. This is achieved by introducing an external knowledge source comprised of application-relevant text passages, stored as embeddings in a high-dimensionality vector database \autocite{rag}.
-
-When the user sends a new query to the system, the retriever model first retrieves additional context from the vector database by determining the most relevant text passages based on their semantic similarity to the query \autocite{rag}. These passages are then prepended to the user's original input and forwarded to the generation model. By providing this additional context, the \gls{llm} can synthesize answers grounded in the retrieved passages instead of relying solely on it's training data \autocite{rag,rag_survey}.
-
-Content:
-\begin{itemize}
-  \item Definition
-  \item Components
-  \item Use cases
-\end{itemize}
-\todo{Other usages of chunking than RAG}
-
+\section{RAG Concepts}
 \subsection{Tokenization}
 Tokenization refers to the segmentation of text into subword units called tokens \autocite{fast_tokenization}. Tokens are the fundamental text representation for most \gls{nlp} tasks. With a granularity located between characters and words, tokens can retain linguistic meaning while also being able to represent arbitrary text with a relatively concise vocabulary \autocite{fast_tokenization}. Using tokenization any given text can essentially be represented as a list of integers, with each integer being the identifier to a specific token in the tokenizer's dictionary \autocite{token_history}. During training, the tokenizer creates it's dictionary by finding character pairings that occur with the highest frequency in the training data \autocite{token_history}. Additionally, with the multitude of different techniques for modern subword tokenization \autocite{wordpiece,sentencepiece,unigram}, the same input text can lead to drastically different outputs depending on the specific tokenizer and training data. Therefore, tokenizers always need to match the \gls{nlp} models they are used with.
 
@@ -34,6 +22,35 @@ Content:
   \item Definition
   \item Role in RAG
 \end{itemize}
+
+\section{Retrieval-Augmented Generation}
+While \glspl{llm} have extensive general domain knowledge due to their enormous corpora of training data, compiled from various open-domain sources \autocite{impact_dataset_rag_multi_hop}, they struggle with tasks that require domain-specific knowledge which they did not encounter during training \autocite{rag_survey}. This can lead to `hallucinations' and inaccuracies, as the model tries to synthesize a matching answer based of it's domain-wise irrelevant training data \autocite{rag_survey,chunk_size_effect_on_rag}.\ \gls{rag} addresses this limitation, extending the usage of \glspl{llm} to applications requiring extensive knowledge in a specific domain \autocite{rag}. This is achieved by retrieving information from an external knowledge source comprised of application-relevant text passages, supplying additional context to the \gls{llm} during answer generation \autocite{rag,rag_survey}.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{rag_diagram}
+  \caption[Naive \gls{rag}]{Architecture of the Naive \gls{rag} system.}\label{fig:naive-rag}
+\end{figure}
+
+While there are many advanced and extended versions of \gls{rag} systems, for this study we will focus on the standard Naive \gls{rag} architecture as depicted in \autoref{fig:naive-rag} \autocite{rag_survey}. Naive \gls{rag} is based on the original \gls{rag} architecture proposed by \textcite{rag}. Naive \gls{rag} systems consist of two modules:
+
+\textbf{Retriever:} The retriever module consists of a query encoder and an external knowledge base \autocite{rag}. It is responsible for retrieving relevant context from the knowledge base, based on the user's query \autocite{rag_survey}. The module is based on the bi-encoder architecture, with the query encoder $q$ and document encoder $d$ encoding texts into a shared embedding space \autocite{rag, dual_encoders}. The knowledge base is a vector database consisting of application-specific text passages $z$. Each passage is stored in the database as a vector embedding $d(z)$, encoded through the document encoder $d$ \autocite{rag}. To identify the relevant passages for a query $x$, $x$ is first transformed into a vector embedding $q(x)$ using the retriever's query encoder \autocite{rag_survey}. Based on the similarity scores between the query embedding and the stored chunk embeddings, the top-$k$ documents $z$ with the highest similarity scores, are then retrieved from the database \autocite{rag,rag_survey}.
+
+\textbf{Generator:} The generator module is responsible for synthesizing the final answer based on the user's query and the passages retrieved by the retriever \autocite{rag}. Firstly, the original query $x$ and the retrieved passages $z$ are combined into a single input query \autocite{rag_survey}. The \gls{llm} is then tasked with generating the final answer $y$, conditioned on this combined input \autocite{rag_survey,rag}.
+
+In order to apply \gls{rag} systems to knowledge-intensive tasks in a specific domain, the external knowledge base needs to be created from relevant data sources. This process is referred to as Indexing \autocite{rag_survey}. Indexing begins with the preparation of the data sources into short text passages \autocite{rag_survey}. For the purpose of this study we will refer to this process as document segmentation. Document segmentation includes \gls{dp}, the conversion of unstructured documents, such as \glspl{pdf} and images, into structured data \autocite{parsingunveiled}, as well as chunking, splitting this data into smaller text passages called chunks \todo{citation}. Chunking is a necessary step for \gls{rag} systems, as both \glspl{llm} and encoders are limited in the number of tokens that fit into their context window \autocite{rag_survey}. Furthermore, indexing includes the encoding of these chunks into vector embeddings. Both the embeddings and the original chunks are then stored as key-value pairs in a vector database, allowing fast and frequent searches during retrieval \autocite{rag_survey}.
+
+% Add paragraph about optimization and how we will focus on optimizing the document segmentation process as that is super important to the performance
+
+Content:
+\begin{itemize}
+  \item Definition
+  \item Components
+  \item Use cases
+\end{itemize}
+\todo{Other usages of chunking than RAG}
+
+
 
 \subsection{Source Attribution}
 

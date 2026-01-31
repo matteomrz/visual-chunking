@@ -6,8 +6,8 @@
         content: str
         geom: list[ParsingBoundingBox]
         parent: ParsingResult | None
-        children: list[ParsingResult] = field(default_factory=list)
-        metadata: dict = field(default_factory=dict)
-        image: str = None
+        children: list[ParsingResult]
+        metadata: dict
+        image: str
   \end{lstlisting}
 \end{tabular}
