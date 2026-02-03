@@ -27,28 +27,6 @@ class VLMParser(DocumentParser, ABC):
         for t in ParsingResultType
     }
 
-    def _get_md(self, raw_result: dict, file_path: Path) -> str:
-        md_content = []
-        for elem in raw_result["layout_elements"]:
-            try:
-                content = elem["content"]
-                raw_type = elem["category"]
-
-            except KeyError:
-                logger.warning(f"Skipping malformed element: {elem}")
-                continue
-
-            if raw_type in [t.value for t in md_filter_types]:
-                continue
-
-            if raw_type == ParsingResultType.SECTION_HEADER.value:
-                header_level = elem.get(PmD.HEADER_LEVEL.value, 1)
-                content = f"{'#' * header_level} {content}"
-
-            md_content.append(content)
-
-        return "\n\n".join(md_content)
-
     def _transform(self, raw_result: dict) -> ParsingResult:
         root = ParsingResult.root()
 

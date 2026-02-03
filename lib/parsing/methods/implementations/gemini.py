@@ -8,7 +8,7 @@ from google.genai import types
 
 from lib.parsing.methods.parsers import Parsers
 from lib.parsing.methods.vlm import VLMParser
-from lib.parsing.methods.vlm_prompt import get_prompt_for_page_wise
+from lib.parsing.methods.vlm_prompt import VLM_MD_PROMPT, get_prompt_for_page_wise
 from lib.utils.json_trim import trim_json_string
 from lib.utils.pdf_to_page_img import pdf_to_page_img_bytes
 
@@ -27,7 +27,7 @@ class GeminiParser(VLMParser):
     def __init__(self, **kwargs):
         load_dotenv()
         self.client = genai.Client()
-        self.model_name = "gemini-2.5-flash-image"
+        self.model_name = kwargs.get("model_name", "gemini-2.5-flash")
         self.max_retries = kwargs.get("max_retries", 2)
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
@@ -67,3 +67,17 @@ class GeminiParser(VLMParser):
                         logger.warning(malformed_msg + retry_msg)
 
         return results
+
+    def _get_md(self, raw_result: dict, file_path: Path) -> str:
+        doc_bytes = file_path.read_bytes()
+        doc_part = types.Part.from_bytes(
+            data=doc_bytes,
+            mime_type="application/pdf"
+        )
+
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=[doc_part, VLM_MD_PROMPT]
+        )
+
+        return response.text
