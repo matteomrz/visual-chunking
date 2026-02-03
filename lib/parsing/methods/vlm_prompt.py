@@ -81,12 +81,12 @@ YOU MUST ENSURE THAT YOUR OUTPUT IS A VALID JSON OBJECT!
 
 def get_vlm_prompt() -> str:
     page_index_text = 'The first page is "page_number": 1.'
-    return _VLM_PROMPT.replace("{{PAGE_INDEX_TEXT}}", page_index_text)
+    return _VLM_PROMPT.replace("{PAGE_INDEX_TEXT}", page_index_text)
 
 
 def get_prompt_for_page_wise(page: int) -> str:
     page_index_text = f'The current page is "page_number": {page}.'
-    return _VLM_PROMPT.replace("{{PAGE_INDEX_TEXT}}", page_index_text)
+    return _VLM_PROMPT.replace("{PAGE_INDEX_TEXT}", page_index_text)
 
 
 VLM_MD_PROMPT = "Convert the content of the PDF document into Markdown."
