@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google.api_core.client_options import ClientOptions
-from google.cloud import documentai_v1 as document_ai
+from google.cloud import documentai_v1beta3 as document_ai
 
 from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.document_parser import DocumentParser
@@ -19,8 +19,9 @@ DocumentLayoutBlock = document_ai.Document.DocumentLayout.DocumentLayoutBlock
 # Document AI Parsing Configuration
 PDF_MIME_TYPE = "application/pdf"
 
-layout_config = document_ai.types.ProcessOptions.LayoutConfig()
+layout_config = document_ai.ProcessOptions.LayoutConfig()
 layout_config.return_bounding_boxes = True
+layout_config.enable_image_extraction = True
 
 PROCESS_OPTIONS = document_ai.ProcessOptions()
 PROCESS_OPTIONS.layout_config = layout_config
@@ -130,6 +131,13 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
             elem_content = item.caption
 
             children.extend(self._transform_table(block))
+
+        # Image Extraction
+        elif block.image_block:
+            item = block.image_block
+
+            elem_type = ParsingResultType.FIGURE
+            elem_content = item.image_text
 
         # Text transformation
         else:

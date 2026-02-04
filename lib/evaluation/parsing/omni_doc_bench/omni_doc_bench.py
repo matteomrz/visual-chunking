@@ -1,10 +1,11 @@
 import json
 import logging
+from pathlib import Path
 
 from huggingface_hub import hf_hub_download, snapshot_download
 import pymupdf
 
-from config import CONFIG_DIR, EVAL_DIR, GUIDELINES_DIR, PARSING_DIR
+from config import CONFIG_DIR, EVAL_DIR, GUIDELINES_DIR
 from lib.parsing.methods.parsers import Parsers
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
@@ -14,7 +15,7 @@ omni_doc_dir = GUIDELINES_DIR / omni_doc_name
 image_dir = omni_doc_dir / "images"
 pdf_dir = omni_doc_dir / "pdfs"
 
-schema_path = EVAL_DIR / "parsing" / "omni_doc_schema.yaml"
+schema_path = EVAL_DIR / "parsing" / "omni_doc_bench" / "omni_doc_schema.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -147,13 +148,13 @@ def create_config_files(exist_ok: bool = False):
             logger.info(f"Created config file for method: {p_name}")
 
 
+def get_omni_doc_dt_path(parser: Parsers) -> Path:
+    return CONFIG_DIR / omni_doc_name / f"{parser.value}.yaml"
+
+
 def prepare_omni_doc_bench(exist_ok: bool = False):
     omni_doc = _get_json(exist_ok=exist_ok)
     _get_images(omni_doc, exist_ok=exist_ok)
     _images_to_pdfs(exist_ok=exist_ok)
     create_config_files(exist_ok=exist_ok)
     logger.info("Finished setup for OmniDocBench. For usage check the README.md.")
-
-
-if __name__ == "__main__":
-    prepare_omni_doc_bench(True)
