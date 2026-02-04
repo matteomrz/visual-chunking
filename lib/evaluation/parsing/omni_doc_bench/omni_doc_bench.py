@@ -4,8 +4,16 @@ from pathlib import Path
 
 from huggingface_hub import hf_hub_download, snapshot_download
 import pymupdf
+import pandas as pd
+import numpy as np
 
-from config import CONFIG_DIR, EVAL_DIR, GUIDELINES_DIR
+from config import (
+    CONFIG_DIR,
+    EVAL_DIR,
+    GUIDELINES_DIR,
+    MD_DIR,
+    OMNI_DOC_PROJECT_PATH
+)
 from lib.parsing.methods.parsers import Parsers
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
@@ -14,8 +22,9 @@ omni_doc_name = "omni_doc_bench"
 omni_doc_dir = GUIDELINES_DIR / omni_doc_name
 image_dir = omni_doc_dir / "images"
 pdf_dir = omni_doc_dir / "pdfs"
+gt_path = omni_doc_dir / "OmniDocBench.json"
 
-schema_path = EVAL_DIR / "parsing" / "omni_doc_bench" / "omni_doc_schema.yaml"
+schema_path = EVAL_DIR / "parsing" / omni_doc_name / "omni_doc_schema.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -138,11 +147,16 @@ def create_config_files(exist_ok: bool = False):
     for parser in Parsers:
         p_name = parser.value
         p_path = output_dir / f"{p_name}.yaml"
+
         if exist_ok and p_path.exists():
             logger.debug(f"Skipping existing config file for method: {p_name}")
             continue
 
-        p_content = template.replace("{{method_name}}", p_name)
+        dt_path = MD_DIR / p_name / omni_doc_name / "pdfs"
+
+        p_content = template.replace("{{OMNI_DOC_PATH}}", str(gt_path))
+        p_content = p_content.replace("{{DT_PATH}}", str(dt_path))
+
         with open(p_path, "w") as c:
             c.write(p_content)
             logger.info(f"Created config file for method: {p_name}")
@@ -158,3 +172,56 @@ def prepare_omni_doc_bench(exist_ok: bool = False):
     _images_to_pdfs(exist_ok=exist_ok)
     create_config_files(exist_ok=exist_ok)
     logger.info("Finished setup for OmniDocBench. For usage check the README.md.")
+
+
+def create_result_table() -> pd.DataFrame:
+    """
+    Adapted from the OmniDocBench repository.
+    Creates a DataFrame containing the benchmark results for every Parser.
+    Parsers for which the benchmark has not been run are not included.
+    """
+
+    results = []
+
+    matching_algorithm = "quick_match"
+    result_dir = OMNI_DOC_PROJECT_PATH / "result"
+
+    for parser in Parsers:
+        res_name = f"{parser.value}_{matching_algorithm}_metric_result.json"
+        result_path = result_dir / res_name
+
+        if not result_path.exists():
+            logger.warning(
+                f"Missing OmniDocBench result for {parser.value} "
+                f"at: {result_path}"
+            )
+            continue
+
+        with open(result_path, 'r') as f:
+            result = json.load(f)
+
+        metrics_results = {}
+
+        for category_type, metric in [("text_block", "Edit_dist"), ("display_formula", "CDM"),
+                                      ("table", "TEDS"), ("table", "TEDS_structure_only"),
+                                      ("reading_order", "Edit_dist")]:
+            if metric == 'CDM' or metric == "TEDS" or metric == "TEDS_structure_only":
+                if result[category_type]["page"].get(metric):
+                    metrics_results[category_type + '_' + metric] = \
+                        result[category_type]["page"][metric][
+                            "ALL"] * 100
+                else:
+                    metrics_results[category_type + '_' + metric] = 0
+            else:
+                metrics_results[category_type + '_' + metric] = result[category_type]["all"][
+                    metric].get(
+                    "ALL_page_avg", np.nan)
+
+        result_entry = pd.Series(metrics_results, name=parser.value)
+        results.append(result_entry)
+
+    df = pd.DataFrame(results).round(3)
+    df['overall'] = ((1 - df['text_block_Edit_dist']) * 100 + df['display_formula_CDM'] + df[
+        'table_TEDS']) / 3
+
+    return df

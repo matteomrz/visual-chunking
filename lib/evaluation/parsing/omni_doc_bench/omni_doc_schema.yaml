@@ -19,9 +19,9 @@ end2end_eval:
     dataset:
         dataset_name: end2end_dataset
         ground_truth:
-            data_path: ../../visual-chunking/data/guidelines/omni_doc_bench/OmniDocBench.json
+            data_path: {{OMNI_DOC_PATH}}
         prediction:
-            data_path: ../../visual-chunking/data/markdown/{{method_name}}/omni_doc_bench/pdfs
+            data_path: {{DT_PATH}}
         match_method: quick_match
         filter:
             language: english

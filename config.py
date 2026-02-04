@@ -26,3 +26,7 @@ CONFIG_DIR = DATA_DIR / "configs"  # Configs for benchmarks
 # Default File used by the parsing and annotation methods
 
 DEFAULT_GUIDELINE = "example_guideline"
+
+# Path pointing to the OmniDocBench project
+
+OMNI_DOC_PROJECT_PATH = ROOT_DIR.parent / "omni_doc" / "OmniDocBench"
