@@ -91,10 +91,12 @@
 % Settings for lstlistings
 
 % Use this for basic highlighting
-\lstset{%
+\lstset{
+  language=Python,
   basicstyle=\ttfamily,
   columns=fullflexible,
   autogobble,
+  deletekeywords=[2]{id,type},
   keywordstyle=\bfseries\color{TUMBlue},
   stringstyle=\color{TUMAccentGreen}
 }
