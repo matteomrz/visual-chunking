@@ -6,6 +6,14 @@
 
 \begin{table}[htpb]
   \centering
-  \input{figures/tables/parsing_result_type}
   \caption[ParsingResultType]{Complete list of classifications permitted to be returned by a \gls{dp} implementation. Each implementation provides a mapping from their native output classifications to the standard set defined here. Some ParsingResultTypes may only be returned from a subset of these implementations.}
+  \input{figures/tables/parsing_result_type}
 \end{table}\label{tab:parsing-result-type}
+
+\clearpage
+
+\begin{figure}
+  \centering
+  \caption[OmniDocBench configuration template]{Template of the configuration file for the content extraction evaluation using OmniDocBench.\ \texttt{\{\{OMNI\_DOC\_PATH\}\}} is to be replaced with the path to the OmniDocBench ground truth file.\ \texttt{\{\{DT\_PATH\}\}} is to be replaced with the directory that the \gls{dp} implementation's predictions are saved in.}\label{fig:omni-doc-config}
+  \input{figures/code/omni_doc_bench_config}
+\end{figure}

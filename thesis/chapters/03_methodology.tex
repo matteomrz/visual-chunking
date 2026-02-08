@@ -58,7 +58,7 @@ The ChunkingResult (\autoref{fig:chunking_result}) is the final output of the do
 The Chunk (\autoref{fig:chunk}) represents a singular passage used for the creation of the knowledge base in downstream \gls{rag} applications. In addition to the textual content of the chunk, which is stored in \lstinline!content!, the datatype contains the ParsingBoundingBoxes required for visual source attribution. Lastly, the metadata field contains additional information about the chunk, such as its token length.
 
 \section{Parsing Module}
-The parsing module revolves around extracting the content of a raw \gls{pdf} file as a tree of ParsingResult nodes. It serves as an abstraction layer on top of various available \gls{dp} implementations, unifying different \gls{dp} approaches and output formats into a common interface. The module consists of four sequential steps.
+The parsing module revolves around extracting the content of a raw \gls{pdf} file as a tree of ParsingResult nodes. It serves as an abstraction layer on top of various available \gls{dp} implementations, unifying different \gls{dp} approaches and output formats into a common interface. The module processes incoming documents through four sequential steps.
 
 \paragraph{\gls{dp} interaction:}
 In the first step, the module handles the interaction with the underlying \gls{dp} implementation. This includes request construction, preparing the input document in the required format of the implementation, and error handling. This logic is encapsulated through the abstract \lstinline!_parse! function, extracting the result of the \gls{dp} operation in the implementation-specific data structure.
@@ -144,7 +144,7 @@ Recursive character chunking leverages the structure of the textual content of t
 
 The delimiters used in this implementation are adapted from LangChain's RecursiveCharacterTextSplitter \autocite{langchain,langchain_splitting_recursively}, with punctuation added to better identify sentence endings, as suggested by \textcite{chroma_eval}. This results in the following delimiters: \lstinline|["\n\n", "\n", ".", "!", "?", " ", ""]|.
 
-Once the queue's length exceeds $N$, the strategy splits the tokens using the highest-order delimiter. If there still exists a split which is larger than $N$, the process recurses on the oversized split with the next delimiter in the list. This `coarse-to-fine' approach preserves logical groupings while avoiding unnecessary fragmentation \autocite{chunking_comparison}. Similar to fixed-size chunking, recursive character chunking also incorporates a sliding window approach with an overlap of $O$ tokens between adjacent chunks.
+Once the queue's length exceeds $N$, the strategy splits the tokens using the highest-order delimiter. If there still exists a split which is larger than $N$, the process recurses on the oversized split with the next delimiter in the list. This ``coarse-to-fine'' approach preserves logical groupings while avoiding unnecessary fragmentation \autocite{chunking_comparison}. Similar to fixed-size chunking, recursive character chunking also incorporates a sliding window approach with an overlap of $O$ tokens between adjacent chunks.
 
 \subsection{Breakpoint-based Semantic Chunking}
 Breakpoint-based semantic chunking separates the document at the sentence level, inserting breakpoints in between sentences to denote chunk borders \autocite{semantic_chunking}. Instead of relying on structural markers, the strategy generates semantic passages by identifying shifts in the document topic.
@@ -164,7 +164,7 @@ As the algorithm traverses the document tree, it processes each ParsingResult no
 
   \item \textbf{Recursion:} If the subtree exceeds the size limits the node's content is appended to the heading tokens and the algorithm recurses onto the children of the node. After recursion, adjacent children nodes are merged as long as they were not split any further during recursion and their combined length does not exceed $N-S$. This ensures that resulting chunks are as close to the length $N$ as possible. After merging, the content's tokens are prepended to each of the splits and the splits are returned.
 
-  \item \textbf{Leaf-splitting:} If the algorithm reaches a leaf node that exceeds the available space $N-S$, it falls back to using recursive character splitting to determine the chunk boundaries. Following the logic from the recursion step, the content's tokens are prepended to the splits before they are returned.
+  \item \textbf{Leaf-splitting:} If the algorithm reaches a leaf node that exceeds the available space $N-S$, it results to using recursive character splitting to determine the chunk boundaries. Following the logic from the recursion step, the content's tokens are prepended to the splits before they are returned.
 \end{enumerate}
 
 \section{Evaluation Framework}
@@ -178,7 +178,7 @@ The goal of the \gls{dla} evaluation is to assess the correctness of the boundin
   \caption{Distribution of ground truth annotations across the different element types contained in the \lstinline!publaynet-mini! subset of the PubLayNet dataset.}\label{tab:publaynet_counts}
 \end{table}
 
-To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide `hard-predictions', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this study \autocite{lrp_error,eclair}.
+To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide ``hard-predictions'', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this study \autocite{lrp_error,eclair}.
 
 For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{object_detection_metrics}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, firstly the \glspl{dtbb} are classified into \glspl{tp} and \glspl{fp}. A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class, so that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $N$ \glspl{dtbb}, out of which $S, (S\leq N)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
 
@@ -206,19 +206,77 @@ For scenarios with multiple classes, such as the PubLayNet dataset, the Macro F1
   \label{eq:macrof1}
 \end{equation}
 
-The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and F1@50:95 will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes \autocite{coco}. F1@50 is chosen, as a threshold of 50\% is one of the most commonly used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline!faster-coco-eval! package is used to determine the recall and precision values at the \gls{iou} thresholds \autocite{faster-coco-eval}.
+The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and F1@50:95 will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes \autocite{coco}. F1@50 is chosen, as a threshold of 50\% is one of the most commonly used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline[language=HTML]!faster-coco-eval! package is used to determine the recall and precision values at the \gls{iou} thresholds \autocite{faster-coco-eval}.
 
-\subsection{Content Parsing Evaluation}
-OmniDocBench
-Content:
-\begin{itemize}
-  \item Data Creation
-  \item Evaluation Modes (End2End $to$ Evaluate Markdown output (Content))
-  \item Usages in other papers
-  \item State of the art evaluations (if I find any, most for all kinds of documents)
-  \item Types of Documents (English and Chinese, different kinds: Scientific Paper\dots) all single page
-  \item Subset for the thesis: English Scientific Papers
-\end{itemize}
+
+
+
+\subsection{Content Extraction Evaluation}
+The goal of content extraction evaluation is to evaluate the quality of the extracted textual content from the document. In the context of oncology guidelines, where an error in the extraction of textual content can have a fatal effect, potentially altering clinical recommendations, assessing the quality of the content extraction is a critical aspect of our evaluation.
+
+OmniDocBench has established itself as the leading benchmark for performing end-to-end evaluations \autocite{omnidocbench,paddleocr,mineru_vlm,monkeyocr,dotsocr,docling_toolkit}, in particular for evaluating the quality of the \gls{dp} implementation's Markdown output. The benchmark includes nine different \gls{pdf} document types, such as academic literature, newspapers, and financial reports, from 3 different language types, Chinese, English, and mixed \autocite{omnidocbench}. In total, the benchmark contains 1355 single-page \gls{pdf} documents \autocite{omnidocbench}. For the purpose of this study, we limit our evaluation to english academic literature. These documents closely resemble the layout of the \glspl{cpg}, including both single and double-column layouts with complex tables and figures. After filtering, we are therefore left with a total of 129 \gls{pdf} documents for our evaluation.
+
+The dataset behind OmniDocBench was created through a semi-automatic process. Initial annotations are retrieved using LayoutLMv3 \autocite{layoutlm_v3} for \gls{dla} and PaddleOCR \autocite{paddleocr}, UniMERNet \autocite{unimernet}, and GPT-4o \autocite{gpt4o} for content extraction. Annotators manually refine the extracted annotations, correcting reading order and extracted content, as well as affiliating captions with their respective figures and tables. In a final steps expert researchers review and correct mathematical formulas and tables to ensure accuracy in the final annotations. In total, the dataset includes over 20,000 annotated structural elements.
+
+The evaluation of a single \gls{dp} implementation follows a three-step process:
+
+\paragraph{Extraction:} In a first step, the documents' elements are extracted from the Markdown texts. Since the Markdown format is purely textual, this step is primarily performed using regular expression matching \autocite{omnidocbench}. The format of tables varies depending on the \gls{dp} implementation with Markdown, \gls{html} and \LaTeX{} formats being possible. To prevent interference between extraction steps, the extraction of different types follows a specific order. After extraction, Markdown tables are converted into \gls{html} format for further processing. In total, five different element types are extracted: \LaTeX{} and \gls{html} tables, display formulas, code blocks, and paragraphs \autocite{omnidocbench}.
+
+\paragraph{Matching:} The extracted elements are now matched to ground truth elements of the same type through a process called Adjacency Search Match \autocite{omnidocbench}. First, the normalized edit distances between each possible pair is calculated, with pairs that exceed a specific threshold being considered as a successful match. As different implementations separate paragraphs at different positions, fuzzy matching is used to identify any paragraphs that are substrings of a respective matching partner. If so the substring paragraph is merged with its adjacent paragraphs until the pair's normalized edit distance starts to increase \autocite{omnidocbench}. This ensures that the way paragraphs are separated does not influence the matching process. Some element types, such as headers and figure captions, are automatically removed by some implementations. To ensure a fair comparison, these elements are also removed before the calculation of the metrics \autocite{omnidocbench}.
+
+\paragraph{Metric calculation:} OmniDocBench provides a multitude of different evaluation metrics for the extracted element \autocite{omnidocbench}. Based on the characteristics of the oncology guidelines, we select the following subset of metrics for our evaluation:
+
+\begin{enumerate}
+  \item \textbf{Normalized Edit Distance:}
+        We rely on the normalized edit distance to evaluate how well the \gls{dp} implementation extracts content from the textual elements of the oncology guidelines. This is a crucial step for ensuring that clinical recommendations remain intact and unaltered.
+
+        The \gls{gld}, also known as the edit distance, is a metric that measures the textual similarity between two strings $X, Y \in\Sigma^*$, with $\Sigma^*$ being the set of strings over an alphabet $\Sigma$ \autocite{edit_distance}. $\lambda\notin\Sigma$ is the empty string. The metric denotes the minimum cost of transforming $X$ into $Y$ through weighted elementary edit operations. According to \textcite{edit_distance}, an \textquote[p.1]{elementary edit operation [$T$] is a pair $(a,b)\neq(\lambda,\lambda)$, often written as $a\to b$, where both $a$ and $b$ are strings of lengths 0 or 1.} There are three elementary edit operations: insertions ($\lambda\to a$), substitutions ($a\to b$), and deletions ($b\to\lambda$). The edit transformation of $X$ into $Y$, $T_{X,Y}=T_1T_2\dots T_l$, is a sequence of elementary edit operations. Using a weight function $\gamma$ which assigns a nonnegative real number $\gamma(T)$ to each elementary edit operation $T$, the weight of the edit transformation $T_{X,y}$ is computed as defined in \autoref{eq:trans_weight} \autocite{edit_distance}.
+
+        \begin{equation}
+          \gamma(T_{X,Y})=\sum_{i=1}^{l}\gamma(T_i)
+          \label{eq:trans_weight}
+        \end{equation}
+
+        Following the definitions from \textcite{edit_distance}, given $X,Y\in\Sigma^*$, the \gls{gld} is then defined as in \autoref{eq:gld}.
+
+        \begin{equation}
+          \text{GLD}(X,Y)=\min\{\gamma(T_{X,Y})\}
+          \label{eq:gld}
+        \end{equation}
+
+        The \gls{gld} is not normalized with respect to the lengths of $X$ and $Y$. A short string $X$ that requires the same elementary edit operations as a longer string $X', |X|<|X'|$ is therefore not additionally penalized. The normalized \gls{gld}, which is defined in \autoref{eq:ngld}, addresses this issue. For a weight function $\gamma$, that assigns the same weight to insertions and deletions of any character, $d_{\text{N-GLD}}$ is a metric over $\Sigma^*$ whose values are in $[0,1]$ \autocite{edit_distance}.
+
+        \begin{equation}
+          \begin{split}
+            \alpha                & =\max\{\gamma(a\to\lambda),\gamma(\lambda\to b),a,b\in\Sigma\}      \\
+            d_{\text{N-GLD}}(X,Y) & =\frac{2\cdot\text{GLD}(X,Y)}{\alpha\cdot(|X|+|Y|)+\text{GLD}(X,Y)}
+          \end{split}
+          \label{eq:ngld}
+        \end{equation}
+
+  \item \textbf{\gls{teds}:}
+        As complex tables are a common occurrence in the oncology guidelines, examining the quality of the table structure recognition of the different implementations, is a key requirement for our evaluation.\ \gls{teds} measures the similarity between two \gls{html} tables. In order to calculate this metric, extracted \LaTeX{} tables are first converted into \gls{html} format \autocite{omnidocbench}.\ \gls{teds} builds on top of the tree edit distance proposed by \textcite{tree_edit_distance}. Hereby, the tree edit distance is defined as \textquote[p.1]{the minimum-cost sequence of node edit operations that transforms [a] tree $F$ into [another tree] $G$} \autocite{tree_edit_distance}.
+
+        In \gls{html}, tables are represented as tree structures. The root node has two children, \lstinline!thead! and \lstinline!tbody!, grouping the table's header rows and body rows respectively. Each table row \lstinline!tr! is made up of table cells \lstinline!td!, the leaves of the table tree. A cell has three attributes. The attributes ``colspan'' and ``rowspan'' denote the respective number of columns and rows that the cell stretches across. Lastly, ``content'' includes the textual content of the table cell \autocite{teds}.
+
+        \gls{teds} defines three different operations and their respective costs. Inserting or deleting a node has a cost of 1. The cost of substituting a table node $n_o$ with $n_s$ varies on the type and attributes of the node. If one of the node is not a leaf node their substitution, such as switching the order of two rows, has a cost of 1. When both nodes are table cells, their substitution cost is 1 if their spanning columns or rows are different. If the leaf nodes differ in their content, their substitution cost is the normalized \gls{gld} between their contents \autocite{teds}.
+        Following the definition from \textcite{teds}, the \gls{teds} between two table trees $F$ and $G$ is then computed as in \autoref{eq:teds}. Hereby, $|T|$ denotes the number of nodes in a table tree $T$ and $\text{EditDist}$ is the tree edit distance. The value of \gls{teds} is confined to $[0,1]$ \autocite{teds}.
+
+        \begin{equation}
+          \text{TEDS}(F,G)=1-\frac{\text{EditDist}(F,G)}{\max(|F|,|G|)}
+          \label{eq:teds}
+        \end{equation}
+
+        In addition to the regular \gls{teds}, OmniDocBench provides a structure-only version of this metric \autocite{omnidocbench}. This version disregards differences between the content of table cells, effectively setting the substitution cost of two table cells that span the same amounts of rows and columns to 0. In combination, these metrics help discern between the \gls{dp} approach's ability to understand the structure of the table and its ability to extract accurate textual information from the table cells.
+
+  \item \textbf{Normalized edit distance for the reading order:}
+        Evaluating the reading order of the implementation's output is an important validation step to ensure that the system is able to adapt to the double and single column layouts of the oncology guidelines. The normalized edit distance of the reading order is used for this evaluation \autocite{omnidocbench}. In order to create a fair comparison only text elements are included for this evaluation, as the placement of floating elements such as tables or figures can be somewhat ambiguous \autocite{omnidocbench}. Each of the ground truth elements contains an integer referring to their index in the natural reading order of the source document. The list of these indices is referred to as $I$. The indices are then ordered by the reading order of their matched predictions in the Markdown document. This list of reordered indices is referred to as $I'$ and denotes the ordering as returned from the \gls{dp} implementation. The normalized edit distance between $I$ and $I'$ is then calculated, with the elementary edit operations being the removal, insertion and substitution of a list element.
+\end{enumerate}
+
+The chosen metrics and document filters are stored in a configuration file and passed to the benchmark during evaluation. The full OmniDocBench configuration file that is used for our evaluation is displayed in \autoref{fig:omni-doc-config}.
 
 \subsection{Chunking Evaluation}
 Chroma Evaluation
+
+\subsection{Evaluation Environment}
+All evaluations are performed on a 2023 MacBook Pro equipped with a M3 processor and 16 GB of unified memory. In order to optimize the performance of this hardware, especially for the locally deployed \gls{vlm}-based \gls{dp} approaches, we utilize Apple's MLX engine \autocite{mlx} when possible.

@@ -50,6 +50,7 @@ class UnstructuredParser(DocumentParser[list[Element]]):
             filename=file_path,
             strategy=strat,
             languages=["eng", "deu"],
+            infer_table_structure=True,
             extract_images_in_pdf=True,
             extract_image_block_types=["Image", "Table"],
             extract_image_block_to_payload=False,

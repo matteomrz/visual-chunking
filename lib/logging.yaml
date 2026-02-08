@@ -14,7 +14,7 @@ handlers:
 loggers:
     lib:
         handlers: [ console ]
-        level: DEBUG
+        level: INFO
         propagate: False
 
 root:

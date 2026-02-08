@@ -12,13 +12,13 @@ class HierarchicalChunker(DocumentChunker):
 
     module = Chunkers.HIERARCHICAL
 
-    # Limit how much of our chunk can be taken up by parent headers
+    # Limit how much of the chunk can be taken up by parent headers
     max_parent_tokens: int
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.max_tokens = kwargs.get("max_tokens", 128)
-        self.max_parent_tokens = floor(self.max_tokens * 0.5)
+        max_parent_token_ratio = kwargs.get("max_parent_token_ratio", 0.5)
+        self.max_parent_tokens = floor(self.max_tokens * max_parent_token_ratio)
 
     def _get_chunk_tokens(self, document: ParsingResult):
         yield from self._get_from_element(document, [])

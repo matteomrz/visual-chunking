@@ -34,7 +34,7 @@ def export_table_to_latex(
 
     if not switch_highlighting:
         styler.highlight_max(axis=axis, props=bold_style)
-        styler.highlight_min(axis=axis, props=underline_style)  # props=underline_style)
+        styler.highlight_min(axis=axis, props=underline_style)
     else:
         styler.highlight_min(axis=axis, props=bold_style)
         styler.highlight_max(axis=axis, props=underline_style)

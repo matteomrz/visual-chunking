@@ -114,7 +114,7 @@ def _images_to_pdfs(exist_ok: bool = False):
     for image_path in image_dir.glob(pattern="*.jpg"):
         pdf_path = pdf_dir / f"{image_path.stem}.pdf"
         if exist_ok and pdf_path.exists():
-            logger.info(f"Skipping existing PDF for: {image_path.stem}")
+            logger.debug(f"Skipping existing PDF for: {image_path.stem}")
         else:
             try:
                 pdf = pymupdf.open()
@@ -125,7 +125,7 @@ def _images_to_pdfs(exist_ok: bool = False):
 
                 pdf.save(pdf_path)
                 pdf.close()
-                logger.info(f"Successfully created PDF for: {image_path.stem}")
+                logger.debug(f"Successfully created PDF for: {image_path.stem}")
             except Exception as e:
                 logger.warning(f"Failed PDF creation for: {image_path.stem}, due to: {str(e)}")
 
@@ -159,7 +159,7 @@ def create_config_files(exist_ok: bool = False):
 
         with open(p_path, "w") as c:
             c.write(p_content)
-            logger.info(f"Created config file for method: {p_name}")
+            logger.debug(f"Created config file for method: {p_name}")
 
 
 def get_omni_doc_dt_path(parser: Parsers) -> Path:
@@ -202,7 +202,7 @@ def create_result_table() -> pd.DataFrame:
 
         metrics_results = {}
 
-        for category_type, metric in [("text_block", "Edit_dist"), ("display_formula", "CDM"),
+        for category_type, metric in [("text_block", "Edit_dist"),
                                       ("table", "TEDS"), ("table", "TEDS_structure_only"),
                                       ("reading_order", "Edit_dist")]:
             if metric == 'CDM' or metric == "TEDS" or metric == "TEDS_structure_only":
@@ -221,7 +221,7 @@ def create_result_table() -> pd.DataFrame:
         results.append(result_entry)
 
     df = pd.DataFrame(results).round(3)
-    df['overall'] = ((1 - df['text_block_Edit_dist']) * 100 + df['display_formula_CDM'] + df[
-        'table_TEDS']) / 3
+    df['overall'] = ((1 - df['text_block_Edit_dist']) * 100 + df['table_TEDS'] + (
+        1 - df['reading_order_Edit_dist']) * 100) / 3
 
     return df
