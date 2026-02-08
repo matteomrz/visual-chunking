@@ -17,7 +17,7 @@ def get_document_parser(parser_type: Parsers) -> DocumentParser[Any]:
 
             return DoclingParser(use_vlm=False)
 
-        case Parsers.DOCLING_GRANITE:
+        case Parsers.GRANITE_DOCLING:
             from lib.parsing.methods.implementations.docling import DoclingParser
 
             return DoclingParser(use_vlm=True)

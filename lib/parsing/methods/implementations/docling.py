@@ -66,7 +66,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
 
     def __init__(self, use_vlm=False):
         if use_vlm:
-            self.module = Parsers.DOCLING_GRANITE
+            self.module = Parsers.GRANITE_DOCLING
 
             pipeline_options = VlmPipelineOptions(
                 vlm_options=vlm_model_specs.GRANITEDOCLING_MLX

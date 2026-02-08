@@ -15,6 +15,7 @@ from config import (
     OMNI_DOC_PROJECT_PATH
 )
 from lib.parsing.methods.parsers import Parsers
+from lib.utils.get_parser_thesis_name import get_parser_thesis_name
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
 omni_doc_name = "omni_doc_bench"
@@ -186,6 +187,13 @@ def create_result_table() -> pd.DataFrame:
     matching_algorithm = "quick_match"
     result_dir = OMNI_DOC_PROJECT_PATH / "result"
 
+    metrics = [
+        ("text_block", "Edit_dist", r"$\text{Text}^{Edit}\downarrow$"),
+        ("table", "TEDS", r"$\text{Table}^{TEDS}\uparrow$"),
+        ("table", "TEDS_structure_only", r"$\text{Table}^{S-TEDS^{*}}\uparrow$"),
+        ("reading_order", "Edit_dist", r"$\text{Read}^{Edit}\downarrow$")
+    ]
+
     for parser in Parsers:
         res_name = f"{parser.value}_{matching_algorithm}_metric_result.json"
         result_path = result_dir / res_name
@@ -202,26 +210,30 @@ def create_result_table() -> pd.DataFrame:
 
         metrics_results = {}
 
-        for category_type, metric in [("text_block", "Edit_dist"),
-                                      ("table", "TEDS"), ("table", "TEDS_structure_only"),
-                                      ("reading_order", "Edit_dist")]:
-            if metric == 'CDM' or metric == "TEDS" or metric == "TEDS_structure_only":
+        for category_type, metric, tex_name in metrics:
+            if metric == "TEDS" or metric == "TEDS_structure_only":
                 if result[category_type]["page"].get(metric):
-                    metrics_results[category_type + '_' + metric] = \
-                        result[category_type]["page"][metric][
-                            "ALL"] * 100
+                    value = result[category_type]["page"][metric]["ALL"] * 100
                 else:
-                    metrics_results[category_type + '_' + metric] = 0
+                    value = 0
             else:
-                metrics_results[category_type + '_' + metric] = result[category_type]["all"][
-                    metric].get(
-                    "ALL_page_avg", np.nan)
+                value = result[category_type]["all"][metric].get("ALL_page_avg", np.nan)
 
-        result_entry = pd.Series(metrics_results, name=parser.value)
+            metrics_results[tex_name] = value
+
+        parser_name = get_parser_thesis_name(parser)
+        result_entry = pd.Series(metrics_results, name=parser_name)
         results.append(result_entry)
 
-    df = pd.DataFrame(results).round(3)
-    df['overall'] = ((1 - df['text_block_Edit_dist']) * 100 + df['table_TEDS'] + (
-        1 - df['reading_order_Edit_dist']) * 100) / 3
+    df = pd.DataFrame(results)
+
+    overall_tex = r"$\text{Overall}\uparrow$"
+
+    text_edit_dist = df[metrics[0][2]]
+    table_teds = df[metrics[1][2]]
+    reading_order_edit_dist = df[metrics[3][2]]
+
+    df[overall_tex] = ((1 - text_edit_dist) * 100 + table_teds + (
+        1 - reading_order_edit_dist) * 100) / 3
 
     return df

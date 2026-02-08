@@ -3,7 +3,9 @@ import json
 import pandas as pd
 
 from config import BOUNDING_BOX_DIR
+from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.parsing_result import ParsingMetaData as PmD
+from lib.utils.get_parser_thesis_name import get_parser_thesis_name
 
 
 def get_time_stats():
@@ -33,8 +35,11 @@ def get_time_stats():
                 parsing_pp = metadata[parsing_time_key] / page_cnt
                 transformation_pp = metadata[transformation_time_key] / page_cnt
 
+                parser = Parsers.get_parser_type(metadata[parser_key])
+                parser_name = get_parser_thesis_name(parser)
+
                 stats.append({
-                    "Method": metadata[parser_key],
+                    "Method": parser_name,
                     "Parsing": parsing_pp,
                     "Transformation": transformation_pp
                 })

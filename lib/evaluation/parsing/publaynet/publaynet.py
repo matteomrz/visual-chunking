@@ -15,6 +15,7 @@ from lib.parsing.model.options import ParserOptions
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingMetaData, ParsingResult, \
     ParsingResultType
 from lib.utils.f1_coco import get_f1_metrics
+from lib.utils.get_parser_thesis_name import get_parser_thesis_name
 from lib.utils.merge_boxes import merge_adjacent_boxes
 from lib.utils.open import open_parsing_result
 from lib.utils.to_coco import get_coco_annotations
@@ -227,18 +228,19 @@ def get_class_metrics(coco_eval: COCOeval_faster, parser: DocumentParser[Any]) -
     """
 
     classes = get_f1_metrics(coco_eval)
+    parser_name = get_parser_thesis_name(parser.module)
 
     f_50 = {
         c["class"]: c["f1@50"]
         for c in classes
     }
-    f_50_series = Series(f_50, name=parser.module.value)
+    f_50_series = Series(f_50, name=parser_name)
 
     f_50_95 = {
         c["class"]: c["f1@50:95"]
         for c in classes
     }
-    f_50_95_series = Series(f_50_95, name=parser.module.value)
+    f_50_95_series = Series(f_50_95, name=parser_name)
 
     return f_50_series, f_50_95_series
 
