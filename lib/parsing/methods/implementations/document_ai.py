@@ -46,14 +46,12 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
     client: document_ai.DocumentProcessorServiceClient
 
     layout_path: str
-    ocr_path: str
 
     def __init__(self):
         load_dotenv()
         location = os.getenv("DOC_AI_LOCATION")
         project = os.getenv("DOC_AI_PROJECT_ID")
         layout_processor = os.getenv("DOC_AI_LAYOUT_PROCESSOR_ID")
-        ocr_processor = os.getenv("DOC_AI_OCR_PROCESSOR_ID")
 
         client_options = ClientOptions(
             api_endpoint=f"{location}-documentai.googleapis.com"
@@ -64,7 +62,6 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
         )
 
         self.layout_path = self.client.processor_path(project, location, layout_processor)
-        self.ocr_path = self.client.processor_path(project, location, ocr_processor)
 
     def _request_doc_ai(self, file_path: Path, processor_path: str) -> document_ai.Document:
         with open(file_path, "rb") as f:
@@ -87,8 +84,12 @@ class DocumentAIParser(DocumentParser[document_ai.Document]):
         return self._request_doc_ai(file_path, self.layout_path)
 
     def _get_md(self, raw_result: document_ai.Document, file_path: Path) -> str:
-        document = self._request_doc_ai(file_path, self.ocr_path)
-        return document.text
+        content = "\n\n".join([
+            _get_block_content(block)
+            for block in raw_result.document_layout.blocks
+        ])
+
+        return content
 
     def _transform(self, raw_result: document_ai.Document) -> ParsingResult:
         root = ParsingResult.root()
@@ -278,3 +279,71 @@ def _get_bounding_box(block: DocumentLayoutBlock) -> list[ParsingBoundingBox]:
         i += 1
 
     return geom
+
+
+def _get_block_content(block: DocumentLayoutBlock) -> str:
+    content = ""
+
+    if block.list_block:
+        is_ordered = block.list_block.type_ = "ordered"
+
+        for idx, child in block.list_block.list_entries:
+            content += f"{idx}. " if is_ordered else "- "
+            content += _get_block_content(child) + "\n"
+
+        content = content.trim()
+
+    elif block.table_block:
+        table = block.table_block
+        content += "<table>"
+
+        if table.caption:
+            content += f"<caption>{table.caption}<caption>"
+
+        if table.header_rows:
+            content += "<thead>"
+            for htr in table.header_rows:
+                content += _get_tr_content(htr, True)
+            content += "</thead>"
+
+        if table.body_rows:
+            content += "<tbody>"
+            for btr in table.body_rows:
+                content += _get_tr_content(btr, False)
+            content += "</tbody>"
+
+        content += "</table>"
+
+    elif block.text_block:
+        maybe_header_lvl = block.text_block.type_[-1]
+        if maybe_header_lvl.isdigit():
+            lvl = int(maybe_header_lvl)
+            content += lvl * "#" + " "
+
+        content += block.text_block.text
+
+        for child in block.text_block.blocks:
+            content += "\n\n" + _get_block_content(child)
+
+    return content
+
+
+def _get_tr_content(tr: DocumentLayoutBlock.LayoutTableRow, is_head: bool) -> str:
+    content = "<tr>"
+    cell_name = "th" if is_head else "td"
+
+    for th in tr.cells:
+        content += f"<{cell_name}"
+        if th.col_span > 1:
+            content += f' colspan="{th.colspan}"'
+        if th.row_span > 1:
+            content += f' rowspan="{th.row_span}"'
+        content += ">"
+
+        for thb in th.blocks:
+            content += _get_block_content(thb)
+
+        content += f"</{cell_name}>"
+    content += "</tr>"
+
+    return content

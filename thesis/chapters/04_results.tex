@@ -15,11 +15,18 @@
   \caption[F1 scores on the PubLayNet dataset]{F1 scores of the evaluated \gls{dp} implementations on the PubLayNet dataset.\ \protect\subref{tab:f1_50_publaynet} contains the F1@50 scores, \protect\subref{tab:f1_50_95_publaynet} contains the F1@50:95 scores. Scores are reported per element type. The column \lstinline[language=HTML]!all! reports the respective Macro F1 score for each implementation. Highest values are bolded and smallest values are underlined. Higher values are preferred.}
 \end{figure}\label{tab:f1_publaynet}
 
-\begin{table}[htpb]
+\begin{figure}[htpb]
   \centering
-  \input{figures/tables/time_per_page}
+  \subfloat{
+    \input{figures/plots/time_per_page.tex}
+  }
+  \hfill
+  \subfloat{
+    \input{figures/tables/time_per_page}
+  }
   \caption[Parsing and transformation times per page]{Mean and standard deviation of the \gls{dp} implementation's parsing and transformation times per page. Times are reported in seconds. Fastest times are bolded and slowest times are underlined. Lower values are preferred.}
-\end{table}\label{tab:time_per_page}
+\end{figure}\label{tab:time_per_page}
+
 
 \begin{table}[htpb]
   \centering

@@ -7,6 +7,7 @@ ROOT_DIR = Path(__file__).parent
 THESIS_DIR = ROOT_DIR / "thesis"  # Latex Thesis directory
 FIGURE_DIR = THESIS_DIR / "figures"  # Tex files for all figures
 TABLE_DIR = FIGURE_DIR / "tables"  # Tex files for tables
+PLOT_DIR = FIGURE_DIR / "plots"  # csv files containing data for plotting
 
 LIB_DIR = ROOT_DIR / "lib"  # Code directory
 

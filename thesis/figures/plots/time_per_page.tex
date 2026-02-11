@@ -1,0 +1,32 @@
+
+\pgfplotstableread[col sep=comma]{figures/plots/time_per_page.csv}\datatable
+
+\begin{tikzpicture}
+  \begin{axis}
+    [
+      legend pos=outer north east,
+      legend style={font=\footnotesize\itshape,cells={anchor=west}},
+      ybar=10pt,
+      bar width=17pt,
+      cycle list name=TUM-corporate,
+      /pgf/bar shift=0pt,scale only axis,
+      height=0.5\textwidth,
+      width=0.45\textwidth,
+      ylabel=seconds per page,
+      enlarge x limits=0.15,
+      ymin=0,
+      xtick=\empty,
+      legend style={draw=none, /tikz/every even column/.append style={column sep=5pt}},
+      legend image code/.code={%
+          \draw[#1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);
+        }
+    ]
+
+    \pgfplotsinvokeforeach{0,...,7}{
+      \addplot table [ x expr=\coordindex, select row=#1, y=Mean] {\datatable};
+      \addlegendentry {\pgfplotstablegetelem{#1}{Method}\of\datatable \pgfplotsretval}
+    }
+
+  \end{axis}
+\end{tikzpicture}
+

@@ -11,8 +11,18 @@ _latex_mapping = {
     Parsers.DOCUMENT_AI: "Document AI"
 }
 
+_api_parsers = [
+    "LlamaParse",
+    "Gemini 2.5 Flash",
+    "Document AI"
+]
+
 
 def get_parser_thesis_name(parser: Parsers) -> str:
     """Returns a latex formatted string of the parsers name."""
 
     return _latex_mapping.get(parser, parser.value)
+
+
+def get_is_parser_api(parser: str) -> str:
+    return parser + ("*" if parser in _api_parsers else "")

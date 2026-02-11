@@ -5,7 +5,7 @@ from logging import getLogger
 
 from pandas import DataFrame, Series
 
-from config import TABLE_DIR
+from config import PLOT_DIR, TABLE_DIR
 
 logger = getLogger(__name__)
 
@@ -124,3 +124,14 @@ def export_table_to_latex(
     with open(output_path, "w") as f:
         f.write(tex_content)
         logger.info(f"Saved table content to: {output_path}")
+
+
+def export_table_to_csv(df: DataFrame, name: str):
+    """The exported data is saved as a csv file to 'PLOT_DIR / ```name```.csv'."""
+
+    if not PLOT_DIR.exists():
+        PLOT_DIR.mkdir(parents=True, exist_ok=True)
+
+    csv_path = PLOT_DIR / f"{name}.csv"
+    df.to_csv(path_or_buf=csv_path, index=False)
+    logger.info(f"Saved table data to: {csv_path}")
