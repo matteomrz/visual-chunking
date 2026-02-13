@@ -25,8 +25,8 @@ class SemanticChunker(DocumentChunker):
     module = Chunkers.SEMANTIC
 
     embedding_model: SentenceTransformer = SentenceTransformer('all-MiniLM-L6-v2')
-    similarity_threshold_percentile: int
 
+    similarity_threshold_percentile: int
     min_tokens: int
 
     def __init__(self, **kwargs):
@@ -54,7 +54,9 @@ class SemanticChunker(DocumentChunker):
 
             for tokens in sentence_tokens:
                 text = "".join([t.text for t in tokens])
-                embedding = self.embedding_model.encode_document(text, normalize_embeddings=True)
+                embedding = self.embedding_model.encode_document(
+                    text, normalize_embeddings=True, show_progress_bar=False
+                )
 
                 if prev_embedding is None:
                     distance = torch.zeros(1, 1)

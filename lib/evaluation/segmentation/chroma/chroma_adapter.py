@@ -4,17 +4,20 @@ from typing import Any, List
 
 from chunking_evaluation import BaseChunker
 
-from config import BOUNDING_BOX_DIR
 from lib.evaluation.segmentation.chroma.chroma_setup import CHROMA_DIR
 from lib.parsing.model.parsing_result import ParsingResult, ParsingResultType
 from lib.segmentation.model.chunk import ChunkingResult
 from lib.segmentation.model.document_chunker import DocumentChunker
+from lib.utils.thesis_names import get_chunker_name, get_chunker_param
 
 logger = logging.getLogger(__name__)
 
 
 def _transform_to_parsing_result(text: str) -> ParsingResult:
+    """Transform plain text corpus into rudimentary ParsingResult."""
+
     root = ParsingResult.root()
+
     # The text in the general evaluation is just plain text with newlines in between
     elements = text.split("\n\n")
 
@@ -43,16 +46,19 @@ class ChromaChunker(BaseChunker):
         self._inner_chunker = chunker
 
     def get_info(self) -> dict[str, Any]:
-        info: dict[str, Any] = {"method": self._inner_chunker.__class__.__name__}
-        if hasattr(self._inner_chunker, "max_tokens"):
-            info["max_tokens"] = self._inner_chunker.max_tokens
+        """Information about the chunking strategy and its parameters."""
 
-        if hasattr(self._inner_chunker, "overlap"):
-            info["overlap"] = self._inner_chunker.overlap
+        info: dict[str, Any] = {
+            "Method": get_chunker_name(self._inner_chunker.module),
+            "Param": get_chunker_param(self._inner_chunker),
+            "N": self._inner_chunker.max_tokens
+        }
 
         return info
 
     def split_text(self, text: str) -> List[str]:
+        """Chunking adapter for general evaluation."""
+
         doc = _transform_to_parsing_result(text)
         res = self._inner_chunker.segment(doc, with_geom=False)
         return _transform_to_str_list(res)
@@ -63,21 +69,26 @@ class ChromaChunker(BaseChunker):
         During test execution, we first try to call this method before defaulting to ``split_text`` if None is returned.
         This allows us to get access to the ParsingResult when we evaluate on our Synthetic Dataset.
         """
+
         corpus = Path(corpus_id)
         is_synth = corpus.exists() and corpus.is_relative_to(CHROMA_DIR)
         if not is_synth:
             return None
 
-        # Path to the output from the same parser - as a ParsingResult
-        rel_path = corpus.relative_to(CHROMA_DIR)
-        bbox_path = (BOUNDING_BOX_DIR / rel_path).with_suffix(".json")
+        # Name of the directory of the outputs from the same parser
+        batch_name = str(corpus.relative_to(CHROMA_DIR).with_suffix(""))
 
-        if not bbox_path.exists():
+        try:
+            results = self._inner_chunker.process_batch(batch_name, with_geom=False)
+        except ValueError:
             logger.error(
-                f"Missing bounding boxes for corpus {corpus_id}. "
+                f"Missing ParsingResults for corpus {batch_name}. "
                 f"Defaulting to string input."
             )
             return None
 
-        result = self._inner_chunker.process_document(bbox_path, with_geom=False)
-        return _transform_to_str_list(result)
+        chunks = []
+        for result in results:
+            chunks.extend(_transform_to_str_list(result))
+
+        return chunks

@@ -16,25 +16,6 @@ logger = logging.getLogger(__name__)
 CHROMA_DIR = CONFIG_DIR / "chroma"
 
 
-def _create_chroma_text_file(result: ParsingResult, exist_ok: bool) -> str:
-    """
-    Translates the ParsingResult into a text file that can be used for query generation.
-    Performs additional element filtering to remove tables and figures.
-    """
-    file_path = Path(result.metadata[PmD.GUIDELINE_PATH.value])
-    parser = result.metadata[PmD.PARSER.value]
-
-    rel_path = file_path.relative_to(GUIDELINES_DIR)
-    txt_path = (CHROMA_DIR / parser / rel_path).with_suffix(".txt")
-
-    if not (exist_ok and txt_path.exists()):
-        chroma_str = str(result)
-        with open(txt_path, "w") as f:
-            f.write(chroma_str)
-
-    return str(txt_path)
-
-
 def setup_synthetic_evaluation(
     parser_type: Parsers,
     batch_name: str,
@@ -56,34 +37,45 @@ def setup_synthetic_evaluation(
     doc_parser = get_document_parser(parser_type)
     parser_name = parser_type.value
 
-    options = {ParserOptions.EXIST_OK: parse_exist_ok}
-    documents = doc_parser.process_batch(batch_name, options)
-
-    output_dir = CHROMA_DIR / parser_name / batch_name
+    output_dir = CHROMA_DIR / parser_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Scanning {str(output_dir)} for text documents...")
+    output_path = CHROMA_DIR / parser_name / f"{batch_name}.txt"
 
-    # Paths to .txt files that will be used for query generation
-    output_paths = [
-        _create_chroma_text_file(doc, parse_exist_ok)
-        for doc in documents
-    ]
+    if parse_exist_ok and output_path.exists():
+        logger.info(
+            f"Chroma document corpus exists at {str(output_path)}."
+            "Skipping generation."
+        )
 
-    logger.info(f"Using {len(output_paths)} documents to create synthetic Chroma dataset...")
+    else:
+        options = {ParserOptions.EXIST_OK: parse_exist_ok}
+        documents = doc_parser.process_batch(batch_name, options)
+
+        logger.info(f"Using {len(documents)} documents to create synthetic Chroma evaluation...")
+
+        corpus = "\n\n".join([str(doc) for doc in documents])
+
+        with open(output_path, "w") as f:
+            f.write(corpus)
+
+        logger.info(f"Finished creating chroma corpus at {output_path}.")
 
     load_dotenv()
     query_path = CHROMA_DIR / f"{batch_name}_{parser_name}.csv"
     skip_generation = query_exist_ok and query_path.exists()
 
-    evaluation = SyntheticEvaluation(corpora_paths=output_paths, queries_csv_path=query_path)
+    evaluation = SyntheticEvaluation(
+        corpora_paths=[output_path],
+        queries_csv_path=query_path,
+        chroma_db_path=str(CHROMA_DIR / parser_name / "db")
+    )
 
     if not skip_generation:
-        queries_per_file = math.ceil(question_count / len(output_paths))
         evaluation.generate_queries_and_excerpts(
             num_rounds=1,
             approximate_excerpts=True,
-            queries_per_corpus=queries_per_file,
+            queries_per_corpus=question_count,
         )
 
     logger.info("Finished creating synthetic evaluation.")

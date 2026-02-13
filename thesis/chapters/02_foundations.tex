@@ -76,26 +76,6 @@ The cosine similarity is calculated as the normalized dot product, as defined in
 \subsection{Bounding Boxes}
 Bounding boxes represent the most fundamental method for annotating the position of an object within an image. A bounding box is the smallest rectangle that fully encloses the shape of the object \autocite{shape_analysis}. These boxes are defined within the image's coordinate system, with its origin typically positioned at the top-left corner of the image \autocite{dive_into_dl}. The x-axis extends horizontally from this point, while the y-axis extends vertically. Coordinates can either be expressed in absolute pixel units or as normalized fractional values relative to the dimensions of the image. For this study, we focus exclusively on horizontal bounding boxes, which are aligned to the horizontal axis, also known as Feret Boxes \autocite{shape_analysis}. There are multiple formats for representing bounding boxes, with the \gls{ltrb} notation, which denotes the coordinates of the top-left and bottom-right corners of the bounding box, being a prominent option \autocite{dive_into_dl}.
 
-\subsection{Intersection over Union}
-According to the definition from \textcite{object_detection}, the \gls{iou} between two bounding boxes $BB_{a}$ and $BB_{b}$ is defined as described in \autoref{eq:iou}. The \gls{iou} can take on any value between 0 and 1, where a value of 0 means that there is no overlap between the two bounding boxes, and a value of 1 means that the two bounding boxes are identical. In the context of object detection, \gls{iou} is commonly used to evaluate the accuracy of predicted bounding boxes against ground truth bounding boxes \autocite{object_detection}.
-
-\begin{equation}
-  IoU(BB_{a}, BB_{b}) = \frac{\text{Area of intersection of } BB_{a} \text{ and } BB_{b}}{\text{Area of union of } BB_{a} \text{ and } BB_{b}}
-  \label{eq:iou}
-\end{equation}
-
-\begin{figure}[htbp]
-  \centering
-  \hfill
-  \subfloat[$IoU=0.5$]{\includegraphics[width=0.25\textwidth]{images/iou50}}\label{fig:iou_50}
-  \hfill
-  \subfloat[$IoU=0.75$]{\includegraphics[width=0.25\textwidth]{images/iou75}}\label{fig:iou_75}
-  \hfill
-  \subfloat[$IoU=0.95$]{\includegraphics[width=0.25\textwidth]{images/iou95}}\label{fig:iou_95}
-  \hfill
-  \caption{A pair of identical bounding boxes at different \gls{iou} values. The shaded area is the intersection of the bounding boxes. As the \gls{iou} value increases, the area of the intersection approaches the area of the bounding box.}
-\end{figure}
-
 \section{Retrieval-Augmented Generation}
 While \glspl{llm} have extensive general domain knowledge due to their enormous corpora of training data, compiled from various open-domain sources \autocite{impact_dataset_rag_multi_hop}, they struggle with tasks that require domain-specific knowledge which they did not encounter during training \autocite{rag_survey}. This can lead to ``hallucinations'' and inaccuracies, as the model tries to synthesize a matching answer based of its domain-wise irrelevant training data \autocite{rag_survey,chunk_size_effect_on_rag}.\ \gls{rag} addresses this limitation, extending the usage of \glspl{llm} to applications requiring extensive knowledge in a specific domain \autocite{rag}. This is achieved by retrieving information from an external knowledge source comprised of application-relevant text passages, supplying additional context to the \gls{llm} during answer generation \autocite{rag,rag_survey}.
 

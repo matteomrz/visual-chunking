@@ -156,7 +156,13 @@ We then insert a breakpoint between sentences which have a higher distance than 
 \subsection{Hierarchical Chunking}
 Hierarchical chunking, which is inspired by the hybrid chunker from the Docling toolkit \autocite{docling_toolkit}, generates discourse passages by leveraging the tree structure of the ParsingResult. The structure and hierarchy of the document are preserved in the final chunks by prepending relevant section headers to the chunk's content.
 
-In order to prevent deep hierarchical structures from taking up a large part of the final chunk, a token budget $B_\text{headings}$ is imposed on the length $S$ of the section heading tokens. If adding an additional heading causes $S$ to exceed $B_\text{headings}$, the highest-level ancestors are removed from the list until the size constraint is satisfied.
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/hierarchical_chunker}
+  \caption[Hierarchical Chunker]{Operational logic of the hierarchical chunker. The initial ParsingResult tree exceeds the maximum token limit and is decomposed into its child subtrees. Each child subtree contains the root node, retaining the context from the document hierarchy. In this example, the subtrees do not exceed the maximum chunk length and are not split further. The algorithm then merges adjacent child subtrees if their combined tree satisfies the size constraint.}
+\end{figure}
+
+In order to prevent deep hierarchical structures from taking up a large part of the final chunk, a token budget $B_\text{h}$ is imposed on the length $S$ of the section heading tokens. If adding an additional heading causes $S$ to exceed $B_\text{h}$, the highest-level ancestors are removed from the list until the size constraint is satisfied.
 
 As the algorithm traverses the document tree, it processes each ParsingResult node following a three-step logic:
 \begin{enumerate}
@@ -180,10 +186,31 @@ The goal of the \gls{dla} evaluation is to assess the correctness of the boundin
 
 To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide ``hard-predictions'', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this study \autocite{lrp_error,eclair}.
 
-For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{object_detection_metrics}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, firstly the \glspl{dtbb} are classified into \glspl{tp} and \glspl{fp}. A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class, so that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $N$ \glspl{dtbb}, out of which $S, (S\leq N)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
+For this reason, we will compare the implementations based on their achieved F1 score. Similarly to \gls{ap}, this metric takes into account two important measures for object detectors: precision and recall \autocite{object_detection_metrics}. According to \textcite{object_detection_metrics}, \textquote[p. 9]{Precision is the ability of a model to identify only relevant objects.\ \textelp{} Recall is the ability of a model to find all relevant cases \textelp{}}. In order to calculate their values, the \glspl{dtbb} are first classified into \glspl{tp} and \glspl{fp}.
+
+The classification relies on how accurately the \glspl{dtbb} align with the \glspl{gtbb}, which is measured through the \gls{iou}. According to the definition from \textcite{object_detection}, the \gls{iou} between two bounding boxes $BB_{a}$ and $BB_{b}$ is defined as described in \autoref{eq:iou}. The \gls{iou} can take on any value between 0 and 1, where a value of 0 means that there is no overlap between the two bounding boxes, and a value of 1 means that the two bounding boxes are identical.
 
 \begin{equation}
-  \text{Pr} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{N-S}\text{FP}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ detections}
+  IoU(BB_{a}, BB_{b}) = \frac{\text{Area of intersection of } BB_{a} \text{ and } BB_{b}}{\text{Area of union of } BB_{a} \text{ and } BB_{b}}
+  \label{eq:iou}
+\end{equation}
+
+\begin{figure}[htbp]
+  \centering
+  \hfill
+  \subfloat[$IoU=0.5$]{\includegraphics[width=0.25\textwidth]{images/iou50}}\label{fig:iou_50}
+  \hfill
+  \subfloat[$IoU=0.75$]{\includegraphics[width=0.25\textwidth]{images/iou75}}\label{fig:iou_75}
+  \hfill
+  \subfloat[$IoU=0.95$]{\includegraphics[width=0.25\textwidth]{images/iou95}}\label{fig:iou_95}
+  \hfill
+  \caption{A pair of identical bounding boxes at different \gls{iou} values. The shaded area is the intersection of the bounding boxes. As the \gls{iou} value increases, the area of the intersection approaches the area of the bounding box.}
+\end{figure}
+
+A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class such that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $P$ \glspl{dtbb}, out of which $S, (S\leq P)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
+
+\begin{equation}
+  \text{Pr} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{P-S}\text{FP}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ detections}
   \label{eq:precision}
 \end{equation}
 
@@ -199,10 +226,10 @@ The F1 score is the weighted harmonic mean between precision and recall and is c
   \label{eq:f1score}
 \end{equation}
 
-For scenarios with multiple classes, such as the PubLayNet dataset, the Macro F1 score can be used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the mean of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $N_{:j}$ and $G_{:j}$ denote the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
+For scenarios with multiple classes, such as the PubLayNet dataset, the Macro F1 score can be used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the mean of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $P_{:j}$ and $G_{:j}$ denote the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
 
 \begin{equation}
-  F_{1_\text{Macro}}(N, G) = \frac{1}{M}\sum_{j=1}^{M}F_1(N_{:j}, G_{:j})
+  F_{1_\text{Macro}}(P, G) = \frac{1}{M}\sum_{j=1}^{M}F_1(P_{:j}, G_{:j})
   \label{eq:macrof1}
 \end{equation}
 
@@ -256,7 +283,7 @@ The evaluation of a single \gls{dp} implementation follows a three-step process:
 
         In \gls{html}, tables are represented as tree structures. The root node has two children, \lstinline!thead! and \lstinline!tbody!, grouping the table's header rows and body rows respectively. Each table row \lstinline!tr! is made up of table cells \lstinline!td!, the leaves of the table tree. A cell has three attributes. The attributes ``colspan'' and ``rowspan'' denote the respective number of columns and rows that the cell stretches across. Lastly, ``content'' includes the textual content of the table cell \autocite{teds}.
 
-        \gls{teds} defines three different operations and their respective costs. Inserting or deleting a node has a cost of 1. The cost of substituting a table node $n_o$ with $n_s$ varies on the type and attributes of the node. If one of the node is not a leaf node their substitution, such as switching the order of two rows, has a cost of 1. When both nodes are table cells, their substitution cost is 1 if their spanning columns or rows are different. If the leaf nodes differ in their content, their substitution cost is the normalized \gls{gld} between their contents \autocite{teds}.
+        \gls{teds} defines three different operations and their respective costs. Inserting or deleting a node has a cost of 1. The cost of substituting a table node $n_o$ with $n_s$ varies on the type and attributes of the node. If one of the nodes is not a leaf node their substitution, such as switching the order of two rows, has a cost of 1. When both nodes are table cells, their substitution cost is 1 if their spanning columns or rows are different. If the leaf nodes differ in their content, their substitution cost is the normalized \gls{gld} between their contents \autocite{teds}.
         Following the definition from \textcite{teds}, the \gls{teds} between two table trees $F$ and $G$ is then computed as in \autoref{eq:teds}. Hereby, $|T|$ denotes the number of nodes in a table tree $T$ and $\text{EditDist}$ is the tree edit distance. The value of \gls{teds} is confined to $[0,1]$ \autocite{teds}.
 
         \begin{equation}
@@ -277,7 +304,7 @@ The quality of the \gls{dp} process is meaningless if the relevant passages can 
 
 \textcite{chroma_eval} propose a framework that focuses specifically on evaluating the influence of the chunking process on the retrieval phase. Their methodology builds on the fact that retrieving irrelevant tokens results in unnecessary computational strain and distractions during generation \autocite{llm_context_distractions,chroma_eval}. Therefore they propose a novel evaluation approach that evaluates the retrieved context on the token level. Their contributions include the proposal of specialized evaluation metrics as well as a framework for the creation of the evaluation dataset. We follow their evaluation approach while adapting it to our own data types.
 
-\paragraph{Dataset creation:} To compare the chunking strategies against each other, a corpus of oncology guideline documents needs to be selected for the evaluation. In addition, \gls{qa} pairs are needed to evaluate the quality of the retrieval. Hereby the framework provides utilities for the generation of synthetic \gls{qa} pairs from the document corpus through the use of a \gls{llm}. However, for our evaluation we use manually annotated \gls{qa} pairs, created by medical professionals from the \gls{tum} university hospital. While this dataset is not available to the general public, we were permitted to use both the documents as well as the \gls{qa} pairs for this evaluation. In total, the dataset contains \todo{count about 30?} \gls{qa} pairs created for a document corpus of \todo{count} german oncology guidelines published by \gls{awmf}.
+\paragraph{Dataset creation:} To compare the chunking strategies against each other, a corpus of oncology guideline documents needs to be selected for the evaluation. In addition, \gls{qa} pairs are needed to evaluate the quality of the retrieval. Hereby the framework provides utilities for the generation of synthetic \gls{qa} pairs from the document corpus through the use of a \gls{llm} \autocite{chroma_eval}. For our evaluation we use manually annotated \gls{qa} pairs, created by medical professionals from the \gls{tum} university hospital. While this dataset is not available to the general public, we were permitted to use both the documents as well as the \gls{qa} pairs for this evaluation. In total, the dataset contains \todo{count about 30?} \gls{qa} pairs created from a document corpus of \todo{count} german oncology guidelines published by \gls{awmf}.
 
 The documents are first processed by the parsing module to prepare them for the chunking strategies. Hereby, we choose the used \gls{dp} implementation based on the results of the content extraction evaluation. The document corpus $D$ contains the tokens across all of the parsed guideline documents. The parsed documents are then processed by the chunking module once for each chunking strategy. For each strategy $i$, the chunks across all of the documents are contained in the chunk corpus $C_i$. Each chunk $c\in C_i$ is a set of tokens such that $c\subseteq D$. For each question $q$, the answer subset $T_e,T_e\subseteq D$ contains the information that is relevant for answering $q$.
 
@@ -314,17 +341,45 @@ Following this principle, \textcite{chroma_eval} propose three distinct evaluati
   \item \textbf{$\text{Precision}_\Omega$:} $\text{Precision}_\Omega$ refers to the precision value of a ``perfect'' retriever that always retrieves the set of chunks $c_\text{opt}$ consisting of every chunk that contains tokens from $T_e$. The metric therefore provides an upper bound for the token efficiency given perfect recall \autocite{chroma_eval}.
 \end{enumerate}
 
+Deciding on the specific configurations for evaluating the chunking strategies is not trivial, as there is no universally accepted ``best'' set of parameters. The optimal values are highly-dependent on the information density and attributes of the document corpus \autocite{rethinking_chunk_size}. Furthermore, there is limited scientific research that quantifies the effect of specific parameter configurations across multiple strategies.
+
+To address this uncertainty, we evaluate each chunking strategy across a range of parameters to identify optimal settings for our application while investigating how different parameters influence retrieval performance. To ensure a thorough investigation while keeping the number of  configurations manageable, we identify a range of options for each parameter based on scientific literature and recommendations from established \gls{rag} frameworks.
+
+\begin{enumerate}
+  \item \textbf{Maximum chunk size ($N$):} The maximum chunk size is the most critical tuneable chunking parameter, as it directly impacts the granularity of the retrieved context.\ \textcite{rethinking_chunk_size} suggest that smaller chunk sizes ($N\leq128$) are effective for datasets that require concise fact-based answers, such as biomedical documents, whereas larger chunks ($512\leq N\leq 1024$) are necessary for documents where information is spread out across long paragraphs. LlamaIndex recommends a maximum token length of 1024 tokens for most applications, finding that increasing the chunk size further leads to decreased performance \autocite{llamaindex_chunk_size}. In order to facilitate an extensive review of different chunk sizes, we evaluate every strategy at $N\in\{128,256,512,1024\}$.
+
+  \item \textbf{Chunk overlap ($O$):} While sliding-window approaches are common, empirical research on the specific effects of overlap remains sparse. Configurations in the literature vary drastically, from the variable $0.5\cdot N$ experimented with by \textcite{chroma_eval} to fixed smaller sizes used by \textcite{semantic_chunking} and LlamaIndex, with the latter setting an unusually small default overlap of 20 tokens on their chunking implementations. In order to strike a balance between these configurations and test the impact of including an overlap, we evaluate the strategies at $O\in\{0,0.20\cdot N\}$.
+
+  \item \textbf{Breakpoint percentile ($Q$):} This parameter determines the sensitivity of the breakpoint-based semantic chunker to topical shifts in the document. Setting a larger $Q$ hereby results in the chunker being more selective, resulting in fewer, larger chunks with more pronounced topical shifts. We experiment with $Q\in\{0.7,0.9\}$.
+
+  \item \textbf{Minimum chunk size ($M$):} To ensure that semantic chunks scale with the maximum chunk size, the minimum chunk size needs to scale accordingly as well. We therefore set $M=0.5\cdot N$.
+
+  \item \textbf{Heading token budget ($B_h$):} In hierarchical chunking, the heading budget prevents section headers from taking up a majority of the chunk's content. For our evaluation, we set $B_h=0.4\cdot N$.
+\end{enumerate}
+
+In total, we evaluate 24 different chunking configurations across four different strategies.
+
+% In order to not only be able to compare different chunking strategies against each other but also enable comparisons between chunking strategy configurations, we evaluate each chunking strategy for a range of possible parameters. In order to enable a thorough investigation while keeping the number of tested configurations manageable, we follow existing literature to identify reasonable value ranges for these parameters.
+
+% The maximum chunk length is the most important parameter. Previous studies found that the chunk size has a significant effect on the efficiency of the retrieval
+
+% There is no universally accepted best value for the maximum chunk size
+
+% While the evaluated strategies are already established, there are a multitude of parameters which need to be set for the evaluation. There is no universally accepted best value for these parameters, with the value depending on the specific data and information density of the application. Additionally, there has been little scientific research on the effect of these parameters, especially for a multitude of chunking strategies. In order to evaluate a broad range of configurations, while keeping the number of tested configurations manageable, we will evaluate each chunker on four maximum token limits $N\in\{128,256,512,1024\}$. For the chunkers using a sliding window approach, we will follow the
+
+% We will therefore follow the documentation from the \gls{rag} framework LlamaIndex, which suggests starting with a chunk size
+% While there is no ``one size fits all'' approach for setting the maximum chunk size, \todo{source} suggest starting with a chunk size of around 250 for general applications. Other experiments have used chunk sizes ranging from
+
+% Deciding on what configurations to test the chunking strategies on is not trivial.
+
 % For our evaluation
 
-% 3 token lengths: small 128, medium 256, large 512
-% 2 overlaps: 50\% and 0\%
+% 3 token lengths: small 128, medium 256, large 512, xl 1028
+% 3 overlaps: 50\%, 25% and 0\%
 % minimum chunk size 50\% and 0\%
 % b headings fixed at 25\%
 
 % Total of 19 configurations
-
-
-
 
 \subsection{Evaluation Environment}
 All evaluations are performed on a 2023 MacBook Pro equipped with a M3 processor and 16 GB of unified memory. In order to optimize the performance of this hardware, especially for the locally deployed \gls{vlm}-based \gls{dp} approaches, we utilize Apple's MLX engine \autocite{mlx} when possible.

@@ -15,7 +15,7 @@ from config import (
     OMNI_DOC_PROJECT_PATH
 )
 from lib.parsing.methods.parsers import Parsers
-from lib.utils.get_parser_thesis_name import get_parser_thesis_name
+from lib.utils.thesis_names import get_parser_thesis_name
 
 omni_doc_repo_id = "opendatalab/OmniDocBench"
 omni_doc_name = "omni_doc_bench"

@@ -9,7 +9,7 @@ handlers:
     console:
         class: logging.StreamHandler
         formatter: simple_formatter
-        level: DEBUG
+        level: INFO
 
 loggers:
     lib:
@@ -19,4 +19,4 @@ loggers:
 
 root:
     handlers: [ console ]
-    level: WARNING
+    level: INFO

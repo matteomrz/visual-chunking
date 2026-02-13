@@ -77,6 +77,20 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             abs_right = bbox.right * width
             abs_bottom = bbox.bottom * height
 
+            # Check if all valid coords
+            # Fixes CropBox not in MediaBox error
+            if not all([
+                0 <= abs_left <= width,
+                0 <= abs_top <= height,
+                0 <= abs_right <= width,
+                0 <= abs_bottom <= height,
+            ]):
+                logger.warning(
+                    "Invalid bounding box:"
+                    f"({abs_left},{abs_top},{abs_right},{abs_bottom})"
+                )
+                continue
+
             box_width = abs_right - abs_left
             box_height = abs_bottom - abs_top
 

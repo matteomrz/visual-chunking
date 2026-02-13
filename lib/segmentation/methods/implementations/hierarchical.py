@@ -55,7 +55,6 @@ class HierarchicalChunker(DocumentChunker):
 
                 for child in element.children:
                     iterator = self._get_from_element(child, parent_tokens[:])
-
                     first_tokens = next(iterator)
 
                     # If our iterator returns any more elements we know that our child was split
@@ -88,6 +87,10 @@ class HierarchicalChunker(DocumentChunker):
 
                     else:
                         prev_tokens = first_tokens
+
+                # Make sure to return tokens if the node only has one child
+                if prev_tokens:
+                    yield self._add_parent_tokens(prev_tokens, elem_tokens)
 
             # element is a leaf node -> split content itself
             else:

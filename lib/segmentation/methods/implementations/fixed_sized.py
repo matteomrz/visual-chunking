@@ -9,7 +9,6 @@ class FixedSizeChunker(DocumentChunker):
 
     module = Chunkers.FIXED_SIZE
 
-    max_tokens: int
     overlap: int
 
     def __init__(self, **kwargs):

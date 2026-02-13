@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generator
 
+import numpy as np
 from transformers import AutoTokenizer
 
 from config import BOUNDING_BOX_DIR, SEGMENTATION_OUTPUT_DIR
@@ -178,7 +179,27 @@ class DocumentChunker(ABC):
 
     @property
     def dst_path(self) -> Path:
-        return SEGMENTATION_OUTPUT_DIR / self.module.value
+        """
+        Directory to save the ChunkingResult JSON serialization in.
+        Example: 'SEGMENTATION_OUTPUT_DIR/fixed_size/1024_200/'
+        """
+        return SEGMENTATION_OUTPUT_DIR / self.module.value / self._config_str
+
+    @property
+    def _config_str(self):
+        """
+        Subdirectory name to differentiate between different chunking configurations.
+        Example: '1024_200', for a chunker with max_token_length=1024 and overlap=200
+        """
+        return "_".join([str(v) for k, v in self._parameters.items()])
+
+    @property
+    def _parameters(self) -> dict[str, str | int]:
+        """All set-able parameters for the chunking strategy."""
+        return {
+            k: v for k, v in vars(self).items()
+            if isinstance(v, (str, int))
+        }
 
     @abstractmethod
     def _get_chunk_tokens(self, document: ParsingResult) -> Generator[list[RichToken], Any, None]:
@@ -217,6 +238,10 @@ class DocumentChunker(ABC):
         for segment in self._get_chunk_tokens(document):
             if not isinstance(segment, list):
                 break
+
+            # Filter out any empty chunks (fix for recursive strategy)
+            if not any([t.text.strip() for t in segment]):
+                continue
 
             chunk = get_chunk(segment, chunk_idx, elem_info, with_geom)
             result.chunks.append(chunk)
@@ -261,7 +286,7 @@ class DocumentChunker(ABC):
         result = self.segment(document, with_geom)
 
         chunk_time = time.time() - start_time
-        _add_metadata(result, chunk_time)
+        self._add_metadata(result, chunk_time)
 
         self._save(file_path, result)
         return result
@@ -293,7 +318,13 @@ class DocumentChunker(ABC):
         else:
             raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
 
+    def _add_metadata(self, result: ChunkingResult, chunk_time: float):
+        """Add additional metadata to the result of the document chunking."""
+        token_lens = [c.metadata["token_len"] for c in result.chunks]
 
-def _add_metadata(result: ChunkingResult, chunk_time: float):
-    """Add additional metadata to the result of the document chunking."""
-    result.metadata["chunking_time"] = chunk_time
+        result.metadata.update(self._parameters)
+        result.metadata["chunking_time"] = chunk_time
+        result.metadata["chunk_count"] = len(result.chunks)
+        result.metadata["chunk_length_mean"] = np.mean(token_lens).round(4)
+        result.metadata["chunk_length_std"] = np.std(token_lens).round(4)
+        result.metadata["chunk_length_median"] = np.median(token_lens)

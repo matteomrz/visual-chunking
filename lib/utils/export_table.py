@@ -30,9 +30,11 @@ def export_table_to_latex(
     df: DataFrame,
     name: str,
     axis: int = 0,
+    column_format: str | None = None,
     replace_zeros: str | None = None,
-    switch_highlighting: bool | list[bool] = False,
+    highlight_mode: bool | list[bool | None] | None = True,
     escape_latex=True,
+    sort_by_index=True,
     precision: int = 4
 ):
     """
@@ -44,40 +46,48 @@ def export_table_to_latex(
         df: pandas.DataFrame to convert
         name: name of the resulting .tex file
         axis: on which axis the max value should be highlighted. Default: 0 (0: column, 1: row)
+        column_format: \begin{tabular}{<column_format>}. Default: None
         replace_zeros: character to replace zero entries with. Default: No replacement
-        switch_highlighting: whether to switch the highlighting style of max and min values. \
-         Can either be a single value for all columns or a list of booleans containing a value for each individual columns. \
+        highlight_mode: three different highlighting modes available. \
+         True: highlight max as bold, second-highest underscore. \
+         False: highlight min as bold, second-lowest underscore. \
+         None: no highlighting. \
+         Can also be a list of values for each column.  \
          If the length of the list does not match the number of columns, it will use the default for all columns. \
-         Default: False
+         Default: True (Highlight max)
         escape_latex: whether latex text should be escaped in index and column headers. Default: True
+        sort_by_index: whether to sort the dataframe by the index before exporting. Default: True
         precision: floating point precision used in the output. Default: 4
     """
+
+    if sort_by_index:
+        df.sort_index(inplace=True)
 
     columns = df.columns.tolist()
 
     highlight_max = []
     highlight_min = []
 
-    if isinstance(switch_highlighting, list):
-        if not len(switch_highlighting) == len(columns):
+    if isinstance(highlight_mode, list):
+        if not len(highlight_mode) == len(columns):
             logger.warning(
                 "Columnwise highlighting information is incomplete. "
-                f"Expected {len(columns)}. Actual: {len(switch_highlighting)}. "
+                f"Expected {len(columns)}. Actual: {len(highlight_mode)}. "
                 "Highlighting max values in all columns."
             )
             highlight_max = columns
 
         else:
-            for i in range(len(switch_highlighting)):
-                if switch_highlighting[i]:
-                    highlight_min.append(columns[i])
-                else:
+            for i in range(len(highlight_mode)):
+                if highlight_mode[i]:
                     highlight_max.append(columns[i])
+                elif highlight_mode[i] is not None:
+                    highlight_min.append(columns[i])
 
-    elif switch_highlighting:
-        highlight_min = columns
-    else:
+    elif highlight_mode:
         highlight_max = columns
+    elif highlight_mode is not None:
+        highlight_min = columns
 
     styler = df.style
 
@@ -109,12 +119,16 @@ def export_table_to_latex(
 
     # Replace zeros
     if replace_zeros:
-        rep_zeros = lambda num: replace_zeros if num == 0 else round(num, 4)
+        rep_zeros = lambda num: replace_zeros if num == 0 else f"{num:.4f}"
         styler.format(rep_zeros)
     else:
         styler.format(precision=precision)
 
-    tex_content = styler.to_latex(hrules=True)
+    tex_content = styler.to_latex(
+        hrules=True,
+        column_format=column_format,
+        multicol_align="c"
+    )
 
     if not TABLE_DIR.exists():
         TABLE_DIR.mkdir(parents=True, exist_ok=True)

@@ -15,7 +15,7 @@ from lib.parsing.model.options import ParserOptions
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingMetaData, ParsingResult, \
     ParsingResultType
 from lib.utils.f1_coco import get_f1_metrics
-from lib.utils.get_parser_thesis_name import get_parser_thesis_name
+from lib.utils.thesis_names import get_parser_thesis_name
 from lib.utils.merge_boxes import merge_adjacent_boxes
 from lib.utils.open import open_parsing_result
 from lib.utils.to_coco import get_coco_annotations
