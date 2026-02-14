@@ -1,32 +1,39 @@
 
-\pgfplotstableread[col sep=comma]{figures/plots/time_per_page.csv}\datatable
+\newcommand{\makeTimePlot}[2]{%
 
-\begin{tikzpicture}
-  \begin{axis}
-    [
-      legend pos=outer north east,
-      legend style={font=\footnotesize\itshape,cells={anchor=west}},
-      ybar=10pt,
-      bar width=17pt,
-      cycle list name=TUM-corporate,
-      /pgf/bar shift=0pt,scale only axis,
-      height=0.5\textwidth,
-      width=0.45\textwidth,
-      ylabel=seconds per page,
-      enlarge x limits=0.15,
-      ymin=0,
-      xtick=\empty,
-      legend style={draw=none, /tikz/every even column/.append style={column sep=5pt}},
-      legend image code/.code={%
-          \draw[#1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);
-        }
-    ]
+  \pgfplotstableread[col sep=comma]{#1}\tempdata
 
-    \pgfplotsinvokeforeach{0,...,7}{
-      \addplot table [ x expr=\coordindex, select row=#1, y=Mean] {\datatable};
-      \addlegendentry {\pgfplotstablegetelem{#1}{Method}\of\datatable \pgfplotsretval}
-    }
+  \begin{tikzpicture}
+    \begin{axis}
+      [
+        legend pos=north west,
+        legend style={font=\footnotesize\itshape,cells={anchor=west}},
+        ybar=10pt,
+        bar width=17pt,
+        cycle list name=TUM-corporate,
+        /pgf/bar shift=0pt,scale only axis,
+        height=0.3\textwidth,
+        width=0.3\textwidth,
+        ylabel style={%
+            at={(axis description cs:0,1)},
+            anchor=south,
+            rotate=-90,
+          },
+        ylabel=$\mu$,
+        enlarge x limits=0.15,
+        ymin=0,
+        xtick=\empty,
+        legend style={draw=none, /tikz/every even column/.append style={column sep=5pt}},
+        legend image code/.code={%
+            \draw[##1] (0cm,-0.1cm) rectangle (0.3cm,0.1cm);
+          }
+      ]
 
-  \end{axis}
-\end{tikzpicture}
+      \pgfplotsinvokeforeach{0,...,#2}{
+        \addplot table [ x expr=\coordindex, select row=##1, y=Mean] {\tempdata};
+        \addlegendentry {\pgfplotstablegetelem{##1}{Method}\of\tempdata \pgfplotsretval}
+      }
 
+    \end{axis}
+  \end{tikzpicture}
+}

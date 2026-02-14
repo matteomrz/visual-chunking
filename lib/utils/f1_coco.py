@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def get_f1_metrics(coco_eval: COCOeval_faster) -> list[dict]:
     """
     Logic adapted from COCOEval_faster.extended_metrics().
-    Calculates per-class and overall F1 metrics at IoU thresholds 0.5 and 0.5:95.
+    Calculates per-class and weighted overall F1 metrics at IoU thresholds 0.5 and 0.5:95.
 
     Args:
         coco_eval: COCOeval_faster object after running evaluate()
@@ -50,12 +50,16 @@ def get_f1_metrics(coco_eval: COCOeval_faster) -> list[dict]:
     iou_50_idx = np.argwhere(np.isclose(iou_thrs, 0.50)).item()
 
     per_class = []
+    cat_counts = []
 
     cat_ids = coco_eval.params.cat_ids
     cat_id_to_name = {c["id"]: c["name"] for c in coco_eval.cocoGt.loadCats(cat_ids)}
 
     for k, cid in enumerate(cat_ids):
         cat_name = cat_id_to_name[cid]
+
+        cat_cnt = len(coco_eval.cocoGt.catToImgs.get(cid, []))
+        cat_counts.append(cat_cnt)
 
         f1_per_iou = best_f1_per_iou_class[:, k]
 
@@ -76,8 +80,10 @@ def get_f1_metrics(coco_eval: COCOeval_faster) -> list[dict]:
         })
 
     # f1 per iou and recall value averaged through classes
-    f1_macro = np.nanmean(f1_raw, axis=2)
-    best_f1_per_iou_overall = np.nanmax(f1_macro, axis=1)
+    weights = np.array(cat_counts)
+    weighted_f1 = np.average(f1_raw, axis=2, weights=weights)
+
+    best_f1_per_iou_overall = np.nanmax(weighted_f1, axis=1)
 
     f1_all_50 = best_f1_per_iou_overall[iou_50_idx].item()
     f1_all_50_95 = np.nanmean(best_f1_per_iou_overall).item()

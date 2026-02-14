@@ -140,6 +140,64 @@ def create_publaynet_gt(max_items: int = 200, exist_ok: bool = False):
         logger.info(f"Saved ground truth file to {PUBLAYNET_GT_PATH}")
 
 
+def _merge_list_items(node: ParsingResult):
+    """Merges orphaned list items into overarching list groups."""
+
+    list_start = 0
+    list_items = []
+
+    def wrap_in_list():
+        list_node = ParsingResult(
+            type=ParsingResultType.LIST,
+            content="",
+            geom=[],
+            id="",  # ID does not matter for PubLayNet
+            children=list_items,
+            parent=node,
+        )
+
+        for item in list_items:
+            item.parent = list_node
+
+        node.children.insert(list_start, list_node)
+
+    idx = 0
+    while idx < len(node.children):
+        child = node.children[idx]
+
+        # We found a list item that does not have a list that wraps around it
+        if child.type in [
+            ParsingResultType.LIST_ITEM, ParsingResultType.REFERENCE_ITEM
+        ]:
+            if not list_items:
+                list_start = idx
+
+            node.children.pop(idx)
+            list_items.append(child)
+
+        else:
+            # The previous elements were ungrouped list nodes
+            # We wrap them into a dummy list for publaynet
+            if list_items:
+                wrap_in_list()
+                list_items = []
+
+                # Account for newly inserted node
+                idx += 1
+
+            # Recurse for any children that should not contain unwrapped list items
+            if child.type not in [
+                ParsingResultType.LIST, ParsingResultType.REFERENCE_LIST
+            ]:
+                _merge_list_items(child)
+
+            idx += 1
+
+    # Catch last elements are orphaned list items
+    if list_items:
+        wrap_in_list()
+
+
 def _add_group_bounding_boxes(result: ParsingResult):
     """
     In some cases group objects (like lists) do not have their own bounding box.
@@ -182,6 +240,7 @@ def _create_dt(result_dir: Path) -> list:
                 raise FileNotFoundError(f"Missing Parsing Output at: {output_path}")
 
             result = open_parsing_result(output_path)
+            _merge_list_items(result)
             _add_group_bounding_boxes(result)
             coco = get_coco_annotations(result)
 

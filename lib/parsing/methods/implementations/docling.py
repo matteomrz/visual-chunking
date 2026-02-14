@@ -54,6 +54,7 @@ class DoclingParser(DocumentParser[DoclingDocument]):
         "PICTURE": ParsingResultType.FIGURE,
         "CAPTION": ParsingResultType.CAPTION,
         "TABLE": ParsingResultType.TABLE,
+        "FORMULA": ParsingResultType.FORMULA,
         "DOCUMENT_INDEX": ParsingResultType.DOC_INDEX,
         "TABLE_ROW": ParsingResultType.TABLE_ROW,
         "TABLE_CELL": ParsingResultType.TABLE_CELL,

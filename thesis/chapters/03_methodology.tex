@@ -173,7 +173,7 @@ As the algorithm traverses the document tree, it processes each ParsingResult no
   \item \textbf{Leaf-splitting:} If the algorithm reaches a leaf node that exceeds the available space $N-S$, it results to using recursive character splitting to determine the chunk boundaries. Following the logic from the recursion step, the content's tokens are prepended to the splits before they are returned.
 \end{enumerate}
 
-\section{Evaluation Framework}
+\section{Evaluation Framework}\label{section:eval_methods}
 
 \subsection{Document Layout Analysis Evaluation}
 The goal of the \gls{dla} evaluation is to assess the correctness of the bounding boxes and type labels produced by the parsing module \autocite{icdar2009}. While there are multiple datasets available for this task \autocite{docbank,doclaynet,omnidocbench}, we will use the PubLayNet dataset \autocite{publaynet} for our evaluation. While many datasets focus on evaluating \gls{dla} on a range of different document types such as forms, invoices or handwritten documents, PubLayNet consists solely of medical scientific articles \autocite{omnidocbench,publaynet}. This format closely resembles the format of the oncology guideline documents which makes it a suitable choice for this evaluation. Compromised of over 360.000 automatically annotated document pages collected from \gls{pmcoa}, PubLayNet is one of the largest datasets for \gls{dla} \autocite{publaynet}. As the dataset in its entirety is no longer publicly available and far too large for the purposes of this thesis, we will use \lstinline!publaynet-mini!, a small subset of 500 pages of the original dataset for this evaluation \autocite{publaynet-mini}. As seen in \autoref{tab:publaynet_counts}, the subset contains around 5000 ground truth annotations for elements from 5 different classes.
@@ -181,7 +181,7 @@ The goal of the \gls{dla} evaluation is to assess the correctness of the boundin
 \begin{table}[htpb]
   \centering
   \input{figures/tables/publaynet_counts}
-  \caption{Distribution of ground truth annotations across the different element types contained in the \lstinline!publaynet-mini! subset of the PubLayNet dataset.}\label{tab:publaynet_counts}
+  \caption{Distribution of ground truth annotations across the different element types contained in the \lstinline!publaynet-mini! subset of the PubLayNet dataset. Element types are disproportionally represented, with ``Text'' making up a large majority of the dataset.}\label{tab:publaynet_counts}
 \end{table}
 
 To assess the performance of different predictors on object detection tasks such as \gls{dla}, \gls{ap} is the most commonly used metric \autocite{object_detection_survey}. Previous evaluations of \gls{dla} models on the PubLayNet dataset also use a version of this metric \autocite{icdar2021_competition}.\ However, \gls{ap} relies on the predictor's confidence values, indicating how confident the predictor is about a predicted bounding box and class label. As most of the \gls{dp} implementations provide ``hard-predictions'', which do not contain any confidence values, the \gls{ap} is not a viable metric for the purposes of this study \autocite{lrp_error,eclair}.
@@ -207,36 +207,36 @@ The classification relies on how accurately the \glspl{dtbb} align with the \gls
   \caption{A pair of identical bounding boxes at different \gls{iou} values. The shaded area is the intersection of the bounding boxes. As the \gls{iou} value increases, the area of the intersection approaches the area of the bounding box.}
 \end{figure}
 
-A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class such that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{object_detection_metrics} for a model that, on a dataset with $G$ \glspl{gtbb}, outputs $P$ \glspl{dtbb}, out of which $S, (S\leq P)$ are \glspl{tp}, precision and recall can be formulated as shown in \autoref{eq:precision} and \autoref{eq:recall}.
+A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the same class such that their \gls{iou} is greater than a given threshold. One \gls{gtbb} can not be matched to multiple \glspl{dtbb}. If there does not exist a \gls{gtbb} that fulfils these criterions, the \gls{dtbb} is classified as a \gls{fp}. Any \glspl{gtbb} which were not matched to a \gls{dtbb} are classified as \glspl{fn}. Following the definition from \textcite{maximize_f1}, for a class $i$, precision and recall are formulated as described in \autoref{eq:precision} and \autoref{eq:recall}. Hereby $tp_i$, $fp_i$, and $fn_i$ denote the count of their respective classification for bounding boxes of class $i$.
 
 \begin{equation}
-  \text{Pr} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{P-S}\text{FP}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ detections}
+  \text{Pr}_i = \frac{tp_i}{tp_i+fp_i} = \frac{tp_i}{\text{all detections}_i}
   \label{eq:precision}
 \end{equation}
 
 \begin{equation}
-  \text{Re} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{\sum_{n=1}^{S}\text{TP}_{n} + \sum_{n=1}^{G-S}\text{FN}_{n}} = \frac{\sum_{n=1}^{S}\text{TP}_{n}}{all\ ground\ truths}
+  \text{Re}_i = \frac{tp_i}{tp_i+fn_i} = \frac{tp_i}{\text{all ground truths}_i}
   \label{eq:recall}
 \end{equation}
 
-The F1 score is the weighted harmonic mean between precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The F1 score is calculated for a single class at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as a \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T \autocite{scenescript}.
+The F1 score is the weighted harmonic mean between precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The metric is calculated for a single class $i$ at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as a \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T \autocite{scenescript}.
 
 \begin{equation}
-  F_1 = 2\frac{\text{Pr}\cdot\text{Rc}}{\text{Pr}+\text{Rc}}
+  \text{F}1_i = \frac{2\cdot\text{Pr}_i\cdot\text{Rc}_i}{\text{Pr}_i+\text{Rc}_i}
   \label{eq:f1score}
 \end{equation}
 
-For scenarios with multiple classes, such as the PubLayNet dataset, the Macro F1 score can be used to assess the overall performance of the predictor \autocite{maximize_f1}. The Macro F1 score is the mean of the single class F1 scores. For a dataset with $M$ different classes, the calculation of the Macro F1 score is described in \autoref{eq:macrof1}. Hereby, $P_{:j}$ and $G_{:j}$ denote the \glspl{dtbb} and \glspl{gtbb} belonging to elements of class $j$ \autocite{maximize_f1}.
+For scenarios with multiple classes, such as the PubLayNet dataset, the weighted F1 score can be used to assess the overall performance of the predictor. The weighted F1 score is the weighted average of the single-class F1 scores \autocite{weighted_f1}. For a dataset with $C$ different classes, the calculation of the weighted F1 score is described in \autoref{eq:weightedf1}. Hereby, $w_i$ denotes the proportion of \glspl{gtbb} that belong to class $i$ \autocite{weighted_f1}.
 
 \begin{equation}
-  F_{1_\text{Macro}}(P, G) = \frac{1}{M}\sum_{j=1}^{M}F_1(P_{:j}, G_{:j})
-  \label{eq:macrof1}
+  \text{F1}_\text{weighted} = \sum_{i=1}^{C}w_i\text{F1}_i
+  \label{eq:weightedf1}
 \end{equation}
 
-The \gls{dp} implementations will be evaluated on both their single-class and Macro F1 scores. Specifically, their (Macro) F1@50 and F1@50:95 will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes \autocite{coco}. F1@50 is chosen, as a threshold of 50\% is one of the most commonly used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline[language=HTML]!faster-coco-eval! package is used to determine the recall and precision values at the \gls{iou} thresholds \autocite{faster-coco-eval}.
+The \gls{dp} implementations will be evaluated on both their single-class and weighted F1 scores. Specifically, their (weighted) F1@50 and F1@50:95 will be compared against each other. F1@50:95 refers to the mean of the F1 values calculated at 10 evenly spaced \gls{iou} thresholds between 0.5 and 1.0 and is inspired by the primary challenge metric found in the MS COCO dataset \autocite{coco}. This rewards implementations, which provide more accurate bounding boxes \autocite{coco}. F1@50 is chosen, as a threshold of 50\% is one of the most commonly used threshold values for metrics in object detection \autocite{object_detection_metrics}. To calculate these metrics, the \lstinline[language=HTML]!faster-coco-eval! package is used to determine the recall and precision values at the \gls{iou} thresholds \autocite{faster-coco-eval}.
 
 \subsection{Content Extraction Evaluation}
-The goal of content extraction evaluation is to evaluate the quality of the extracted textual content from the document. In the context of oncology guidelines, where an error in the extraction of textual content can have a fatal effect, potentially altering clinical recommendations, assessing the quality of the content extraction is a critical aspect of our evaluation.
+The goal of the content extraction evaluation is to evaluate the quality of the extracted textual content from the document. In the context of oncology guidelines, where an error in the extraction of textual content can have a fatal effect, potentially altering clinical recommendations, assessing the quality of the content extraction is a critical aspect of our evaluation.
 
 OmniDocBench has established itself as the leading benchmark for performing end-to-end evaluations \autocite{omnidocbench,paddleocr,mineru_vlm,monkeyocr,dotsocr,docling_toolkit}, in particular for evaluating the quality of the \gls{dp} implementation's Markdown output. The benchmark includes nine different \gls{pdf} document types, such as academic literature, newspapers, and financial reports, from 3 different language types, Chinese, English, and mixed \autocite{omnidocbench}. In total, the benchmark contains 1355 single-page \gls{pdf} documents \autocite{omnidocbench}. For the purpose of this study, we limit our evaluation to english academic literature. These documents closely resemble the layout of the \glspl{cpg}, including both single and double-column layouts with complex tables and figures. After filtering, we are therefore left with a total of 129 \gls{pdf} documents for our evaluation.
 
@@ -268,7 +268,7 @@ The evaluation of a single \gls{dp} implementation follows a three-step process:
           \label{eq:gld}
         \end{equation}
 
-        The \gls{gld} is not normalized with respect to the lengths of $X$ and $Y$. A short string $X$ that requires the same elementary edit operations as a longer string $X', |X|<|X'|$ is therefore not additionally penalized. The normalized \gls{gld}, which is defined in \autoref{eq:ngld}, addresses this issue. For a weight function $\gamma$, that assigns the same weight to insertions and deletions of any character, $d_{\text{N-GLD}}$ is a metric over $\Sigma^*$ whose values are in $[0,1]$ \autocite{edit_distance}.
+        The \gls{gld} is not normalized with respect to the lengths of $X$ and $Y$. Therefore, transforming short strings with the same amount of edit operations as long strings is not additionally penalized, even though the number of edit operations represents a larger proportion of the total content. The normalized \gls{gld}, which is defined in \autoref{eq:ngld}, addresses this issue. For a weight function $\gamma$, that assigns the same weight to insertions and deletions of any character, $d_{\text{N-GLD}}$ is a metric over $\Sigma^*$ whose values are in $[0,1]$ \autocite{edit_distance}.
 
         \begin{equation}
           \begin{split}
@@ -304,7 +304,7 @@ The quality of the \gls{dp} process is meaningless if the relevant passages can 
 
 \textcite{chroma_eval} propose a framework that focuses specifically on evaluating the influence of the chunking process on the retrieval phase. Their methodology builds on the fact that retrieving irrelevant tokens results in unnecessary computational strain and distractions during generation \autocite{llm_context_distractions,chroma_eval}. Therefore they propose a novel evaluation approach that evaluates the retrieved context on the token level. Their contributions include the proposal of specialized evaluation metrics as well as a framework for the creation of the evaluation dataset. We follow their evaluation approach while adapting it to our own data types.
 
-\paragraph{Dataset creation:} To compare the chunking strategies against each other, a corpus of oncology guideline documents needs to be selected for the evaluation. In addition, \gls{qa} pairs are needed to evaluate the quality of the retrieval. Hereby the framework provides utilities for the generation of synthetic \gls{qa} pairs from the document corpus through the use of a \gls{llm} \autocite{chroma_eval}. For our evaluation we use manually annotated \gls{qa} pairs, created by medical professionals from the \gls{tum} university hospital. While this dataset is not available to the general public, we were permitted to use both the documents as well as the \gls{qa} pairs for this evaluation. In total, the dataset contains \todo{count about 30?} \gls{qa} pairs created from a document corpus of \todo{count} german oncology guidelines published by \gls{awmf}.
+\paragraph{Dataset creation:} To compare the chunking strategies against each other, a corpus of oncology guideline documents needs to be selected for the evaluation. In addition, \gls{qa} pairs are needed to evaluate the quality of the retrieval. Hereby the framework provides utilities for the generation of synthetic \gls{qa} pairs from the document corpus through the use of a \gls{llm} \autocite{chroma_eval}. For our evaluation we use manually annotated \gls{qa} pairs, created by medical professionals from the \gls{tum} university hospital. While this dataset is still in development and will not be available to the general public, we were permitted to use both the documents as well as the \gls{qa} pairs in their current state for this evaluation. In total, the dataset contains 46 \gls{qa} pairs created from a document corpus of eleven german oncology guidelines published by \gls{awmf}.
 
 The documents are first processed by the parsing module to prepare them for the chunking strategies. Hereby, we choose the used \gls{dp} implementation based on the results of the content extraction evaluation. The document corpus $D$ contains the tokens across all of the parsed guideline documents. The parsed documents are then processed by the chunking module once for each chunking strategy. For each strategy $i$, the chunks across all of the documents are contained in the chunk corpus $C_i$. Each chunk $c\in C_i$ is a set of tokens such that $c\subseteq D$. For each question $q$, the answer subset $T_e,T_e\subseteq D$ contains the information that is relevant for answering $q$.
 

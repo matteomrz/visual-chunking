@@ -54,6 +54,7 @@ class MinerUParser(DocumentParser):
         "table": ParsingResultType.TABLE,
         "table_body": ParsingResultType.TABLE,
         "table_footnote": ParsingResultType.FOOTNOTE,
+        "index": ParsingResultType.DOC_INDEX,
     }
 
     def __init__(self, use_vlm=False):

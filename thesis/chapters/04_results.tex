@@ -2,7 +2,13 @@
 
 \chapter{Results}\label{chapter:results}
 
-\begin{figure}[htpb]
+\section{Document Parsing Evaluation}
+Building on the benchmarks and metrics introduced in \autoref{section:eval_methods}, we present the quantitative evaluation of the selected \gls{dp} implementations. This analysis covers the performance results for both the \gls{dla} and content extraction evaluations, followed by a comparison of the implementations' processing speeds based on their average parsing time per page.
+
+\subsection{Document Layout Analysis Evaluation}
+The results of the evaluation of each \gls{dp} implementations' \gls{dla} performance on the PubLayNet dataset are summarized in \autoref{tab:f1_publaynet}.
+
+\begin{table}[htpb]
   \centering
   \subfloat[F1@50]{
     \input{figures/tables/f_50_publaynet}\label{tab:f1_50_publaynet}
@@ -12,30 +18,71 @@
     \input{figures/tables/f_50_95_publaynet}\label{tab:f1_50_95_publaynet}
   }
 
-  \caption[F1 scores on the PubLayNet dataset]{F1 scores of the evaluated \gls{dp} implementations on the PubLayNet dataset.\ \protect\subref{tab:f1_50_publaynet} contains the F1@50 scores, \protect\subref{tab:f1_50_95_publaynet} contains the F1@50:95 scores. Scores are reported per element type. The column \lstinline[language=HTML]!all! reports the respective Macro F1 score for each implementation. Highest values are bolded and smallest values are underlined. Higher values are preferred.}
-\end{figure}\label{tab:f1_publaynet}
+  \caption[F1 scores on the PubLayNet dataset]{F1 scores of the evaluated \gls{dp} implementations on the PubLayNet dataset.\ \protect\subref{tab:f1_50_publaynet} contains the F1@50 scores, \protect\subref{tab:f1_50_95_publaynet} contains the F1@50:95 scores. Scores are reported per element type. The column \lstinline[language=HTML]!all! reports the weighted F1 score. Highest values are bolded and second highest values are underlined. Higher values are preferred.}\label{tab:f1_publaynet}
+\end{table}
 
-\begin{figure}[htpb]
+Regarding the F1@50 scores (\autoref{tab:f1_50_publaynet}), MinerU 2.5 VLM achieved the highest overall weighted score of 0.8599, followed by Docling (0.8555) and MinerU 2.5 Pipeline (0.8545).
+
+In terms of single-class F1@50 performance, Document AI recorded the highest values in three out of the five categories, namely ``title'' (0.9789), ``table'' (0.9911), and ``figure'' (0.9848). However, both Document AI and  LlamaParse recorded a score of 0.0000 for the ``list'' category, with LlamaParse additionally reporting the same score for the ``figure'' type. Across all implementations, the lowest scores were consistently observed in either the ``list'' or ``figure'' category. Hereby, ``list'' recorded the lowest maximum F1 score among all element types, with Docling reaching the highest value of 0.8022.
+
+For the ``text'' category, which represents more than 72\% of the annotations in the \lstinline!publaynet-mini! dataset (\autoref{tab:publaynet_counts}), MinerU 2.5 \gls{vlm} (0.9119) achieved the highest score, with MinerU2.5 Pipeline (0.8735) following in second place. While the performance of the two MinerU systems remained similar across most element types, they diverged by a margin of 0.4026 for the ``figure'' category, with the pipeline approach (0.6534) scoring higher than the \gls{vlm}-based approach (0.2508). Granite Docling (0.5989) and LlamaParse (0.7031) recorded the lowest weighted F1 scores, with one of these two implementations consistently ranking lowest in every individual category.
+
+\begin{table}[htpb]
   \centering
-  \subfloat{
-    \input{figures/plots/time_per_page.tex}
-  }
-  \hfill
-  \subfloat{
-    \input{figures/tables/time_per_page}
-  }
-  \caption[Parsing and transformation times per page]{Mean and standard deviation of the \gls{dp} implementation's parsing and transformation times per page. Times are reported in seconds. Fastest times are bolded and slowest times are underlined. Lower values are preferred.}
-\end{figure}\label{tab:time_per_page}
+  \input{figures/tables/f_diff_publaynet}
+  \caption[Decrease from F1@50 to F1@50:95 scores on the PubLayNet dataset]{Decrease in reported scores ($-\Delta$) when transitioning from F1@50 to F1@50:95 scores on the PubLayNet dataset.}\label{tab:f1_diff_publaynet}
+\end{table}
 
+Pivoting to the F1@50:95 scores (\autoref{tab:f1_50_95_publaynet}) and the corresponding decrease in reported values (\autoref{tab:f1_diff_publaynet}) results in a shift in the model rankings. Increasing the \gls{iou} requirements sees Docling claim the highest overall weighted F1 score with 0.7304 as MinerU 2.5 Pipeline (0.7189) takes the second rank. Meanwhile, its \gls{vlm}-based counterpart (0.6568) drops to fifth place behind Unstructured.io (0.6691) and Document AI (0.6663). This trend is also reflected in the ``text'' category where Docling (0.8206, $\Delta=-0.0481$) claims the top spot in front of MinerU 2.5 Pipeline (0.8097, $\Delta=-0.0638$) and \gls{vlm} (0.8032, $\Delta=-0.1087$).
+
+The ``title'' element type sees the most substantial decrease in reported scores across the individual categories, ranging from Unstructured.io's 0.2003 up to the 0.4361 decrease reported by MinerU 2.5 \gls{vlm}. The smallest average decrease was observed for the ``table'' elements ($\mu\Delta=0.0482$). Granite Docling ($\Delta=-0.0848$) and Unstructured.io ($\Delta=-0.1088$) report the smallest change in overall weighted F1 scores.
+
+\subsection{Content Extraction Evaluation}
+\autoref{tab:omni_doc_bench} presents the results of the content extraction evaluation using OmniDocBench. The evaluation was performed for the subset of english scientific literature documents, yielding results for a total of 129 single-page \gls{pdf} documents. MinerU 2.5 \gls{vlm} recorded the highest overall score of 94.3450 as Miner U 2.5 Pipeline (90.6538) followed in second place.
 
 \begin{table}[htpb]
   \centering
   \input{figures/tables/omni_doc_bench}
-  \caption[OmniDocBench evaluation results]{Results of the \gls{dp} implementation on the OmniDocBench benchmark.}
-\end{table}\label{tab:omni_doc_bench}
+  \caption[OmniDocBench evaluation results]{Results of the \gls{dp} implementation on the OmniDocBench benchmark. $S-TEDS*$ is the structure-only \gls{teds}. $Edit$ is the normalized edit distance. Overall is the mean of $\text{Text}^{Edit}$, $\text{Table}^{TEDS}$, and $\text{Read}^{Edit}$. For metrics marked with $\uparrow$ higher values are preferred, while $\downarrow$ denotes that lower values are better. Best values are bolded and second-best values are underlined.}\label{tab:omni_doc_bench}
+\end{table}
+
+MinerU 2.5 \gls{vlm} also recorded the highest value for each of the individual metrics. For the normalized edit distance, MinerU 2.5 \gls{vlm} (0.0247) led by a significant margin in front of MinerU 2.5 Pipeline (0.0439), Document AI (0.0452), and Gemini 2.5 Flash (0.0455). For \gls{teds} the MinerU 2.5 implementations were the only implementations that reached a score higher than 80 (\gls{vlm}: 86.0939, Pipeline: 80.2155), with Docling (66.3294) being the closest competitor. The same pattern is observed for the structure-only value of the metric, as MinerU 2.5 \gls{vlm} (92.8198) and Pipeline (90.1323) scored highest and Docling (85.2592) came third.
+
+The reading order edit distance is the only metric where the second rank was not occupied by MinerU 2.5 Pipeline (0.0386). Instead, Document  AI (0.0261) took its place. MinerU 2.5 \gls{vlm} (0.0059) reached the first place with a normalized edit distance that is less than one fourth of the score achieved by Document AI.
+
+The lowest values for both the overall and individual metric scores were consistently reported by either LlamaParse or Granite Docling. LlamaParse (75.0460) is the only implementation that scored less than 80 in the overall metric, with Granite Docling (80.5537) scoring slightly above.
+
+\subsection{Processing Times}
+We evaluated the average processing time per page for each of the different \gls{dp} implementations across the \gls{pdf} documents used for the \gls{dla} and content extraction evaluation. In total, the mean parsing time was evaluated across 629 document pages. The observed mean processing time per page in seconds and standard deviation for each implementation are displayed in \autoref{tab:time_per_page}.
+
+\begin{figure}[htpb]
+  \centering
+  \subfloat[locally-deployed]{
+    \makeTimePlot{figures/plots/time_per_page_local.csv}{5}
+    \label{fig:local_time}
+  }
+  \hfil
+  \subfloat[cloud-based]{
+    \makeTimePlot{figures/plots/time_per_page_cloud.csv}{2}
+    \label{fig:cloud_time}
+  }
+  \caption{Mean parsing times for locally-deployed \protect\subref{fig:local_time} and cloud-based \protect\subref{fig:cloud_time} \gls{dp} implementations. Values are reported in seconds per page.}\label{fig:time_plots}
+\end{figure}
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/time_per_page}
+  \caption[Parsing and transformation times per page]{Mean ($\mu$) and standard deviation ($\sigma$) of the \gls{dp} implementations' parsing times per page. Times are reported in seconds. Fastest times are bolded and second fastest times are underlined. Lower values are preferred. Cloud-based services are marked with ``*''.}\label{tab:time_per_page}
+\end{table}
+
+The evaluated \gls{dp} implementations varied greatly in their mean processing time per page. Overall, Document AI achieved the shortest parsing time per page of 1.7 seconds. Only considering implementations that were evaluated on local hardware sees Docling claim the top spot with an average of 2.1 seconds per page. Except for Unstructured.io ($\mu=5.1$), all other methods reported parsing times above 15 seconds per page. Hereby, MinerU 2.5 \gls{vlm} reported the slowest processing speed with an average of 42 seconds. Among cloud-based services, LlamaParse had the slowest parsing speed, processing each page for an average of 37.2 seconds.
+
+Document AI ($\sigma=0.4101$) and Docling ($\sigma=1.3166$) also reported the smallest standard deviation. Despite having a faster mean parsing time than both LlamaParse and MinerU 3.5 \gls{vlm}, Granite Docling ($\mu=16.74$, $\sigma=63.5661$) reported the highest standard deviation among all evaluated methods.
+
+\section{Chunking Evaluation}
 
 \begin{table}[htpb]
   \centering
   \input{figures/tables/chroma_results}
-  \caption[Chroma evaluation results]{Results of the chunking strategies on the Chroma evaluation.}
-\end{table}\label{tab:chroma}
+  \caption[Chunking evaluation results]{Results of the chunking strategies on the chunking evaluation. All values are reported as $\mu\pm\sigma$. Highest $\mu$ are bolded and second-highest are underlined.}\label{tab:chroma}
+\end{table}

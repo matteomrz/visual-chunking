@@ -31,7 +31,11 @@ def merge_adjacent_boxes(
             intersect_start = max(box.left, merged_box.left)
             intersect_end = min(box.right, merged_box.right)
 
-            x_overlap = (intersect_end - intersect_start) / smallest_width
+            if smallest_width != 0:
+                x_overlap = (intersect_end - intersect_start) / smallest_width
+            else:
+                x_overlap = 0
+
             y_distance = merged_box.top - box.bottom
 
             if x_overlap >= min_x_overlap and y_distance <= max_y_distance:
