@@ -68,7 +68,8 @@ class MinerUParser(DocumentParser):
             )
         else:
             self.module = Parsers.MINERU_PIPELINE
-            self.model = PipelineModelSingleton().get_model()
+            # Specifying german or english does not matter as both get converted into "latin" for the OCR model
+            self.model = PipelineModelSingleton().get_model(lang="german")
 
     def _parse(self, file_path: Path, options: dict = None) -> dict:
         file_image_path = self._create_image_dir(file_path)

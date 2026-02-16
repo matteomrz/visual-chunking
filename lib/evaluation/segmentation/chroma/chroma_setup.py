@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 CHROMA_DIR = CONFIG_DIR / "chroma"
 
 
+def get_db_path(parser: Parsers) -> str:
+    return str(CHROMA_DIR / parser.value / "db")
+
+
 def _create_corpus(parser_type: Parsers, batch_name: str, exist_ok: bool) -> Path:
     doc_parser = get_document_parser(parser_type)
     parser_name = parser_type.value
@@ -95,7 +99,7 @@ def setup_evaluation_from_medical_qas(
     evaluation = SyntheticEvaluation(
         corpora_paths=[str(corpus_path)],
         queries_csv_path=str(qa_path),
-        chroma_db_path=(CHROMA_DIR / parser_name / "db")
+        chroma_db_path=get_db_path(parser_type)
     )
 
     logger.info("Finished creating evaluation on the medical QA pairs.")

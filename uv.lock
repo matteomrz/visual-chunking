@@ -745,7 +745,7 @@ wheels = [
 [[package]]
 name = "chunking-evaluation"
 version = "0.1.0"
-source = { git = "https://github.com/matteomrz/chunking_evaluation_fix.git#4995d528aaef3144415ae886439d99e0dfeb7e8f" }
+source = { git = "https://github.com/matteomrz/chunking_evaluation_fix.git#a5c2b8edd7e56deb08d0a4475c931a2ad1471b26" }
 dependencies = [
     { name = "anthropic" },
     { name = "attrs" },

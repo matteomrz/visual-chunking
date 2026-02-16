@@ -6,6 +6,7 @@ from chunking_evaluation import BaseChunker
 
 from lib.evaluation.segmentation.chroma.chroma_setup import CHROMA_DIR
 from lib.parsing.model.parsing_result import ParsingResult, ParsingResultType
+from lib.segmentation.methods.chunkers import Chunkers
 from lib.segmentation.model.chunk import ChunkingResult
 from lib.segmentation.model.document_chunker import DocumentChunker
 from lib.utils.thesis_names import get_chunker_name, get_chunker_param
@@ -44,6 +45,24 @@ class ChromaChunker(BaseChunker):
 
     def __init__(self, chunker: DocumentChunker):
         self._inner_chunker = chunker
+
+    @property
+    def collection_name(self):
+        module = self._inner_chunker.module
+        max_tokens = self._inner_chunker.max_tokens
+        param = 0
+        match module:
+            case Chunkers.FIXED_SIZE | Chunkers.RECURSIVE:
+                if hasattr(self._inner_chunker, "overlap"):
+                    param = self._inner_chunker.overlap
+            case Chunkers.SEMANTIC:
+                if hasattr(self._inner_chunker, "similarity_threshold_percentile"):
+                    param = self._inner_chunker.similarity_threshold_percentile
+            case Chunkers.HIERARCHICAL:
+                if hasattr(self._inner_chunker, "max_parent_tokens"):
+                    param = self._inner_chunker.max_parent_tokens
+
+        return f"{module}_{max_tokens}_{param}"
 
     def get_info(self) -> dict[str, Any]:
         """Information about the chunking strategy and its parameters."""

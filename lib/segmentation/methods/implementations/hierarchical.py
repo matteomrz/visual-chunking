@@ -45,7 +45,7 @@ class HierarchicalChunker(DocumentChunker):
                 parent_cnt += elem_token_cnt
 
                 # If headers are too long, highest ones are removed
-                while self.max_tokens - parent_cnt < self.max_parent_tokens:
+                while parent_cnt > self.max_parent_tokens:
                     parent_cnt -= parent_tokens[0]
                     parent_tokens.pop(0)
 
@@ -55,7 +55,13 @@ class HierarchicalChunker(DocumentChunker):
 
                 for child in element.children:
                     iterator = self._get_from_element(child, parent_tokens[:])
-                    first_tokens = next(iterator)
+                    try:
+                        first_tokens = next(iterator)
+                    except StopIteration:
+                        continue
+
+                    if not first_tokens:
+                        continue
 
                     # If our iterator returns any more elements we know that our child was split
                     for curr_tokens in iterator:

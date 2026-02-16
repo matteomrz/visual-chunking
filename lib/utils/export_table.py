@@ -33,6 +33,7 @@ def export_table_to_latex(
     column_format: str | None = None,
     replace_zeros: str | None = None,
     highlight_mode: bool | list[bool | None] | None = True,
+    add_lines_between_index: bool = False,
     escape_latex=True,
     sort_by_index=True,
     precision: int = 4
@@ -55,6 +56,7 @@ def export_table_to_latex(
          Can also be a list of values for each column.  \
          If the length of the list does not match the number of columns, it will use the default for all columns. \
          Default: True (Highlight max)
+        add_lines_between_index: whether to add '\\cline' between the index rows. Default: False
         escape_latex: whether latex text should be escaped in index and column headers. Default: True
         sort_by_index: whether to sort the dataframe by the index before exporting. Default: True
         precision: floating point precision used in the output. Default: 4
@@ -127,7 +129,9 @@ def export_table_to_latex(
     tex_content = styler.to_latex(
         hrules=True,
         column_format=column_format,
-        multicol_align="c"
+        multicol_align="c",
+        multirow_align="t",
+        clines="skip-last;data" if add_lines_between_index else None
     )
 
     if not TABLE_DIR.exists():
