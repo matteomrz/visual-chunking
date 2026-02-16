@@ -38,6 +38,7 @@ def load_annotations(anno_path: Path, corpus_path: Path) -> pd.DataFrame:
     offsets = pd.read_csv(offset_path).set_index("pdf_name")
 
     qa_pairs = []
+    error_counter = 0
 
     with open(anno_path, "r") as f_a:
         for line in tqdm(f_a):
@@ -52,8 +53,13 @@ def load_annotations(anno_path: Path, corpus_path: Path) -> pd.DataFrame:
 
             references = []
             for highlight in annotation["highlights"]:
+                if highlight["raw_text"] == "":
+                    logger.debug("Encountered Highlight with empty text. Skipping...")
+                    continue
+
                 result = rigorous_document_search(doc_content, highlight["raw_text"])
                 if result is None or not result[0]:
+                    error_counter += 1
                     logger.error(
                         "Could not find highlight in document corpus. "
                         f"Searched text: {highlight["raw_text"]}"
@@ -82,4 +88,5 @@ def load_annotations(anno_path: Path, corpus_path: Path) -> pd.DataFrame:
             )
             qa_pairs.append(qa_pair)
 
+    logger.info(f"Processed QA pairs with {error_counter} errors.")
     return pd.DataFrame(qa_pairs)

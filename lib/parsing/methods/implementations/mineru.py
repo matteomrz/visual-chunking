@@ -6,7 +6,10 @@ from mineru.backend.vlm.vlm_analyze import (
     ModelSingleton as VlmModelSingleton,
     doc_analyze as vlm_doc_analyze,
 )
-from mineru.backend.vlm.vlm_middle_json_mkcontent import union_make as vlm_union_make
+from mineru.backend.vlm.vlm_middle_json_mkcontent import (
+    merge_para_with_text as vlm_merge_para,
+    union_make as vlm_union_make
+)
 from mineru.backend.pipeline.pipeline_analyze import (
     ModelSingleton as PipelineModelSingleton,
     doc_analyze as pipeline_doc_analyze,
@@ -15,6 +18,7 @@ from mineru.backend.pipeline.model_json_to_middle_json import (
     result_to_middle_json as pipeline_get_middle_json,
 )
 from mineru.backend.pipeline.pipeline_middle_json_mkcontent import (
+    merge_para_with_text as pipeline_merge_para,
     union_make as pipeline_union_make,
 )
 from mineru.cli.common import convert_pdf_bytes_to_bytes_by_pypdfium2, read_fn
@@ -116,7 +120,10 @@ class MinerUParser(DocumentParser):
             logging.warning(f"Wrong element type. Expected `dict`, Actual `{type(element)}`")
             return
 
-        content = _get_content(element)
+        if self.is_vlm:
+            content = vlm_merge_para(element)
+        else:
+            content = pipeline_merge_para(element)
 
         elem_type = element.get("type", "unknown")
         if "sub_type" in element.keys():
@@ -166,23 +173,6 @@ def _get_pipeline_result(
         lang_list[0],
         ocr_list[0],
     )
-
-
-def _get_content(element: dict) -> str:
-    """Collect element content from the constructing spans."""
-    content = ""
-    lines = element.get("lines", [])
-    for line in lines:
-        if not isinstance(line, dict):
-            continue
-
-        spans = line.get("spans", [])
-        for span in spans:
-            if not isinstance(span, dict):
-                continue
-
-            content = content + span.get("content", "")
-    return content
 
 
 def _get_bounding_box(
