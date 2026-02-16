@@ -120,7 +120,9 @@ class MinerUParser(DocumentParser):
             logging.warning(f"Wrong element type. Expected `dict`, Actual `{type(element)}`")
             return
 
-        if self.is_vlm:
+        if "lines" not in element.keys():
+            content = ""
+        elif self.is_vlm:
             content = vlm_merge_para(element)
         else:
             content = pipeline_merge_para(element)
