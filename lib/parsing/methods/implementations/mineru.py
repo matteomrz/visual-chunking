@@ -120,16 +120,24 @@ class MinerUParser(DocumentParser):
             logging.warning(f"Wrong element type. Expected `dict`, Actual `{type(element)}`")
             return
 
+        image_path: str | None = None
+        elem_type = element.get("type", "unknown")
+        if "sub_type" in element.keys():
+            elem_type += f"_{element['sub_type']}"
+
         if "lines" not in element.keys():
             content = ""
+        elif elem_type in ["image_body", "table_body"]:
+            for line in element["lines"]:
+                for span in line["spans"]:
+                    if span.get("image_path", ""):
+                        image_path = span["image_path"]
+                    if span["type"] == "table":
+                        content = f"{span['html']}"
         elif self.is_vlm:
             content = vlm_merge_para(element)
         else:
             content = pipeline_merge_para(element)
-
-        elem_type = element.get("type", "unknown")
-        if "sub_type" in element.keys():
-            elem_type += f"_{element['sub_type']}"
 
         parsed_type = self._get_element_type(elem_type)
         idx = element.get("index", "")
@@ -144,6 +152,7 @@ class MinerUParser(DocumentParser):
             content=content,
             geom=[b_box],
             parent=parent,
+            image=image_path
         )
 
         parent.children.append(result)
