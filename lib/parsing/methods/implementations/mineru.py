@@ -97,7 +97,7 @@ class MinerUParser(DocumentParser):
                 logging.warning(f"Wrong page type. Expected `dict`, Actual `{type(page)}`")
                 continue
 
-            for element in page.get("para_blocks", []):
+            for element in page.get("preproc_blocks", []):
                 self._transform_element(parent=root, element=element, page=page)
 
         return root
