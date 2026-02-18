@@ -61,7 +61,7 @@ def load_annotations(anno_path: Path, corpus_path: Path) -> pd.DataFrame:
                 if result is None or not result[0]:
                     error_counter += 1
                     logger.error(
-                        "Could not find highlight in document corpus. "
+                        f"Could not find highlight in document corpus. ({pdf_name}) "
                         f"Searched text: {highlight["raw_text"]}"
                     )
                     continue

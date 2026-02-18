@@ -23,7 +23,7 @@ The results of the evaluation of each \gls{dp} implementations' \gls{dla} perfor
 
 Regarding the F1@50 scores (\autoref{tab:f1_50_publaynet}), MinerU 2.5 VLM achieved the highest overall weighted score of 0.8599, followed by Docling (0.8555) and MinerU 2.5 Pipeline (0.8545).
 
-In terms of single-class F1@50 performance, Document AI recorded the highest values in three out of the five categories, namely ``title'' (0.9789), ``table'' (0.9911), and ``figure'' (0.9848). However, both Document AI and  LlamaParse recorded a score of 0.0000 for the ``list'' category, with LlamaParse additionally reporting the same score for the ``figure'' type. Across all implementations, the lowest scores were consistently observed in either the ``list'' or ``figure'' category. Hereby, ``list'' recorded the lowest maximum F1 score among all element types, with Docling reaching the highest value of 0.8022.
+In terms of single-class F1@50 performance, Document AI recorded the highest values in three out of the five categories, namely ``title'' (0.9789), ``table'' (0.9911), and ``figure'' (0.9848). However, both Document AI and  LlamaParse recorded a score of 0.0000 for the ``list'' category, with LlamaParse additionally reporting the same score for the ``figure'' type. Across all implementations, the lowest scores were also consistently observed in either the ``list'' or ``figure'' category. Hereby, ``list'' recorded the lowest maximum F1 score among all element types, with Docling reaching the highest value of 0.8022.
 
 For the ``text'' category, which represents more than 72\% of the annotations in the \lstinline!publaynet-mini! dataset (\autoref{tab:publaynet_counts}), MinerU 2.5 \gls{vlm} (0.9119) achieved the highest score, with MinerU2.5 Pipeline (0.8735) following in second place. While the performance of the two MinerU systems remained similar across most element types, they diverged by a margin of 0.4026 for the ``figure'' category, with the pipeline approach (0.6534) scoring higher than the \gls{vlm}-based approach (0.2508). Granite Docling (0.5989) and LlamaParse (0.7031) recorded the lowest weighted F1 scores, with one of these two implementations consistently ranking lowest in every individual category.
 
@@ -38,17 +38,17 @@ Pivoting to the F1@50:95 scores (\autoref{tab:f1_50_95_publaynet}) and the corre
 The ``title'' element type sees the most substantial decrease in reported scores across the individual categories, ranging from Unstructured.io's 0.2003 up to the 0.4361 decrease reported by MinerU 2.5 \gls{vlm}. The smallest average decrease was observed for the ``table'' elements ($\mu\Delta=0.0482$). Granite Docling ($\Delta=-0.0848$) and Unstructured.io ($\Delta=-0.1088$) report the smallest change in overall weighted F1 scores.
 
 \subsection{Content Extraction Evaluation}
-\autoref{tab:omni_doc_bench} presents the results of the content extraction evaluation using OmniDocBench. The evaluation was performed for the subset of english scientific literature documents, yielding results for a total of 129 single-page \gls{pdf} documents. MinerU 2.5 \gls{vlm} recorded the highest overall score of 94.3450 as Miner U 2.5 Pipeline (90.6538) followed in second place.
+\autoref{tab:omni_doc_bench} presents the results of the content extraction evaluation using OmniDocBench. The evaluation was performed for the subset of English scientific literature documents, yielding results for a total of 129 single-page \gls{pdf} documents. MinerU 2.5 \gls{vlm} recorded the highest overall score of 94.3450 as Miner U 2.5 Pipeline (90.6538) followed in second place.
 
 \begin{table}[htpb]
   \centering
   \input{figures/tables/omni_doc_bench}
-  \caption[OmniDocBench evaluation results]{Results of the \gls{dp} implementation on the OmniDocBench benchmark. $S-TEDS*$ is the structure-only \gls{teds}. $Edit$ is the normalized edit distance. Overall is the mean of $\text{Text}^{Edit}$, $\text{Table}^{TEDS}$, and $\text{Read}^{Edit}$. For metrics marked with $\uparrow$ higher values are preferred, while $\downarrow$ denotes that lower values are better. Best values are bolded and second-best values are underlined.}\label{tab:omni_doc_bench}
+  \caption[OmniDocBench Evaluation Results]{Results of the content extraction evaluation on the OmniDocBench benchmark. $S-TEDS*$ is the structure-only \gls{teds}. $Edit$ is the normalized edit distance. Overall is the mean of $1-\text{Text}^{Edit}$, $\text{Table}^{TEDS}$, and $1-\text{Read}^{Edit}$. For metrics marked with $\uparrow$ higher values are preferred, while $\downarrow$ denotes that lower values are better. Best values are bolded and second-best values are underlined.}\label{tab:omni_doc_bench}
 \end{table}
 
-MinerU 2.5 \gls{vlm} also recorded the highest value for each of the individual metrics. For the normalized edit distance, MinerU 2.5 \gls{vlm} (0.0247) led by a significant margin in front of MinerU 2.5 Pipeline (0.0439), Document AI (0.0452), and Gemini 2.5 Flash (0.0455). For \gls{teds} the MinerU 2.5 implementations were the only implementations that reached a score higher than 80 (\gls{vlm}: 86.0939, Pipeline: 80.2155), with Docling (66.3294) being the closest competitor. The same pattern is observed for the structure-only value of the metric, as MinerU 2.5 \gls{vlm} (92.8198) and Pipeline (90.1323) scored highest and Docling (85.2592) came third.
+MinerU 2.5 \gls{vlm} also recorded the highest value for each of the individual metrics. For the normalized edit distance, MinerU 2.5 \gls{vlm} (0.0247) led by a significant margin in front of MinerU 2.5 Pipeline (0.0439), Document AI (0.0452), and Gemini 2.5 Flash (0.0455). For \gls{teds} the MinerU 2.5 implementations were the only ones of the evaluated approaches that reached a score higher than 80 (\gls{vlm}: 86.0939, Pipeline: 80.2155), with Docling (66.3294) being the closest competitor. The same pattern is observed for the structure-only value of the metric, as MinerU 2.5 \gls{vlm} (92.8198) and Pipeline (90.1323) scored highest and Docling (85.2592) came third.
 
-The reading order edit distance is the only metric where the second rank was not occupied by MinerU 2.5 Pipeline (0.0386). Instead, Document  AI (0.0261) took its place. MinerU 2.5 \gls{vlm} (0.0059) reached the first place with a normalized edit distance that is less than one fourth of the score achieved by Document AI.
+The reading order edit distance is the only metric where the second rank was not occupied by MinerU 2.5 Pipeline (0.0386). Instead, Document  AI (0.0261) took its place. MinerU 2.5 \gls{vlm} (0.0059) reached the first place with a normalized edit distance that is less than one fourth of the score achieved by Document AI\@.
 
 The lowest values for both the overall and individual metric scores were consistently reported by either LlamaParse or Granite Docling. LlamaParse (75.0460) is the only implementation that scored less than 80 in the overall metric, with Granite Docling (80.5537) scoring slightly above.
 
@@ -66,23 +66,51 @@ We evaluated the average processing time per page for each of the different \gls
     \makeTimePlot{figures/plots/time_per_page_cloud.csv}{2}
     \label{fig:cloud_time}
   }
-  \caption{Mean parsing times for locally-deployed \protect\subref{fig:local_time} and cloud-based \protect\subref{fig:cloud_time} \gls{dp} implementations. Values are reported in seconds per page.}\label{fig:time_plots}
+  \caption[Mean Parsing Times]{Mean parsing times for locally-deployed \protect\subref{fig:local_time} and cloud-based \protect\subref{fig:cloud_time} \gls{dp} implementations. Values are reported in seconds per page.}\label{fig:time_plots}
 \end{figure}
 
 \begin{table}[htpb]
   \centering
   \input{figures/tables/time_per_page}
-  \caption[Parsing and transformation times per page]{Mean ($\mu$) and standard deviation ($\sigma$) of the \gls{dp} implementations' parsing times per page. Times are reported in seconds. Fastest times are bolded and second fastest times are underlined. Lower values are preferred. Cloud-based services are marked with ``*''.}\label{tab:time_per_page}
+  \caption[Mean and Standard Deviation of Parsing Times]{Mean ($\mu$) and standard deviation ($\sigma$) of the \gls{dp} implementations' parsing times per page. Times are reported in seconds. Fastest times are bolded and second fastest times are underlined. Lower values are preferred. Cloud-based services are marked with ``*''.}\label{tab:time_per_page}
 \end{table}
 
 The evaluated \gls{dp} implementations varied greatly in their mean processing time per page. Overall, Document AI achieved the shortest parsing time per page of 1.7 seconds. Only considering implementations that were evaluated on local hardware sees Docling claim the top spot with an average of 2.1 seconds per page. Except for Unstructured.io ($\mu=5.1$), all other methods reported parsing times above 15 seconds per page. Hereby, MinerU 2.5 \gls{vlm} reported the slowest processing speed with an average of 42 seconds. Among cloud-based services, LlamaParse had the slowest parsing speed, processing each page for an average of 37.2 seconds.
 
-Document AI ($\sigma=0.4101$) and Docling ($\sigma=1.3166$) also reported the smallest standard deviation. Despite having a faster mean parsing time than both LlamaParse and MinerU 3.5 \gls{vlm}, Granite Docling ($\mu=16.74$, $\sigma=63.5661$) reported the highest standard deviation among all evaluated methods.
+Document AI ($\sigma=0.4101$) and Docling ($\sigma=1.3166$) also reported the smallest standard deviation. Despite having a faster mean parsing time than both LlamaParse and MinerU 2.5 \gls{vlm}, Granite Docling ($\mu=16.74$, $\sigma=63.5661$) reported the highest standard deviation among all evaluated methods.
 
 \section{Chunking Evaluation}
+We present the evaluation results for 28 different chunking configurations on both the manually-annotated \gls{qa} dataset from the \gls{tum} university hospital as well as the datasets created for the evaluation performed by \textcite{chroma_eval}. Each corpus was converted into a chunk corpus for each of the chunking configurations. Embeddings were created using OpenAI's \texttt{text-embedding-3-small} model \autocite{openai_embedding_small} and Chroma \autocite{chromadb} was used for creating and retrieving from the vector database. During retrieval, the number of retrieved passages was determined dynamically as the number of chunks that contain tokens from the references included in each \gls{qa} pair.
+
+\subsection{Oncology Guideline QA Dataset}
+\autoref{tab:chroma_medqa} presents the results of the chunking evaluation on the expert-annotated \gls{qa} pairs. In total, the dataset contains 46 \gls{qa} pairs created from a document corpus of eleven german oncology guidelines published by \gls{awmf}. Each document was parsed using Docling before chunk creation. Our results indicate that the impact of specific parameters varies across different chunking strategies.
 
 \begin{table}[htpb]
   \centering
-  \input{figures/tables/chroma_results}
-  \caption[Chunking evaluation results]{Results of the chunking strategies on the chunking evaluation. All values are reported as $\mu\pm\sigma$. Highest $\mu$ are bolded and second-highest are underlined.}\label{tab:chroma}
+  \input{figures/tables/chroma_results_oncology}
+  \caption[Results of the chunking evaluation on the manually annotated medical \gls{qa} pairs]{Results of the chunking evaluation on the manually annotated medical \gls{qa} pairs. All values are reported as $\mu\pm\sigma$. Highest $\mu$ are bolded and second-highest are underlined.}\label{tab:chroma_medqa}
+\end{table}
+
+\begin{enumerate}
+  \item \textbf{Fixed-size chunking:} This strategy reached the highest token-wise recall of all tested configurations at a maximum chunk size $N=512$ with an overlap between chunks of $O=104\ (0.2\cdot N)$. Recall improved consistently with increasing chunk size up to this point after which it started to recess. Introducing overlap yielded higher recall than non-overlapping configuration with the same maximum chunk length while maintaining steady precision. An exception to this trend was observed at $N=1024$, where overlap added no benefit to recall. Notably, the configurations $N=256\ (O=52)$ and $N=512\ (O=0)$ reported identical \gls{iou} values and precision values, despite the latter achieving a higher recall ($\Delta_{Re}=0.07$). Precision displayed a linear negative relationship with the maximum chunk size, decreasing as $N$ increased.
+  \item \textbf{Recursive character chunking:} For recursive character chunking recall increased monotonically as chunk size increased, reporting its highest value of 0.55 for the largest maximum chunk size $N=1024$. While overlap positively influenced the recall value, the effect was of a smaller magnitude than in fixed-size chunking. Hereby, the configurations for $N=512$ showed the smallest positive effect upon the introduction of an overlap value ($\Delta_{Re}=0.01$). Additionally, the inclusion of overlap had a negative effect on the reported precision, leading to an average decrease of $\Delta_{Pr}=0.03$. $\text{Precision}_\Omega$ values were consistently higher than those of fixed-size configurations, although this gap diminished with increasing maximum chunk size.
+  \item \textbf{Breakpoint-based semantic chunking:} Similar to the recursive approach, semantic chunking displayed a positive correlation between maximum chunk size and recall, with 0.52 being the maximum value reported by the configuration with $N=1024$. For the similarity threshold percentile $Q$ a crossover effect was observed. For smaller maximum chunk sizes $N<512$, the lower threshold $Q=70$ yielded higher recall values. However, as the maximum chunk size increased, the higher threshold $Q=90$ prevailed. The same relationship was also observed for the precision and \gls{iou} metrics. For $\text{precision}_\Omega$, $Q=90$ yielded higher values at every $N$ value.
+  \item \textbf{Hierarchical chunking:} At the smallest maximum chunk size $N=128$, hierarchical chunking exhibited the highest precision (0.22), $\text{precision}_\Omega$ (0.17), and \gls{iou} (0.17) values of any tested configuration. In addition it reported the second highest recall value at this $N$ value with 0.32. However, increasing the chunk size did not lead to an increase in recall as it did for the other strategies, with recall values stagnating and even recessing as the maximum chunk length decreased.
+\end{enumerate}
+
+Across all reported configurations we observe that the reported \gls{iou} values are highly correlated with the configurations precision. Especially for lower precision scores ($\text{Pr}<0.1$) the \gls{iou} remained within 0.01 of the reported precision. The metric also responded more sensitive to changes in the precision value while staying stable as recall varied.
+
+\subsection{General Document QA Datasets}
+In addition to evaluating the chunking strategies on the manually annotated oncology \gls{qa} pairs, we measured their performance on the document corpora provided by the research of \textcite{chroma_eval}. Specifically, five different corpora are provided, including chat dialogues, wikipedia excerpts, and Pubmed, which is comprised of biomedical journal literature \autocite{chroma_eval}. We report both the results averaged across these corpora and the individual results on the Pubmed corpora.
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/chroma_results_general}
+  \caption[Results of the chunking evaluation averaged over all predefined corpora]{Results of the chunking evaluation averaged over all predefined corpora. All values are reported as $\mu\pm\sigma$. Highest $\mu$ are bolded and second-highest are underlined.}\label{tab:chroma_general}
+\end{table}
+
+\begin{table}[htpb]
+  \centering
+  \input{figures/tables/chroma_results_pubmed}
+  \caption[Results of the chunking evaluation on the predefined PubMed corpus]{Results of the chunking evaluation on the predefined PubMed corpus. All values are reported as $\mu\pm\sigma$. Highest $\mu$ are bolded and second-highest are underlined.}\label{tab:chroma_pubmed}
 \end{table}

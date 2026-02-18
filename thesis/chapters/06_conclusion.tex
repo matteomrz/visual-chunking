@@ -1,9 +1,10 @@
 % !Tex root = ../main.tex
 
 \chapter{Conclusion}\label{chapter:conclusion}
+This study encompassed an in-depth comparative analysis of current document segmentation configurations and their application for oncology guideline documents. We developed a modular document segmentation pipeline, proposing a unified methodology that addresses the fragmented landscape of available \gls{dp} implementations. Furthermore, motivated by the lack of traceability of current solutions, we introduced a novel approach to the chunking problem that prioritizes traceability and enables visual source attribution for established strategies. In total we provide integrations for 8 different \gls{dp} systems and four chunking strategies, facilitating a rigorous evaluation across a multitude of possible module combinations.
 
-\begin{itemize}
-  \item How to improve tables
-  \item How to include figures
-  \item Make bounding boxes more granular $to$ token level instead of line level
-\end{itemize}
+By critically examining existing benchmarks, we established a set of evaluation metrics and datasets tailored to the requirements of the oncology guideline documents. After reviewing the capabilities of the \gls{dp} approaches and 28 distinct chunking configurations, our findings indicate that while \gls{vlm}-based approaches demonstrate significant potential for \gls{dp}, especially for content extraction, they remain limited by their output variability and positional inaccuracy. Consequently, we conclude that current pipeline-based approaches, specifically MinerU 2.5 Pipeline and Docling, offer the stability and completeness required for the data preparation of the \gls{rag}-based medical knowledge assistant.
+
+As the field of \gls{dp} is continuously evolving, a primary focus in the development of the document segmentation pipeline was to ensure a modular architecture that supports the integration of emerging techniques. We therefore encourage future research towards exploring novel \gls{dp} approaches and applying our proposed methodology to additional chunking techniques.
+
+Another direction that could be explored in future experiments involves addressing the limitations of our current evaluation framework. In particular, expanding the performance assessment of \gls{dp} implementations on multi-page \gls{pdf} documents would bridge a significant gap in the existing research landscape.

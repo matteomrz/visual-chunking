@@ -7,7 +7,7 @@
 
 The Aidvice project proposes to address this problem by leveraging recent advantages in \gls{ai}. Specifically, the project revolves around the development of a \gls{rag} based knowledge assistant \autocite{aidvice}.\ \gls{rag} is an emerging paradigm which addresses a fundamental problem of traditional \glspl{llm} \autocite{rag}. While \glspl{llm} excel at many \gls{nlp} tasks, they are prone to ``hallucinations'' and inaccurate answers, when sought information goes beyond the model's training data \autocite{rag_survey}. This provides a major obstacle for the usage of \glspl{llm} in the medical field, where accurate and reliable answers are of the highest priority \autocite{lins}.\ \gls{rag} mitigates these drawbacks by retrieving additional context from an external knowledge source which the \gls{llm} can take advantage of during answer generation \autocite{chunk_size_effect_on_rag,rag}.
 
-The efficiency of such a \gls{rag} system is fundamentally constrained by the quality and relevance of the context retrieved from the knowledge base \autocite{dense_x,data_quality_rag}. Therefore, the construction of the knowledge base out of the oncology guidelines is a critical aspect of the project. Additionally, as the project has a clear focus on verifiability and traceability, there is an additional requirement to provide visual source attribution with the models responses. This means that retrieved passages need to include accurate positional information, giving visual confirmation to the practitioner about the origin of the retrieved context \autocite{visa}.
+The efficacy of such a \gls{rag} system is fundamentally constrained by the quality and relevance of the context retrieved from the knowledge base \autocite{dense_x,data_quality_rag}. Therefore, the construction of the knowledge base out of the oncology guidelines is a critical aspect of the project. Additionally, as the project has a clear focus on verifiability and traceability, there is an additional requirement to provide visual source attribution with the models responses. This means that retrieved passages need to include accurate positional information, giving visual confirmation to the practitioner about the origin of the retrieved context \autocite{visa}.
 
 As \glspl{llm} are constrained by the size of their context window, it is not feasible to store the entire guideline documents as individual entries in the knowledge base \autocite{rag_survey}. Therefore, the documents need to be split up into smaller text chunks that fit into the model's context window \autocite{rag_survey}. This process is called chunking \autocite{semantic_chunking}.
 
@@ -17,7 +17,7 @@ During retrieval the model identifies the most relevant passages in the knowledg
 
 Additionally, established implementations of popular chunking strategies do not fulfill the requirement of visual source attribution at the granularity required by the Aidvice project \autocite{langchain,llamaindex,docling_toolkit,langchain_splitting_recursively}. Therefore there is a need for the development of a novel solution that addresses this issue.
 
-\section{Objectives}
+\section{Objectives}\label{section:objectives}
 This study addresses three fundamental research questions regarding the data preparation for a \gls{rag} based knowledge assistant for oncology guidelines. Each of the following research questions addresses a specific aspect of the evaluation and improvement of the document segmentation process required for the construction of the knowledge base.
 
 \begin{itemize}

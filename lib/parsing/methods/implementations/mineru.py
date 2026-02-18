@@ -128,12 +128,13 @@ class MinerUParser(DocumentParser):
         if "lines" not in element.keys():
             content = ""
         elif elem_type in ["image_body", "table_body"]:
-            for line in element["lines"]:
-                for span in line["spans"]:
+            content = ""
+            for line in element.get("lines", []):
+                for span in line.get("spans", []):
                     if span.get("image_path", ""):
                         image_path = span["image_path"]
-                    if span["type"] == "table":
-                        content = f"{span['html']}"
+                    if span.get("type", "") == "table":
+                        content = f"{span.get('html', '')}"
         elif self.is_vlm:
             content = vlm_merge_para(element)
         else:
