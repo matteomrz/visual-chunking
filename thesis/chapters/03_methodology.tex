@@ -154,7 +154,7 @@ As the strategy traverses the document tree, ParsingResult nodes are split into 
 We then insert a breakpoint between sentences which have a higher distance than the $Q$-th percentile of all calculated distances. Breakpoint-based semantic chunking has no regard for the size of its produced chunks, leading to a large variability in chunk sizes. To mitigate this issue, we introduce a minimum chunk size $M$. If the strategy produces a chunk which is shorter than $M$, we combine it with the next splits until their combined length is greater than $M$. To handle the inverse problem, we use the strategy of recursive character chunking in order to further split oversized chunks.
 
 \subsection{Hierarchical Chunking}
-Hierarchical chunking, which is inspired by the hybrid chunker from the Docling toolkit \autocite{docling_toolkit}, generates discourse passages by leveraging the tree structure of the ParsingResult. The structure and hierarchy of the document are preserved in the final chunks by prepending relevant section headers to the chunk's content.
+Hierarchical chunking, which is inspired by the hybrid chunker from the Docling toolkit \autocite{docling_toolkit}, generates discourse passages by leveraging the tree structure of the ParsingResult. The structure and hierarchy of the document are preserved in the final chunks by prepending relevant section headings to the chunk's content.
 
 \begin{figure}[htpb]
   \centering
@@ -366,7 +366,7 @@ To address this uncertainty, we evaluate each chunking strategy across a range o
 
   \item \textbf{Minimum chunk size ($M$):} To ensure that semantic chunks scale with the maximum chunk size, the minimum chunk size needs to scale accordingly as well. We therefore set $M=0.5\cdot N$.
 
-  \item \textbf{Heading token budget ($B_h$):} In hierarchical chunking, the heading budget prevents section headers from taking up a majority of the chunk's content. For our evaluation, we set $B_h=0.4\cdot N$.
+  \item \textbf{Heading token budget ($B_h$):} In hierarchical chunking, the heading budget prevents section headings from taking up a majority of the chunk's content. For our evaluation, we set $B_h=0.4\cdot N$.
 \end{enumerate}
 
 In total, we evaluate 28 different chunking configurations across four different strategies.
