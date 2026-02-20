@@ -93,6 +93,13 @@ def export_table_to_latex(
 
     styler = df.style
 
+    # Replace zeros
+    if replace_zeros:
+        rep_zeros = lambda num: replace_zeros if num == 0 else f"{num:.4f}"
+        styler.format(rep_zeros)
+    else:
+        styler.format(precision=precision)
+
     bold_style = "bfseries:;"  # \bfseries
     underline_style = "underline:--rwrap;"  # \underline{}
 
@@ -118,13 +125,6 @@ def export_table_to_latex(
     if escape_latex:
         styler.format_index(escape="latex", axis=1)
         styler.format_index(escape="latex", axis=0)
-
-    # Replace zeros
-    if replace_zeros:
-        rep_zeros = lambda num: replace_zeros if num == 0 else f"{num:.4f}"
-        styler.format(rep_zeros)
-    else:
-        styler.format(precision=precision)
 
     tex_content = styler.to_latex(
         hrules=True,
