@@ -1,10 +1,22 @@
 \chapter{\abstractname}
+Oncology guidelines are continuously increasing in size and complexity, placing additional strain on medical personnel. \Gls{rag} based knowledge assistants offer a promising solution for navigating these extensive documents.
 
-%TODO: Abstract
+The creation of such an assistant requires the preparation of the guideline documents, transforming them into a machine readable format through \gls{dp} and chunking them into small textual units. Hereby, the characteristics of the documents and the high traceability requirements of the knowledge assistant pose significant challenges to these processes. Additionally, the fragmented methodologies and data formats of established \gls{dp} implementations complicate direct comparisons.
 
+Our research investigates the alignment of established \gls{dp} datasets with oncology guidelines, identifies suitable metrics for measuring the quality of the data preparation, and proposes architectural enhancements to provide the required traceability.
 
+We develop a modular pipeline, enabling comparisons between eight different \gls{dp} implementations and four established chunking strategies. PubLayNet and OmniDocBench are identified as adequate datasets for evaluating the \gls{dp} module. However, these datasets critically lack multi-page and born-digital document representations. Our study concludes that the F1 score is a suitable metric for measuring the quality of the \gls{dla}, while combining the normalized edit distance and \gls{teds} is useful for evaluating the content extraction. Regarding the evaluation of the chunking module, token-wise precision and recall proved essential, while relying on combined metrics, such as the token-wise \gls{iou} is discouraged.
 
+To fulfill the requirements of the \gls{rag} based knowledge assistant, we introduce a novel token-centric chunking methodology and improvements to the relation integration of the \gls{dp} module. Ultimately, our approach facilitates visual source attribution at a high granularity but necessitates more rigorous quantitative validation in future work.
 
+\paragraph{Keywords:} RAG, Document Segmentation, Document Parsing, Chunking, Benchmarking
+
+% Reset the used glossary entries, so next time they will be listed in full again
+\glsreset{dp}
+\glsreset{rag}
+\glsreset{dla}
+\glsreset{teds}
+\glsreset{iou}
 
 \makeatletter
 \ifthenelse{\pdf@strcmp{\languagename}{english}=0}
@@ -14,10 +26,23 @@
 
 \chapter{\abstractname}
 
-%TODO: Abstract in other language
-\begin{otherlanguage}{ngerman} % TODO: select other language, either ngerman or english !
+\begin{otherlanguage}{ngerman}
+  Die kontinuierliche Steigerung des Umfangs und der Komplexität von onkologischen Leitlinien stellt eine zunehmende Belastung für medizinisches Personal dar. Neuartige Technologien, wie auf \glspl{rag} basierende Wissensassistenten, bieten eine vielversprechende Lösung für die effektive Navigation dieser Leitlinien. Für die Implementierung eines solchen Assistenten müssen die Leitlinien zunächst durch \glspl{dp} in ein strukturiertes maschinenlesbares Format übertragen und durch ``chunking'' in kurze Textausschnitte aufgeteilt werden. Hierbei stellen die Eigenschaften der Leitlinien und die hohen Transparenzanforderungen des Projektes bedeutende Herausforderungen für diese Prozesse dar. Außerdem kompliziert die fragmentierte Methodik und die verschiedenen Datentypen der DP-Implementierungen einen direkten Vergleich.
+
+  Unsere Forschung untersucht die Gemeinsamkeiten zwischen bestehenden Datensätzen und den onkologischen Leitlinien, identifiziert Metriken für die Evaluation des Prozesses und erweitert diesen um den Anforderungen des Projektes gerecht zu werden.
+
+  Wir entwickeln eine modulare Dokumentsegmentierungspipeline und ermöglichen so Vergleiche zwischen acht DP-Implementierungen und vier Chunkingstrategien. PubLayNet und OmniDocBench wurden als adequate Datensätze für die Evaluierung des DP-Moduls identifiziert. Jedoch enthalten beiden Datensätzen keine mehrseitigen oder digital erstellte Dokumente. Wir schlussfolgern, dass der F1 Score sich als Metrik für die Evaluation der Dokumentlayout-Analyse eignet. In Kombination bieten sich die normalisierte Editierdistanz und die \glspl{teds} für die Qualitätsanalyse der Inhaltsextraktion an. Für die Messung der Chunkingleistung befinden wir die Sensitivität und die Spezifität auf dem Token-Level als wichtigste Metriken. Von der Verwendung kombinierter Metriken, wie dem Jaccard-Koeffizienten, ist hierbei abzuraten.
+
+  Um die Anforderungen des Wissensassistenten zu erfüllen, stellen wir im Rahmen unserer Forschung eine neuartige tokenzentrierte Chunkingmethodik und verschiedene Verbesserungen für die Beziehungsintegration des DP-Moduls vor. Unsere Methodik ermöglicht eine visuelle positionsabhängige Quellenangabe mit einer hohen Granularität, erfordert allerdings zusätzlicher quantitativer evaluation in zukünftigen Forschungsarbeiten.
+
+  \paragraph{Schlüsselwörter:} RAG, Dokumentensegmentierung, Document Parsing, Chunking, Benchmarking
 
 \end{otherlanguage}
+
+% Reset the used glossary entries, so next time they will be listed in full again
+\glsreset{dp}
+\glsreset{rag}
+\glsreset{teds}
 
 
 % Undo the name switch
