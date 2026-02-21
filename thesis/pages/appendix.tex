@@ -1,7 +1,7 @@
 \chapter{General Addenda}
 
 \lstinputlisting[
-  basicstyle=\ttfamily\small,language=XML,breaklines=true,breakatwhitespace=false,label={lst:gemini-prompt},caption={Prompt to apply the Gemini 2.5 Flash model to \gls{dp} tasks. Gemini models are trained to output coordinates from 0 to 1000, with the origin at the left-top corner of the image. Additionally, they are trained to provide bounding boxes as tuples in the $(y_0,x_0,y_1,x_1)$ format. In order to maximize the accuracy of detected bounding boxes, \lstinline|box_2d|, the key used in Google's official documentation, is used to denote the bounding box tuples in the output \gls{json}.}
+  basicstyle=\ttfamily\small,language=XML,breaklines=true,breakatwhitespace=false,label={lst:gemini-prompt},caption={Prompt to apply the Gemini 2.5 Flash model to the \gls{dp} task. Gemini models are trained to output coordinates from 0 to 1000, with the origin at the top-left corner of the image. Additionally, they are trained to provide bounding boxes as tuples in the $(y_0,x_0,y_1,x_1)$ format. In order to maximize the accuracy of the detected bounding boxes, \lstinline|box_2d|, the key used in Google's official documentation, is used to denote the bounding box tuples in the output \gls{json}.}
 ]{figures/code/gemini_prompt.txt}
 
 \begin{table}[htpb]
