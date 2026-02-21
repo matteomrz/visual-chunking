@@ -7,10 +7,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from lib.parsing.model.parsing_result import ParsingResult
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.methods.implementations.recursive import find_splits
-from lib.segmentation.model.document_chunker import DocumentChunker
-from lib.segmentation.model.token import RichToken
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.methods.implementations.recursive import find_splits
+from lib.chunking.model.document_chunker import DocumentChunker
+from lib.chunking.model.token import RichToken
 from lib.utils.get_sentences import get_sentences, setup_nltk
 
 

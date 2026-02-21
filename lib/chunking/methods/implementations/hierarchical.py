@@ -1,10 +1,10 @@
 from math import floor
 
 from lib.parsing.model.parsing_result import ParsingResult, ParsingResultType
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.methods.implementations.recursive import find_splits
-from lib.segmentation.model.document_chunker import DocumentChunker
-from lib.segmentation.model.token import RichToken
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.methods.implementations.recursive import find_splits
+from lib.chunking.model.document_chunker import DocumentChunker
+from lib.chunking.model.token import RichToken
 
 
 class HierarchicalChunker(DocumentChunker):
@@ -17,8 +17,7 @@ class HierarchicalChunker(DocumentChunker):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        max_parent_token_ratio = kwargs.get("max_parent_token_ratio", 0.5)
-        self.max_parent_tokens = floor(self.max_tokens * max_parent_token_ratio)
+        self.max_parent_tokens = kwargs.get("max_parent_tokens", floor(0.5 * self.max_tokens))
 
     def _get_chunk_tokens(self, document: ParsingResult):
         yield from self._get_from_element(document, [])

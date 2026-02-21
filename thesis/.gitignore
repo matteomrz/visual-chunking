@@ -39,3 +39,7 @@ build/*
 # Backup files
 *.bak
 *.backup
+
+# Raw figure files
+figures/images/*.svg
+figures/images/*.af

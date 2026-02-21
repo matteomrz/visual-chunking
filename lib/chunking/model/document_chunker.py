@@ -9,11 +9,12 @@ from typing import Any, Generator
 import numpy as np
 from transformers import AutoTokenizer
 
-from config import BOUNDING_BOX_DIR, SEGMENTATION_OUTPUT_DIR
+from config import PARSING_RESULT_DIR, CHUNKING_RESULT_DIR
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.model.chunk import Chunk, ChunkingResult
-from lib.segmentation.model.token import RichToken
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.model.chunk import Chunk, ChunkingResult
+from lib.chunking.model.token import RichToken
+from lib.utils.annotate import create_annotation
 from lib.utils.create_dir import create_directory
 from lib.utils.max_min import get_max_min
 from lib.utils.open import open_parsing_result
@@ -83,14 +84,20 @@ def get_chunk(
                 # Assumes token density is the same across all lines
                 token_per_line = elem.tokens_per_geom / line_cnt
 
+                # While in MOST cases just taking the floor / ceil of the frac_lines
+                # works out to include the entire text, we prefer having increased
+                # recall at the cost of being less precise
+
+                # If you want to have closer bounding boxes remove the -1 / +1 after rounding
+
                 if min_idx > box_start_idx:
                     frac_lines = (min_idx - box_start_idx) / token_per_line
-                    top_line = math.floor(frac_lines)
+                    top_line = max(0, math.floor(frac_lines) - 1)
                     copy_box.top = bbox.spans[top_line].top
 
                 if max_idx < box_end_idx:
                     frac_lines = (box_end_idx - max_idx) / token_per_line
-                    bottom_line = line_cnt - math.ceil(frac_lines)
+                    bottom_line = min(line_cnt - 1, line_cnt - math.ceil(frac_lines) + 1)
                     copy_box.bottom = bbox.spans[bottom_line].bottom
 
                 boxes.append(copy_box)
@@ -114,7 +121,7 @@ class DocumentChunker(ABC):
 
     module: Chunkers
 
-    src_path: Path = BOUNDING_BOX_DIR
+    src_path: Path = PARSING_RESULT_DIR
 
     # Exclude Types with empty content, if any, their children will supply the content
     excluded_types: list[ParsingResultType] = [
@@ -183,7 +190,7 @@ class DocumentChunker(ABC):
         Directory to save the ChunkingResult JSON serialization in.
         Example: 'SEGMENTATION_OUTPUT_DIR/fixed_size/1024_200/'
         """
-        return SEGMENTATION_OUTPUT_DIR / self.module.value / self._config_str
+        return CHUNKING_RESULT_DIR / self.module.value / self._config_str
 
     @property
     def _config_str(self):
@@ -264,16 +271,20 @@ class DocumentChunker(ABC):
         output_dir = create_directory(file_path, self.src_path, self.dst_path)
         output_path = output_dir / file_path.name
 
+        result.metadata["chunk_path"] = str(output_path)
+
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
 
-    def process_document(self, file_path: Path, with_geom: bool = True) -> ChunkingResult:
+    def process_document(self, file_path: Path, with_geom: bool = True,
+                         draw: bool = False) -> ChunkingResult:
         """
         Performs chunking for a single document.
 
         Args:
             file_path: Absolute path of the JSON file containing the bounding boxes
             with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
+            draw: Whether to create an annotated PDF file for the resulting Chunks (Default: False)
 
         Returns:
             Chunked document as ChunkingResult
@@ -287,17 +298,28 @@ class DocumentChunker(ABC):
 
         chunk_time = time.time() - start_time
         self._add_metadata(result, chunk_time)
-
         self._save(file_path, result)
+
+        if draw:
+            create_annotation(result)
+
+        logger.info(f"Finished chunking {file_name} in {chunk_time:.4f}s.")
+
         return result
 
-    def process_batch(self, batch_name: str, with_geom: bool = True) -> list[ChunkingResult]:
+    def process_batch(
+        self,
+        batch_name: str,
+        with_geom: bool = True,
+        draw: bool = False
+    ) -> list[ChunkingResult]:
         """
         Performs chunking for a batch of multiple documents.
 
         Args:
             batch_name: Name of the directory containing the JSON files of the bounding boxes
             with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
+            draw: Whether to create annotated PDF files for the resulting Chunks (Default: False)
 
         Raises:
             FileNotFoundError: If the batch directory is not found in ``src_path``
@@ -311,7 +333,7 @@ class DocumentChunker(ABC):
             results = []
 
             for file_path in batch_path.glob("*.json"):
-                res = self.process_document(file_path, with_geom)
+                res = self.process_document(file_path, with_geom, draw)
                 results.append(res)
 
             return results

@@ -4,11 +4,11 @@ from typing import Any, List
 
 from chunking_evaluation import BaseChunker
 
-from lib.evaluation.segmentation.chroma.chroma_setup import CHROMA_DIR
+from lib.evaluation.chunking.chroma.chroma_setup import CHROMA_DIR
 from lib.parsing.model.parsing_result import ParsingResult, ParsingResultType
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.model.chunk import ChunkingResult
-from lib.segmentation.model.document_chunker import DocumentChunker
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.model.chunk import ChunkingResult
+from lib.chunking.model.document_chunker import DocumentChunker
 from lib.utils.thesis_names import get_chunker_name, get_chunker_param
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from pathlib import Path
 from pymupdf import TEXTFLAGS_DICT, TEXT_PRESERVE_IMAGES, pymupdf, Document
 from pymupdf.utils import (
     get_text,
-    # get_textpage_ocr
+    get_textpage_ocr
 )
 
 from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
@@ -110,20 +110,24 @@ def _add_spans_to_element(element: ParsingResult, pdf: Document):
             rect = pymupdf.Rect(abs_left, abs_top, abs_right, abs_bottom)
             page.set_cropbox(rect)
 
-            # Experimentally removed OCR textpage - Guidelines are all programmatic
-            # Using lower dpi than 300 leads to scaling issues
-            # tp = get_textpage_ocr(page, full=True, dpi=300)
-
-            text = get_text(
+            content = get_text(
                 page,
-                # textpage=tp,
                 option="dict",
                 sort=True,
                 flags=_pymupdf_flag,
             )
 
+            blocks = content.get("blocks", [])
+
+            # Experimentally removed OCR textpage - Guidelines are all programmatic
+            # However still used as a fallback if no blocks were recognized
+            # Using lower dpi than 300 leads to scaling issues
+            if not blocks:
+                tp = get_textpage_ocr(page, full=True, dpi=300)
+                blocks = tp.extractDICT().get("blocks", [])
+
             try:
-                for block in text.get("blocks", []):
+                for block in blocks:
                     raw_lines = block.get("lines", [])
 
                     # Sometimes spans which only have very small intersect with element get retrieved

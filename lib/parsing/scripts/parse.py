@@ -8,12 +8,12 @@ def parse_pdf(
     parser_name: str,
     src_name: str,
     is_batch: bool = False,
-    should_draw: bool = False,
-    skip_existing=False,
+    draw: bool = False,
+    exist_ok: bool = False,
 ):
     options = {
-        ParserOptions.ANNOTATE: should_draw,
-        ParserOptions.EXIST_OK: skip_existing,
+        ParserOptions.DRAW: draw,
+        ParserOptions.EXIST_OK: exist_ok,
     }
 
     parser_type = Parsers.get_parser_type(parser_name)

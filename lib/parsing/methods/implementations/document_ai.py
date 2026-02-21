@@ -19,6 +19,7 @@ DocumentLayoutBlock = document_ai.Document.DocumentLayout.DocumentLayoutBlock
 # Document AI Parsing Configuration
 PDF_MIME_TYPE = "application/pdf"
 
+# Without these options Document AI ignores any images and will not extract bounding boxes
 layout_config = document_ai.ProcessOptions.LayoutConfig()
 layout_config.return_bounding_boxes = True
 layout_config.enable_image_extraction = True
@@ -27,7 +28,6 @@ PROCESS_OPTIONS = document_ai.ProcessOptions()
 PROCESS_OPTIONS.layout_config = layout_config
 
 
-# TODO: Give more info about how to use document ai
 class DocumentAIParser(DocumentParser[document_ai.Document]):
     """Uses the LayoutParser from Google's Document AI for parsing."""
 

@@ -1,6 +1,6 @@
 from lib.parsing.methods.parsers import Parsers
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.model.document_chunker import DocumentChunker
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.model.document_chunker import DocumentChunker
 
 _parser_latex_mapping = {
     Parsers.LLAMA_PARSE: "LlamaParse",

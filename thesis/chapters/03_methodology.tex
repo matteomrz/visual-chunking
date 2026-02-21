@@ -222,7 +222,7 @@ A \gls{dtbb} is classified as a \gls{tp} if there exists a \gls{gtbb} from the s
 The F1 score is the weighted harmonic mean between precision and recall and is calculated as defined in \autoref{eq:f1score} \autocite{object_detection_metrics}. The metric is calculated for a single class $i$ at a set \gls{iou} threshold. Selecting a higher threshold will lead to a stricter metric as predictions need to be more precise to be counted as a \gls{tp} \autocite{object_detection_metrics}. A F1 score calculated at an \gls{iou} threshold T\% is commonly referred to as F1@T \autocite{scenescript}.
 
 \begin{equation}
-  \text{F}1_i = \frac{2\cdot\text{Pr}_i\cdot\text{Rc}_i}{\text{Pr}_i+\text{Rc}_i}
+  \text{F}1_i = \frac{2\cdot\text{Pr}_i\cdot\text{Re}_i}{\text{Pr}_i+\text{Re}_i}
   \label{eq:f1score}
 \end{equation}
 

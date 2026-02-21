@@ -79,3 +79,34 @@ On the other hand, our results indicate that the token-wise \gls{iou} is not a s
 
 \section{Document Segmentation Enhancements}
 Addressing \textbf{RQ3}, which investigates how document segmentation methods can be adapted and expanded on to fulfill the visual source attribution requirements of a \gls{rag} based knowledge assistant, we integrated two distinct enhancements into our document segmentation pipeline. Firstly, we enhanced the relation integration of the \gls{dp} implementations by implementing additional post-processing steps. Specifically, we filter out extraneous elements, infer the document's structural hierarchy based on the reading order, and determine span-level bounding boxes. These additions optimize the document tree, enabling the use of structure-dependent chunking strategies such as hierarchical chunking while ensuring that downstream chunking output only contains relevant content. Our second contribution entails the proposition of a novel token-based methodology for the chunking process. This approach enables traceability for every constituent token even when employing chunking strategies that do not inherently respect the structure of the document. Combined with the span-level bounding boxes introduced in the \gls{dp} post-processing, our pipeline successfully generates chunk bounding boxes at a higher level of granularity than previous implementations. However, it is important to note that the precision of the produced bounding boxes has so far only been verified through qualitative, small-scale evaluations. Therefore, future work should incorporate a more rigorous quantitative evaluation to validate the robustness of this novel approach.
+
+\section{Key Findings and Best Practices}
+We summarize the findings described in this chapter for each of the research questions, giving a list of actionable recommendations for future applications of the research conducted in this study.
+
+\begin{displayquote}
+  \textbf{RQ1:} How are the challenges introduced by oncology guidelines reflected in established benchmarks for document parsing?
+\end{displayquote}
+
+We found that established benchmarks and datasets generally evaluate a single aspect of the \gls{dp} process. PubLayNet proved to be valuable for evaluating the implementations' \gls{dla} capabilities on documents that are from a similar medical domain as the guideline documents. OmniDocBench provides an extensive stress test that evaluates the content extraction performance on a range of challenging scientific layouts, albeit with a very small sample size. However, we found that some attributes of \glspl{cpg} are not reflected, namely multi-page structural elements and born-digital \gls{pdf} files. We conclude that there is still a need for future research regarding the creation of more complete datasets.
+
+\begin{displayquote}
+  \textbf{RQ2:} Which metrics are most useful for measuring the effectiveness of document parsing and chunking methods?
+\end{displayquote}
+
+We identified a set of valuable metrics that can be applied during different stages of the document segmentation process.
+
+For \gls{dla}, the (weighted) F1 score is useful to compare the performance of the different implementations, regardless of whether they include trustworthy confidence scores in their output. We recommend evaluating the scores at different \gls{iou} thresholds to gain insights into the overall quality of the produced bounding boxes. We identified F1@50:95 as the most useful metric to rank a group of \gls{dp} implementations, as it rewards high-precision localizations while still acknowledging acceptable predictions.
+
+For content extraction, we recommend using a range of metrics to measure the performance of different aspects of the process. Specifically, the normalized edit distance is useful for measuring the text extraction performance and can also be applied for evaluating the correctness of the reading order. For table structure recognition, we recommend \gls{teds} and especially its structure-only variant to measure the quality of the implementation's table structure.
+
+We argue that token-wise recall is the most important metric for measuring the quality of the chunking process. The produced chunks should also have at least a minimum level of token-wise precision to ensure that the generator will be able to find the relevant context inside the retrieved information. For experiments with little retrieval optimization, $\text{precision}_\Omega$ proved useful to identify how similar the produced chunks are to the ground truth. We find that combining recall and precision into a single metric is not recommended due to the uneven relevancy of the two metrics.
+
+\begin{displayquote}
+  \textbf{RQ3:} How can current segmentation methods be adapted or expanded on to fulfill the requirements of a \gls{rag} based knowledge assistant with visual source attribution?
+\end{displayquote}
+
+We find that pipeline-based approaches, specifically MinerU 2.5 Pipeline and Docling, performed best for \gls{dla}, while both MinerU 2.5 \gls{vlm} and Pipeline are the superior choices for content extraction. MinerU 2.5 \gls{vlm}'s slow parsing speed likely makes it infeasible for the project, leaving MinerU 2.5 Pipeline and Docling as the optimal choices. Docling provides more granular table elements and processes documents significantly faster. MinerU provides better content extraction and span-level bounding boxes for text elements.
+
+The evaluation of the chunking strategies revealed that recursive character chunking performed best among the tested configurations. For \gls{rag} applications building on oncology guideline documents, we recommend starting with an initial chunk size of $512$ tokens and perform further parameter tuning.
+
+Our improvements to the \gls{dp} process include the filtering of extraneous elements and optimization of the document tree. For chunking, we introduce a novel methodology that links chunk tokens to the structural element they belong to. This enables visual source attribution with high granularity bounding boxes.

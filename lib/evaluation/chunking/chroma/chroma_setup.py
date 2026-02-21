@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 from config import CONFIG_DIR
 
-from lib.evaluation.segmentation.chroma.load_annotations import get_offsets_path, load_annotations
+from lib.evaluation.chunking.chroma.load_annotations import get_offsets_path, load_annotations
 from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.model.parsing_result import ParsingMetaData

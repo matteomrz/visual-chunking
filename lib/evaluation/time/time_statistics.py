@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 
-from config import BOUNDING_BOX_DIR
+from config import PARSING_RESULT_DIR
 from lib.parsing.methods.parsers import Parsers
 from lib.parsing.model.parsing_result import ParsingMetaData as PmD
 from lib.utils.thesis_names import get_parser_thesis_name
@@ -16,7 +16,7 @@ def get_time_stats():
     parser_key = PmD.PARSER.value
     page_count_key = PmD.PAGE_COUNT.value
 
-    for result_path in BOUNDING_BOX_DIR.rglob("*.json"):
+    for result_path in PARSING_RESULT_DIR.rglob("*.json"):
         with open(result_path, "r") as f:
             result = json.load(f)
 

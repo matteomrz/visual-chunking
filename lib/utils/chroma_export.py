@@ -1,6 +1,6 @@
 import pandas as pd
 
-from lib.segmentation.methods.chunkers import Chunkers
+from lib.chunking.methods.chunkers import Chunkers
 from lib.utils.export_table import export_table_to_latex
 from lib.utils.thesis_names import get_chunker_name
 

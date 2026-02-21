@@ -7,13 +7,16 @@ from typing import Any, Generic, TypeVar
 
 import pymupdf
 
-from config import BOUNDING_BOX_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
+from config import PARSING_RESULT_DIR, GUIDELINES_DIR, IMAGES_DIR, MD_DIR
 from lib.parsing.model.options import ParserOptions
 from lib.parsing.scripts.postprocess import parse_post_process
-from lib.parsing.scripts.annotate import create_annotation
+from lib.utils.annotate import create_annotation
 from lib.parsing.methods.parsers import Parsers
-from lib.parsing.model.parsing_result import ParsingMetaData as PmD, ParsingResult, \
+from lib.parsing.model.parsing_result import (
+    ParsingMetaData as PmD,
+    ParsingResult,
     ParsingResultType
+)
 from lib.utils.create_dir import create_directory, get_directory
 from lib.utils.open import open_parsing_result
 
@@ -48,7 +51,7 @@ class DocumentParser(ABC, Generic[T]):
 
     @property
     def json_dst_path(self) -> Path:
-        return BOUNDING_BOX_DIR / self.module.value
+        return PARSING_RESULT_DIR / self.module.value
 
     @property
     def md_dst_path(self) -> Path:
@@ -170,20 +173,6 @@ class DocumentParser(ABC, Generic[T]):
             json.dump(result.to_dict(), f, indent=2)
             logger.info(f"JSON output saved at: {output_path}")
 
-    def _annotate(self, file_path: Path, options: dict = None):
-        """
-        Call drawing method if requested.
-        To request drawing, set options[ParserOptions.ANNOTATE] = True
-
-        Args:
-            file_path: The path of the input PDF file
-            options: A dictionary of method-specific options [optional]
-        """
-        if options and options.get(ParserOptions.ANNOTATE, False):
-            logger.info(f"Scheduled annotation of {file_path.name}...")
-
-            create_annotation(src_path=file_path, parser=self.module)
-
     def _set_meta(
         self, result: ParsingResult, file_path: Path, start_time: float, parse_time: float,
         transformation_time: float
@@ -238,7 +227,9 @@ class DocumentParser(ABC, Generic[T]):
 
         self._save_md(file_path, md_result)
         self._save_json(file_path, transformed_result)
-        self._annotate(file_path, options)
+
+        if options and options.get(ParserOptions.DRAW, False):
+            create_annotation(transformed_result)
 
         return transformed_result
 
@@ -261,6 +252,8 @@ class DocumentParser(ABC, Generic[T]):
         skip_existing = options.get(ParserOptions.EXIST_OK, False) if options else False
 
         if batch_path.exists() and batch_path.is_dir():
+            logger.info(f"Start parsing of {batch_name}...")
+
             results = []
             failed = []
 
@@ -278,11 +271,17 @@ class DocumentParser(ABC, Generic[T]):
                         res = self.process_document(file_path, options)
                         results.append(res)
 
-                    except BaseException:
+                    except BaseException as e:
+                        logger.warning(
+                            f"Parsing failed for: {file_path.name} "
+                            f"Error: {str(e)}"
+                        )
                         failed.append(file_path.name)
 
             if failed:
                 logger.warning(f"Processing with {self.module} failed for: {failed}")
+
+            logger.info(f"Successfully processed {len(results)} PDF documents in {batch_name}.")
 
             return results
         else:

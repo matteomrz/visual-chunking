@@ -1,7 +1,7 @@
 from lib.parsing.model.parsing_result import ParsingResult
-from lib.segmentation.methods.chunkers import Chunkers
-from lib.segmentation.model.document_chunker import DocumentChunker
-from lib.segmentation.model.token import RichToken
+from lib.chunking.methods.chunkers import Chunkers
+from lib.chunking.model.document_chunker import DocumentChunker
+from lib.chunking.model.token import RichToken
 
 # Ordered list of delimiters
 # Adapted from: https://github.com/langchain-ai/langchain/blob/master/libs/text-splitters/langchain_text_splitters/character.py
