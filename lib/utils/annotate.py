@@ -80,7 +80,7 @@ def _draw_box(
         )
 
 
-def _draw_parsing_result(result: ParsingResult, doc: Document):
+def _draw_parsing_result(result: ParsingResult, doc: Document, **kwargs):
     loaded_idx = -1
     page = None
 
@@ -94,7 +94,7 @@ def _draw_parsing_result(result: ParsingResult, doc: Document):
         if loaded_idx != page_idx:
             page = doc.load_page(page_idx)
 
-        label = result.type.value
+        label = result.type.value if kwargs.get("with_label", True) else ""
         color = _get_color(label)
 
         _draw_box(box, page, color, label=label)
@@ -107,7 +107,7 @@ def _draw_parsing_result(result: ParsingResult, doc: Document):
         _draw_parsing_result(child, doc)
 
 
-def _draw_chunking_result(result: ChunkingResult, doc: Document):
+def _draw_chunking_result(result: ChunkingResult, doc: Document, **kwargs):
     loaded_idx = -1
     page = None
 
@@ -128,10 +128,13 @@ def _draw_chunking_result(result: ChunkingResult, doc: Document):
                 page = doc.load_page(page_idx)
 
             color = chunk_colors[idx % 2]
-            _draw_box(box, page, color, label=chunk.id, fill=True)
+            label = chunk.id if kwargs.get("with_label", True) else ""
+            with_fill = kwargs.get("with_fill", True)
+
+            _draw_box(box, page, color, label=label, fill=with_fill)
 
 
-def create_annotation(annotation_object: ParsingResult | ChunkingResult):
+def create_annotation(annotation_object: ParsingResult | ChunkingResult, **kwargs) -> Path:
     try:
         pdf_path = Path(annotation_object.metadata[PmD.GUIDELINE_PATH.value])
     except KeyError:
@@ -143,11 +146,11 @@ def create_annotation(annotation_object: ParsingResult | ChunkingResult):
     doc = pymupdf.open(pdf_path)
 
     if isinstance(annotation_object, ParsingResult):
-        _draw_parsing_result(annotation_object, doc)
+        _draw_parsing_result(annotation_object, doc, **kwargs)
         json_path = Path(annotation_object.metadata[PmD.JSON_PATH.value])
         output_path = json_path.relative_to(PARSING_RESULT_DIR)
     else:
-        _draw_chunking_result(annotation_object, doc)
+        _draw_chunking_result(annotation_object, doc, **kwargs)
         json_path = Path(annotation_object.metadata["chunk_path"])
         output_path = json_path.relative_to(CHUNKING_RESULT_DIR)
 
@@ -155,5 +158,6 @@ def create_annotation(annotation_object: ParsingResult | ChunkingResult):
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     doc.save(output_path)
-
     logger.info(f"Saved annotated PDF document to: {output_path}")
+    
+    return output_path

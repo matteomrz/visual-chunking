@@ -174,7 +174,11 @@ class DocumentParser(ABC, Generic[T]):
             logger.info(f"JSON output saved at: {output_path}")
 
     def _set_meta(
-        self, result: ParsingResult, file_path: Path, start_time: float, parse_time: float,
+        self,
+        result: ParsingResult,
+        file_path: Path,
+        start_time: float,
+        parse_time: float,
         transformation_time: float
     ):
         """Set the metadata for the ParsingResult."""
@@ -201,6 +205,17 @@ class DocumentParser(ABC, Generic[T]):
         Returns:
             Parsing Output as ParsingResult
         """
+
+        # Check if output already exists and skip if the flag is set
+        skip_existing = options.get(ParserOptions.EXIST_OK, False) if options else False
+        if skip_existing:
+            output_path = self._get_json_output_path(file_path)
+            if output_path.exists():
+                logger.debug(
+                    f"Skipping Document: {file_path.stem}. "
+                    "Output JSON already exists."
+                )
+                return open_parsing_result(output_path)
 
         file_name = file_path.name
         if not (file_path.exists() and file_name and file_name.endswith(".pdf")):
@@ -233,8 +248,11 @@ class DocumentParser(ABC, Generic[T]):
 
         return transformed_result
 
-    def process_batch(self, batch_name: str, options: dict[ParserOptions, Any] = None) -> list[
-        ParsingResult]:
+    def process_batch(
+        self,
+        batch_name: str,
+        options: dict[ParserOptions, Any] = None
+    ) -> list[ParsingResult]:
         """
         Performs full parsing pipeline for a batch of multiple documents.
 
@@ -249,7 +267,6 @@ class DocumentParser(ABC, Generic[T]):
             List of parsing outputs for the documents in the batch as ParsingResult
         """
         batch_path = self.src_path / batch_name
-        skip_existing = options.get(ParserOptions.EXIST_OK, False) if options else False
 
         if batch_path.exists() and batch_path.is_dir():
             logger.info(f"Start parsing of {batch_name}...")
@@ -258,25 +275,17 @@ class DocumentParser(ABC, Generic[T]):
             failed = []
 
             for file_path in batch_path.glob("*.pdf"):
-                output_path = self._get_json_output_path(file_path)
-                if skip_existing and output_path.exists():
-                    logger.debug(
-                        f"Skipping Document: {file_path.stem}. "
-                        "Output JSON already exists."
-                    )
-                    res = open_parsing_result(output_path)
+                try:
+                    res = self.process_document(file_path, options)
                     results.append(res)
-                else:
-                    try:
-                        res = self.process_document(file_path, options)
-                        results.append(res)
 
-                    except BaseException as e:
-                        logger.warning(
-                            f"Parsing failed for: {file_path.name} "
-                            f"Error: {str(e)}"
-                        )
-                        failed.append(file_path.name)
+                # Regardless of what happens, try processing every document
+                except BaseException as e:
+                    logger.warning(
+                        f"Parsing failed for: {file_path.name}. "
+                        f"Error: {str(e)}"
+                    )
+                    failed.append(file_path.name)
 
             if failed:
                 logger.warning(f"Processing with {self.module} failed for: {failed}")
@@ -284,5 +293,6 @@ class DocumentParser(ABC, Generic[T]):
             logger.info(f"Successfully processed {len(results)} PDF documents in {batch_name}.")
 
             return results
+
         else:
             raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")

@@ -108,9 +108,7 @@ class HierarchicalChunker(DocumentChunker):
         # subtree fits in the same chunk
         else:
             if element.type != ParsingResultType.TABLE_ROW:
-                for child in element.children:
-                    child_tokens = self._tokenize(child)
-                    elem_tokens.extend(child_tokens)
+                elem_tokens = self._recursive_tokenize(element)
 
             yield elem_tokens
 
@@ -118,3 +116,11 @@ class HierarchicalChunker(DocumentChunker):
         if len(child) + len(parent) <= self.max_tokens:
             child[0:0] = parent
         return child
+
+    def _recursive_tokenize(self, node: ParsingResult) -> list[RichToken]:
+        tokens = self._tokenize(node)
+        for child in node.children:
+            c_tokens = self._recursive_tokenize(child)
+            tokens.extend(c_tokens)
+
+        return tokens

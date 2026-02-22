@@ -10,7 +10,12 @@ import numpy as np
 from transformers import AutoTokenizer
 
 from config import PARSING_RESULT_DIR, CHUNKING_RESULT_DIR
-from lib.parsing.model.parsing_result import ParsingBoundingBox, ParsingResult, ParsingResultType
+from lib.parsing.model.parsing_result import (
+    ParsingBoundingBox,
+    ParsingMetaData as PmD,
+    ParsingResult,
+    ParsingResultType
+)
 from lib.chunking.methods.chunkers import Chunkers
 from lib.chunking.model.chunk import Chunk, ChunkingResult
 from lib.chunking.model.token import RichToken
@@ -128,7 +133,6 @@ class DocumentChunker(ABC):
         ParsingResultType.TABLE_ROW,
     ]
 
-    # Placeholder for now
     tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
     max_tokens: int
@@ -223,7 +227,8 @@ class DocumentChunker(ABC):
 
     def segment(self, document: ParsingResult, with_geom: bool = True) -> ChunkingResult:
         """
-        Segments the ParsingResult at the given file path
+        Segments the ParsingResult at the given file path.
+        Does not persist the output of the chunking phase.
 
         Args:
             document: The input ParsingResult
@@ -276,20 +281,31 @@ class DocumentChunker(ABC):
         with open(output_path, "w") as f:
             json.dump(result.to_json(), f, indent=2)
 
-    def process_document(self, file_path: Path, with_geom: bool = True,
-                         draw: bool = False) -> ChunkingResult:
+    def process_document(
+        self,
+        document: Path | ParsingResult,
+        with_geom: bool = True,
+        draw: bool = False
+    ) -> ChunkingResult:
         """
         Performs chunking for a single document.
 
         Args:
-            file_path: Absolute path of the JSON file containing the bounding boxes
+            document: Absolute path of the JSON file containing the ParsingResult \
+                OR ParsingResult object
             with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
             draw: Whether to create an annotated PDF file for the resulting Chunks (Default: False)
 
         Returns:
             Chunked document as ChunkingResult
         """
-        document = open_parsing_result(file_path)
+
+        if isinstance(document, Path):
+            file_path = document
+            document = open_parsing_result(file_path)
+        else:
+            file_path = Path(document.metadata.get(PmD.JSON_PATH.value))
+
         file_name = file_path.stem
         logger.info(f"Chunking {file_name} using {self.module.name}...")
 
@@ -309,7 +325,7 @@ class DocumentChunker(ABC):
 
     def process_batch(
         self,
-        batch_name: str,
+        batch: str | list[ParsingResult] | list[Path],
         with_geom: bool = True,
         draw: bool = False
     ) -> list[ChunkingResult]:
@@ -317,7 +333,9 @@ class DocumentChunker(ABC):
         Performs chunking for a batch of multiple documents.
 
         Args:
-            batch_name: Name of the directory containing the JSON files of the bounding boxes
+            batch: Name of the directory containing the JSON files of the bounding boxes \
+                OR list of ParsingResults \
+                OR list of absolute paths of the JSON files containing the ParsingResults
             with_geom: Whether to extract a bounding box for the resulting Chunks (Default: True)
             draw: Whether to create annotated PDF files for the resulting Chunks (Default: False)
 
@@ -327,18 +345,23 @@ class DocumentChunker(ABC):
         Returns:
             List of ChunkingResults for each file in the batch
         """
-        batch_path = self.src_path / batch_name
 
-        if batch_path.exists() and batch_path.is_dir():
-            results = []
+        # Resolve batch items if only the name of the batch is specified
+        # Name should always be <parser>/<guideline_batch>
+        if isinstance(batch, str):
+            batch_path = self.src_path / batch
+            if batch_path.exists() and batch_path.is_dir():
+                batch = [p for p in batch_path.glob("*.json")]
+            else:
+                raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
 
-            for file_path in batch_path.glob("*.json"):
-                res = self.process_document(file_path, with_geom, draw)
-                results.append(res)
+        results = []
 
-            return results
-        else:
-            raise ValueError(f"Error: {batch_path} does not exist or is not a directory.")
+        for doc in batch:
+            res = self.process_document(doc, with_geom, draw)
+            results.append(res)
+
+        return results
 
     def _add_metadata(self, result: ChunkingResult, chunk_time: float):
         """Add additional metadata to the result of the document chunking."""

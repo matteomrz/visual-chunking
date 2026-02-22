@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, Namespace
 
-from lib.chunking.scripts.chunk import chunk_document
 from lib.parsing.methods.parsers import Parsers
 from lib.parsing.scripts.parse import parse_pdf
 
@@ -103,7 +102,7 @@ def _construct_parser() -> Namespace:
     return base_parser.parse_args()
 
 
-def interface():
+def run_pipeline():
     args = _construct_parser()
 
     if args.batch is not None:
@@ -124,9 +123,11 @@ def interface():
 
     chunker = args.chunker
     if chunker:
+        from lib.chunking.scripts.chunk import chunk_document
+
         chunk_document(
-            chunker_name=args.chunker,
-            parser_name=args.parser,
+            chunker_name=chunker,
+            parser_name=parser,
             src_name=src_name,
             is_batch=is_batch,
             **vars(args)
@@ -134,4 +135,4 @@ def interface():
 
 
 if __name__ == "__main__":
-    interface()
+    run_pipeline()
