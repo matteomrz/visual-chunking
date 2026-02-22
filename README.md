@@ -7,7 +7,7 @@ oncology guidelines) using eight different document parsing implementations and 
 strategies.
 
 <div align="center">
-  <img src="thesis/figures/images/pipeline_diagram_image.jpg" width="400" alt="Figure: Architecture of the document segmentation pipeline.">
+  <img src="thesis/figures/images/pipeline_diagram_image.jpg" width="600" alt="Figure: Architecture of the document segmentation pipeline.">
 </div>
 
 In this thesis, we propose a novel chunking methodology that enables visual source attribution on
